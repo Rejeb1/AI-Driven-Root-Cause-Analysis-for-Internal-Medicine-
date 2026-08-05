@@ -63,6 +63,13 @@ class Citation:
     source_id: str
     locator: str
     snippet: str = ""
+    # True when the passage was retrieved for this case rather than attached to
+    # the knowledge-base entry. The distinction is the whole of what
+    # citation-constrained generation claims: an entry citation says where a
+    # number came from, a retrieved one says which text a clinician can read to
+    # check the reasoning. Collapsing them would let the weaker claim pass for
+    # the stronger one.
+    retrieved: bool = False
 
     def __str__(self) -> str:  # pragma: no cover - display only
         return f"{self.source_id}#{self.locator}"
@@ -102,6 +109,17 @@ class Hypothesis:
         signal worth reading, not noise.
         """
         return len(self.support) > 0
+
+    @property
+    def is_retrieval_grounded(self) -> bool:
+        """True if at least one supporting citation was retrieved for this case.
+
+        Stricter than ``is_grounded``: a hypothesis can cite the knowledge-base
+        entry it came from while no passage in the corpus actually speaks to
+        this presentation. That is the case citation-constrained generation is
+        meant to flag, and only this property can see it.
+        """
+        return any(c.retrieved for c in self.support)
 
 
 @dataclass(frozen=True)

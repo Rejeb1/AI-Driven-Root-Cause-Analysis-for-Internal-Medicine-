@@ -6,6 +6,11 @@
     python scripts/run_eval.py --noisy               # lossy history taking
     python scripts/run_eval.py --sweep               # threshold sweep
     python scripts/run_eval.py --ddxplus /path/to/release --limit 2000
+    python scripts/run_eval.py --no-baselines        # skip the comparison
+
+The report always includes the two baselines the brief requires, because an
+accuracy figure printed without them is the easiest number in this project to
+read as better than it is.
 """
 
 from __future__ import annotations
@@ -36,6 +41,60 @@ def load(args) -> tuple:
     return kb, calibration, evaluation
 
 
+def baseline_comparison(kb, test_cases, result) -> str:
+    """The two comparisons the brief demands, run over the same cases.
+
+    Printed with the agent rather than separately, because a headline number
+    with no baseline beside it invites the reader to supply their own -- and
+    on DDXPlus a ranker with no inference at all scores in the nineties, which
+    is not what anyone assumes when they see an accuracy figure.
+    """
+    from dxagent.baselines import RetrievalOnlyBaseline, SinglePassBaseline
+    from dxagent.evaluation import run_agent
+    from dxagent.evaluation.metrics import (
+        differential_metrics,
+        ranking_metrics,
+        selective_metrics,
+    )
+
+    truths = result.truths
+    gold = {
+        case.case_id: case.differential for case in test_cases if case.differential
+    }
+
+    rows = [
+        ("retrieval-only (no inference)", RetrievalOnlyBaseline(kb)),
+        ("single-pass (no loop)", SinglePassBaseline(kb)),
+    ]
+
+    lines = [
+        "",
+        "baselines (project brief section 9)",
+        f"  {'system':<32}{'top-1':>8}{'top-5':>8}{'MRR':>8}{'DDx@5':>9}{'turns':>8}",
+    ]
+
+    def row(name: str, outcomes) -> str:
+        ranking = ranking_metrics(outcomes, truths)
+        selective = selective_metrics(outcomes, truths)
+        ddx = differential_metrics(outcomes, gold) if gold else None
+        recall = f"{ddx.recall_at_5:>8.1%}" if ddx and ddx.n else "     n/a"
+        return (
+            f"  {name:<32}{ranking.top1:>8.1%}{ranking.top5:>8.1%}"
+            f"{ranking.mrr:>8.3f}{recall:>9}{selective.mean_turns:>8.1f}"
+        )
+
+    for name, baseline in rows:
+        lines.append(row(name, run_agent(baseline, test_cases)))
+    lines.append(row("agentic loop", result.outcomes))
+
+    lines.append(
+        "\n  A retrieval-only baseline that does no inference is the floor the "
+        "loop\n  has to clear. Where it does not clear it by much, the benchmark "
+        "is the\n  finding, not the system."
+    )
+    return "\n".join(lines)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ddxplus", help="path to a local DDXPlus release directory")
@@ -50,6 +109,11 @@ def main() -> int:
     parser.add_argument("--max-turns", type=int, default=12)
     parser.add_argument("--max-cost", type=float, default=40.0)
     parser.add_argument("--no-calibration", action="store_true")
+    parser.add_argument(
+        "--no-baselines",
+        action="store_true",
+        help="skip the section 9 baseline comparison",
+    )
     parser.add_argument("--json", help="write full results to this path")
     args = parser.parse_args()
 
@@ -104,6 +168,9 @@ def main() -> int:
     )
 
     print("\n" + result.report())
+
+    if not args.no_baselines:
+        print(baseline_comparison(kb, test_cases, result))
 
     print("\nper-case detail")
     for outcome in result.outcomes:

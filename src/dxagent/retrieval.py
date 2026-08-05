@@ -35,7 +35,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .guidelines import RULES, WORKUPS
-from .schemas import Citation
+from .schemas import Citation, Finding, Polarity
 
 
 @dataclass(frozen=True)
@@ -46,6 +46,12 @@ class Passage:
     citation: Citation
     concepts: tuple[str, ...] = ()  # vocabulary terms this passage speaks about
     target: str = ""  # disease label, when the passage is about one
+    # The kind of rule this passage came from, carried so that retrieval can
+    # respect the distinction ``guidelines`` draws. Without it a CURB-65
+    # criterion retrieves as support for a pneumonia hypothesis, which is the
+    # severity-as-diagnosis category error that module warns about -- the
+    # warning is worth nothing if the retrieval layer ignores it.
+    kind: str = ""
 
     @property
     def identifier(self) -> str:
@@ -73,6 +79,7 @@ def guideline_passages() -> tuple[Passage, ...]:
                 ),
                 citation=rule.citation,
                 target=rule.target,
+                kind=rule.kind.value,
             )
         )
         for criterion in rule.criteria:
@@ -85,6 +92,7 @@ def guideline_passages() -> tuple[Passage, ...]:
                     citation=rule.citation,
                     concepts=(criterion.concept,) if criterion.concept else (),
                     target=rule.target,
+                    kind=rule.kind.value,
                 )
             )
 
@@ -206,7 +214,12 @@ class GuidelineIndex:
         return tuple(results)
 
     def ground(
-        self, label: str, query: str, k: int = 3, min_score: float = 0.3
+        self,
+        label: str,
+        query: str,
+        k: int = 3,
+        min_score: float = 0.3,
+        exclude_kinds: tuple[str, ...] = ("severity",),
     ) -> tuple[Citation, ...]:
         """Citations for a hypothesis, drawn from retrieved text.
 
@@ -214,19 +227,100 @@ class GuidelineIndex:
         brief calls for rejecting or flagging: a hypothesis with no retrievable
         support is exactly what citation-constrained generation is supposed to
         catch, and returning a weak match anyway would defeat the mechanism.
+
+        Severity passages are excluded by default. CURB-65 presupposes the
+        pneumonia diagnosis and grades it; retrieving "Confusion scores 1" as
+        support for *whether* a patient has pneumonia is the category error
+        ``guidelines`` documents, and semantic similarity will happily commit
+        it because the text is full of pneumonia words.
         """
         grounded: list[Citation] = []
-        for passage, score in self.search(query, k=k, target=label):
-            if score < min_score:
+        for passage, score in self.search(query, k=k * 3, target=label):
+            if score < min_score or passage.kind in exclude_kinds:
                 continue
+            if len(grounded) >= k:
+                break
             grounded.append(
                 Citation(
                     source_id=passage.citation.source_id,
                     locator=passage.citation.locator,
                     snippet=f"{passage.text} [retrieved, similarity {score:.2f}]",
+                    retrieved=True,
                 )
             )
         return tuple(grounded)
 
 
-__all__ = ["GuidelineIndex", "Passage", "guideline_passages"]
+def case_query(findings: list[Finding], complaint: str = "") -> str:
+    """Render a case as retrieval text.
+
+    Positive findings only. A query listing every negative would be dominated
+    by them -- there are far more absent findings than present ones -- and the
+    embedding would describe the questionnaire rather than the patient.
+    """
+    present = [
+        f.concept.replace("_", " ").replace(":", " ")
+        for f in findings
+        if f.polarity is Polarity.PRESENT
+    ]
+    parts = [complaint] if complaint else []
+    if present:
+        parts.append("Findings: " + ", ".join(present) + ".")
+    return " ".join(parts) or "undifferentiated presentation"
+
+
+@dataclass
+class GroundedProposer:
+    """Attaches retrieved guideline passages to another proposer's hypotheses.
+
+    This is the citation-constrained generation the brief requires: after the
+    inner proposer ranks the differential, each hypothesis is grounded against
+    text retrieved *for this case*, and any that cannot be are recorded in
+    ``last_ungrounded`` for the gate or a reviewer to act on.
+
+    Entry citations are kept alongside the retrieved ones rather than replaced.
+    The guideline corpus covers the conditions that have published decision
+    rules, which is a minority of any real differential, so replacing would
+    make every uncovered condition look unsupported -- reporting a corpus gap
+    as a clinical finding. ``retrieval_coverage`` measures that gap instead,
+    which is the honest version of the same information.
+    """
+
+    inner: Any  # Proposer
+    index: GuidelineIndex
+    k: int = 3
+    min_score: float = 0.5
+    last_ungrounded: tuple[str, ...] = ()
+    last_coverage: float = 0.0
+
+    def propose(self, findings: list[Finding], complaint: str = "") -> Any:
+        from dataclasses import replace as _replace
+
+        differential = self.inner.propose(findings, complaint)
+        query = case_query(findings, complaint)
+
+        grounded_hypotheses = []
+        ungrounded: list[str] = []
+        for hypothesis in differential.hypotheses:
+            citations = self.index.ground(
+                hypothesis.label, query, k=self.k, min_score=self.min_score
+            )
+            if not citations:
+                ungrounded.append(hypothesis.label)
+            grounded_hypotheses.append(
+                _replace(hypothesis, support=hypothesis.support + citations)
+            )
+
+        self.last_ungrounded = tuple(ungrounded)
+        total = len(differential.hypotheses) or 1
+        self.last_coverage = 1.0 - len(ungrounded) / total
+        return _replace(differential, hypotheses=tuple(grounded_hypotheses))
+
+
+__all__ = [
+    "GroundedProposer",
+    "GuidelineIndex",
+    "Passage",
+    "case_query",
+    "guideline_passages",
+]

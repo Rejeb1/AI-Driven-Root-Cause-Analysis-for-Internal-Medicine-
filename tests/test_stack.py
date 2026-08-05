@@ -171,3 +171,89 @@ def test_search_before_build_is_an_error():
 
     with pytest.raises(RuntimeError, match="not built"):
         GuidelineIndex(model_name="stub", model=StubEncoder()).search("x")
+
+
+# ---------------------------------------------------------------------------
+# citation-constrained generation
+
+
+def test_grounded_proposer_marks_retrieved_citations(kb, cases):
+    """The distinction the whole grounding claim rests on."""
+    pytest.importorskip("qdrant_client")
+    from dxagent.belief import BayesianProposer
+    from dxagent.retrieval import GroundedProposer, GuidelineIndex
+
+    index = GuidelineIndex(model_name="stub", model=StubEncoder()).build()
+    proposer = GroundedProposer(BayesianProposer(kb), index, min_score=-1.0)
+    case = cases[0]
+    differential = proposer.propose(case.initial(), case.presenting_complaint)
+
+    retrieved = [c for h in differential.hypotheses for c in h.support if c.retrieved]
+    entry_level = [
+        c for h in differential.hypotheses for c in h.support if not c.retrieved
+    ]
+    assert retrieved, "expected at least one retrieved citation"
+    assert entry_level, "entry citations must be kept, not replaced"
+    assert any(h.is_retrieval_grounded for h in differential.hypotheses)
+
+
+def test_severity_rules_are_not_retrieved_as_diagnostic_support():
+    """guidelines.py warns about this; retrieval must not commit it anyway.
+
+    CURB-65 presupposes pneumonia and grades it. Semantic search will match it
+    to a pneumonia query enthusiastically, because the text is full of
+    pneumonia words -- which is exactly why the exclusion has to be explicit
+    rather than left to the similarity score.
+    """
+    pytest.importorskip("qdrant_client")
+    from dxagent.retrieval import GuidelineIndex
+
+    index = GuidelineIndex(model_name="stub", model=StubEncoder()).build()
+    citations = index.ground(
+        "community_acquired_pneumonia", "fever and productive cough", min_score=-1.0
+    )
+    assert not any("CURB" in c.snippet for c in citations)
+
+    # ...and the exclusion is a choice, not an absence of matching passages.
+    unfiltered = index.ground(
+        "community_acquired_pneumonia",
+        "fever and productive cough",
+        min_score=-1.0,
+        exclude_kinds=(),
+    )
+    assert any("CURB" in c.snippet for c in unfiltered)
+
+
+def test_ungrounded_hypotheses_are_recorded(kb, cases):
+    """Reporting the corpus gap rather than presenting it as a clinical finding."""
+    pytest.importorskip("qdrant_client")
+    from dxagent.belief import BayesianProposer
+    from dxagent.retrieval import GroundedProposer, GuidelineIndex
+
+    index = GuidelineIndex(model_name="stub", model=StubEncoder()).build()
+    proposer = GroundedProposer(BayesianProposer(kb), index, min_score=2.0)
+    case = cases[0]
+    proposer.propose(case.initial(), case.presenting_complaint)
+
+    # An unreachable threshold grounds nothing, so every hypothesis is listed
+    # and coverage is zero -- the mechanism reports the gap instead of hiding it.
+    assert proposer.last_coverage == 0.0
+    assert len(proposer.last_ungrounded) == len(kb.diseases())
+
+
+def test_case_query_uses_positive_findings_only():
+    """A query listing every negative describes the questionnaire, not the patient."""
+    from dxagent.retrieval import case_query
+    from dxagent.schemas import Finding, Polarity
+
+    query = case_query(
+        [
+            Finding("pleuritic_pain", Polarity.PRESENT),
+            Finding("leg_swelling", Polarity.ABSENT),
+            Finding("fever", Polarity.UNKNOWN),
+        ],
+        "chest pain",
+    )
+    assert "pleuritic pain" in query
+    assert "leg swelling" not in query
+    assert "fever" not in query
