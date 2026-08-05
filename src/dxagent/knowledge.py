@@ -87,6 +87,12 @@ class InMemoryKnowledgeBase:
 
     entries: dict[str, DiseaseEntry] = field(default_factory=dict)
 
+    # Pairwise dependence between findings, keyed by an unordered pair. Empty
+    # by default, in which case inference is exactly the naive-Bayes product it
+    # always was -- so adding this changes nothing until correlations are
+    # supplied, and every earlier measurement still describes the same model.
+    correlations: dict[frozenset[str], float] = field(default_factory=dict)
+
     _marginals: dict[str, float] = field(default_factory=dict, repr=False)
 
     def add(self, entry: DiseaseEntry) -> None:
@@ -125,6 +131,56 @@ class InMemoryKnowledgeBase:
         if entry is None:
             return 1.0
         return entry.likelihood(finding, background=self.background(finding.concept))
+
+    def correlation(self, first: str, second: str) -> float:
+        """Measured dependence between two findings, 0.0 when unknown."""
+        if first == second:
+            return 1.0
+        return self.correlations.get(frozenset((first, second)), 0.0)
+
+    def set_correlations(self, values: dict[frozenset[str], float]) -> None:
+        self.correlations.update(values)
+
+    def redundancy_weights(self, concepts: Iterable[str]) -> dict[str, float]:
+        """How much each observed finding should count, given the others.
+
+        The naive-Bayes product assumes every finding is fresh evidence. When
+        findings are correlated it counts the same information repeatedly, and
+        the error compounds: in the fixture set, four weak negatives about
+        pulmonary embolism -- no sudden onset, no leg swelling, no calf
+        tenderness, no recent immobility, all facets of one clinical picture --
+        multiply into a penalty large enough that a *positive CTPA* afterwards
+        leaves the diagnosis at 13.8%. The evidence was gathered correctly and
+        the arithmetic threw it away.
+
+        The correction is a weight per finding:
+
+            w_f = 1 / (1 + sum over other observed g of |rho(f, g)|)
+
+        Two findings correlated at 1.0 each get weight 1/2, so together they
+        contribute what one would: information counted once. Uncorrelated
+        findings keep weight 1 and the model is unchanged.
+
+        This is a redundancy discount, not a joint distribution. A tree-
+        augmented Bayes model (Friedman et al. 1997) would represent the
+        dependence properly rather than damping it, and is the right next step;
+        this is chosen because it needs one number per pair instead of a
+        conditional table, which is what can actually be estimated from the
+        data available. Its weakness is that it treats positive and negative
+        dependence alike -- both reduce the weight -- which is right for
+        redundancy and wrong for findings that are informative *because* they
+        rarely co-occur.
+        """
+        observed = list(dict.fromkeys(concepts))
+        weights: dict[str, float] = {}
+        for concept in observed:
+            overlap = sum(
+                abs(self.correlation(concept, other))
+                for other in observed
+                if other != concept
+            )
+            weights[concept] = 1.0 / (1.0 + overlap)
+        return weights
 
     def background_likelihood(self, finding: Finding) -> float:
         """P(finding) under the KB-wide marginal, ignoring any disease.

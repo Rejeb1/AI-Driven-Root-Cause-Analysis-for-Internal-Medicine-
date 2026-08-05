@@ -164,6 +164,63 @@ structure — as the only remaining path, and it is no longer gated on MIMIC:
 1.3M DDXPlus patients with full evidence vectors make feature co-occurrence
 directly estimable.
 
+## Correlation structure: the fix, and what it does not fix
+
+Option 1 above is now implemented. `InMemoryKnowledgeBase` accepts pairwise
+correlations and discounts redundant evidence:
+
+    w_f = 1 / (1 + sum over other observed g of |rho(f, g)|)
+
+Two findings correlated at 1.0 contribute what one would. With no correlations
+supplied every weight is 1 and inference is the naive-Bayes product unchanged,
+so nothing measured before this existed has been silently restated.
+
+**On fx-009 it is worth roughly an order of magnitude.** The four VTE
+negatives -- no sudden onset, no leg swelling, no calf tenderness, no recent
+immobility -- are one absent clinical picture, and each now weighs 0.28 rather
+than 1.0, so together they count as a little over one finding instead of four:
+
+    evidence                  PE (naive)   PE (correlated)
+    fever + cough                 0.0080            0.0304
+    + four VTE negatives          0.0019            0.0213
+    + positive CTPA               0.0361            0.2388
+
+**And it is not enough.** The true diagnosis still finishes behind COPD. The
+residual is not independence but the likelihood values themselves: the fixture
+gives P(productive cough | PE) = 0.10, and at clinically plausible values the
+same case resolves correctly.
+
+    P(fever|PE)  P(cough|PE)     PE      top-1
+    0.15         0.10          0.239    copd
+    0.14         0.20          0.309    copd
+    0.25         0.30          0.440    pulmonary embolism
+
+So fx-009 had **two** independent causes, and either alone was sufficient to
+sink it. That is why five successive mechanisms failed to move it: each
+addressed at most one. It also sharpens what "the KB is invented" costs -- not
+merely unverifiable numbers, but numbers extreme enough to change the answer.
+
+### DDXPlus cannot validate this
+
+Correlation correction makes DDXPlus results slightly *worse* (top-1 98.0% to
+96.7%; DDx recall 32.9% to 33.4%). That is the expected result rather than a
+disappointment: the dataset samples evidence independently given the pathology,
+so there is no dependence to recover and correcting for absent correlations
+only adds noise.
+
+Measured on the validate split, only 14 of 3,796 within-disease pairs exceed
+|phi| = 0.3, and the strongest are all *negative* correlations between values
+of the same categorical evidence -- `E_54_@_V_181` with `E_54_@_V_161` -- which
+are alternative answers to one question rather than two findings. That is a
+flattening artefact of the adapter, not clinical structure, and
+`categorical_siblings()` ties them at correlation 1.0 from the release metadata
+without needing to estimate anything.
+
+The wider point for the write-up: this is the third distinct improvement whose
+value DDXPlus is structurally incapable of showing. A benchmark that a
+naive-Bayes model recovers by construction cannot reward relaxing the naive
+assumption.
+
 ## Open questions for the meeting
 
 1. Mandatory minimum workup per presenting complaint (see #4)?

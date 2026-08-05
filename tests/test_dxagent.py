@@ -1281,3 +1281,93 @@ def test_fixture_kb_concepts_are_covered(vocab):
 
     missing = [c for c in COSTS if vocab.concept(c) is None]
     assert not missing, f"no vocabulary entry for: {missing}"
+
+
+# --------------------------------------------------------------------------
+# correlation structure
+
+
+def test_no_correlations_leaves_inference_unchanged(kb, cases):
+    """Adding the mechanism must not silently restate every earlier result."""
+    from dxagent.datasets.fixtures import build_knowledge_base
+
+    plain = build_knowledge_base()
+    assert plain.correlations == {}
+    findings = cases[0].initial()
+    before = BayesianProposer(plain).propose(findings)
+    after = BayesianProposer(build_knowledge_base(correlated=False)).propose(findings)
+    assert before.top.probability == pytest.approx(after.top.probability)
+
+
+def test_redundancy_weights_count_correlated_evidence_once():
+    """Two findings correlated at 1.0 must together weigh what one does."""
+    from dxagent.knowledge import InMemoryKnowledgeBase
+
+    kb = InMemoryKnowledgeBase()
+    kb.set_correlations({frozenset(("a", "b")): 1.0})
+
+    weights = kb.redundancy_weights(["a", "b"])
+    assert weights["a"] == pytest.approx(0.5)
+    assert sum(weights.values()) == pytest.approx(1.0)
+
+    # Uncorrelated findings are untouched.
+    assert kb.redundancy_weights(["a", "z"])["z"] == pytest.approx(1.0)
+
+    # Four findings of one picture count as a little over one, not four.
+    kb.set_correlations(
+        {
+            frozenset(pair): 1.0
+            for pair in (("p", "q"), ("p", "r"), ("p", "s"), ("q", "r"), ("q", "s"), ("r", "s"))
+        }
+    )
+    assert sum(kb.redundancy_weights(["p", "q", "r", "s"]).values()) == pytest.approx(1.0)
+
+
+def test_correlation_rescues_a_diagnosis_buried_by_repeated_evidence():
+    """The defect this exists for, and the size of the effect.
+
+    Four absent findings that are facets of one clinical picture must not
+    multiply into four independent penalties. Measured on fx-009's evidence,
+    correcting for that lifts the true diagnosis by an order of magnitude.
+    """
+    from dxagent.datasets.fixtures import build_knowledge_base
+
+    evidence = [
+        Finding("fever", Polarity.PRESENT),
+        Finding("productive_cough", Polarity.PRESENT),
+        Finding("sudden_onset", Polarity.ABSENT),
+        Finding("leg_swelling", Polarity.ABSENT),
+        Finding("calf_tenderness", Polarity.ABSENT),
+        Finding("recent_immobility", Polarity.ABSENT),
+    ]
+    naive = BayesianProposer(build_knowledge_base()).propose(evidence)
+    aware = BayesianProposer(
+        build_knowledge_base(correlated=True)
+    ).propose(evidence)
+
+    p_naive = naive.probability_of("pulmonary_embolism")
+    p_aware = aware.probability_of("pulmonary_embolism")
+    assert p_aware > 5 * p_naive
+
+
+def test_correlation_alone_does_not_repair_the_case(kb):
+    """Pins the honest limit: an order of magnitude is not enough.
+
+    The remaining error is in the likelihood values themselves, which are
+    invented and too extreme. Recorded so the correlation work is not read as
+    having fixed fx-009 -- it fixed one of the two causes.
+    """
+    from dxagent.datasets.fixtures import build_knowledge_base
+
+    evidence = [
+        Finding("fever", Polarity.PRESENT),
+        Finding("productive_cough", Polarity.PRESENT),
+        Finding("sudden_onset", Polarity.ABSENT),
+        Finding("leg_swelling", Polarity.ABSENT),
+        Finding("calf_tenderness", Polarity.ABSENT),
+        Finding("recent_immobility", Polarity.ABSENT),
+        Finding("imaging:ctpa_filling_defect", Polarity.PRESENT),
+    ]
+    aware = BayesianProposer(build_knowledge_base(correlated=True)).propose(evidence)
+    assert aware.top.label != "pulmonary_embolism"
+    assert aware.probability_of("pulmonary_embolism") < 0.5

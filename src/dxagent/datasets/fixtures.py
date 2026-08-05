@@ -67,8 +67,49 @@ def _cite(source: str, locator: str, snippet: str = "") -> tuple[Citation, ...]:
     return (Citation(source_id=source, locator=locator, snippet=snippet),)
 
 
-def build_knowledge_base() -> InMemoryKnowledgeBase:
-    """Return the synthetic KB. See the module docstring: numbers are invented."""
+
+# Findings that are facets of one clinical picture rather than independent
+# observations. Invented like every other number in this module, and labelled
+# as such -- but the *structure* is not arbitrary: each group below is a set of
+# findings a clinician would read as one story, and reading them as several is
+# precisely the error the naive-Bayes product makes.
+#
+# The pulmonary-embolism group is the one that matters. In fx-009 all four are
+# observed absent, and multiplied independently they bury the true diagnosis
+# deep enough that a positive CTPA afterwards cannot retrieve it. They are not
+# four independent reassurances; they are one absent clinical picture.
+_CORRELATION_GROUPS: tuple[tuple[float, tuple[str, ...]], ...] = (
+    # venous thromboembolism: one picture, four ways of asking about it
+    (0.85, ("sudden_onset", "leg_swelling", "calf_tenderness", "recent_immobility")),
+    # consolidation
+    (0.75, ("fever", "productive_cough", "exam:crackles", "imaging:cxr_consolidation")),
+    # congestion
+    (0.80, ("orthopnoea", "exam:raised_jvp", "lab:raised_bnp",
+            "imaging:cxr_pulmonary_oedema")),
+    # obstructive airway
+    (0.70, ("wheeze_subjective", "smoking_history", "exam:reduced_breath_sounds")),
+    # ischaemia
+    (0.75, ("exertional_chest_pain", "exam:ecg_st_changes", "lab:raised_troponin")),
+)
+
+
+def correlation_pairs() -> dict[frozenset[str], float]:
+    """Pairwise correlations implied by the groups above."""
+    pairs: dict[frozenset[str], float] = {}
+    for strength, members in _CORRELATION_GROUPS:
+        for index, first in enumerate(members):
+            for second in members[index + 1 :]:
+                pairs[frozenset((first, second))] = strength
+    return pairs
+
+
+def build_knowledge_base(correlated: bool = False) -> InMemoryKnowledgeBase:
+    """Return the synthetic KB. See the module docstring: numbers are invented.
+
+    ``correlated=True`` additionally supplies the dependence structure above.
+    Off by default so that every measurement taken before it existed still
+    describes the default knowledge base.
+    """
     register_costs(COSTS)
     kb = InMemoryKnowledgeBase()
 
@@ -281,6 +322,8 @@ def build_knowledge_base() -> InMemoryKnowledgeBase:
             citations=_cite("FIXTURE-KB", "panic", "synthetic entry, not sourced"),
         )
     )
+    if correlated:
+        kb.set_correlations(correlation_pairs())
     return kb
 
 

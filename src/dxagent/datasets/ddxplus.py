@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import ast
 import csv
+import math
 import io
 import json
 import zipfile
@@ -249,6 +250,95 @@ class DDXPlusLoader:
                 )
             )
         return kb
+
+    def categorical_siblings(self) -> dict[frozenset[str], float]:
+        """Values of one categorical evidence, tied together at correlation 1.
+
+        ``E_54_@_V_180`` and ``E_54_@_V_182`` are two answers to one question,
+        not two findings. The loader flattens them into separate binary
+        features, so a naive-Bayes product treats a patient who gave two pain
+        descriptors as having supplied two independent pieces of evidence and
+        squares their effect. Multi-choice evidences admit up to five values,
+        so a single question can contribute five correlated factors.
+
+        This is not estimated because it does not need to be: sharing a base
+        code *is* the dependency, known from the release metadata before any
+        patient is read. Measured on the validate split it is also the single
+        largest source of residual dependence in the data -- the strongest
+        within-disease correlations are all sibling pairs, and they are
+        negative, because choosing one value makes another less likely.
+        """
+        vocabulary = self.evidence_vocabulary()
+        groups: dict[str, list[str]] = defaultdict(list)
+        for concept in vocabulary:
+            if "_@_" in concept:
+                groups[concept.split("_@_")[0]].append(concept)
+
+        pairs: dict[frozenset[str], float] = {}
+        for members in groups.values():
+            for index, first in enumerate(members):
+                for second in members[index + 1 :]:
+                    pairs[frozenset((first, second))] = 1.0
+        return pairs
+
+    def estimate_correlations(
+        self,
+        cases: list[Case],
+        min_cases_per_disease: int = 100,
+        min_abs_phi: float = 0.2,
+    ) -> dict[frozenset[str], float]:
+        """Phi coefficients between findings, measured *within* each disease.
+
+        Within-disease is the only version that means anything here. Two
+        findings both common in pneumonia correlate strongly across a mixed
+        population purely because pneumonia is common, and conditioning on the
+        class is exactly what the naive-Bayes assumption already claims to
+        handle. What is wanted is the dependence that survives that
+        conditioning, because that is the part the model gets wrong.
+
+        Pooled across diseases by taking the largest magnitude seen, which is
+        deliberately conservative in the direction of correcting: a dependence
+        real in one disease and absent in another is still a dependence the
+        product will mishandle when that disease is live.
+        """
+        by_disease: dict[str, list[set[str]]] = defaultdict(list)
+        for case in cases:
+            by_disease[case.diagnosis].append(
+                {c for c, present in case.features.items() if present}
+            )
+
+        strongest: dict[frozenset[str], float] = {}
+        for observations in by_disease.values():
+            n = len(observations)
+            if n < min_cases_per_disease:
+                continue
+            counts: dict[str, int] = defaultdict(int)
+            for observed in observations:
+                for concept in observed:
+                    counts[concept] += 1
+            # Near-constant features carry no usable covariance and their phi
+            # is dominated by rounding.
+            variable = [c for c, k in counts.items() if 0.1 * n < k < 0.9 * n]
+            for index, first in enumerate(variable):
+                for second in variable[index + 1 :]:
+                    both = sum(
+                        1 for o in observations if first in o and second in o
+                    )
+                    p_first = counts[first] / n
+                    p_second = counts[second] / n
+                    p_both = both / n
+                    denominator = math.sqrt(
+                        p_first * (1 - p_first) * p_second * (1 - p_second)
+                    )
+                    if denominator <= 0:
+                        continue
+                    phi = (p_both - p_first * p_second) / denominator
+                    if abs(phi) < min_abs_phi:
+                        continue
+                    key = frozenset((first, second))
+                    if abs(phi) > abs(strongest.get(key, 0.0)):
+                        strongest[key] = phi
+        return strongest
 
     def load_condition_metadata(self, filename: str = "release_conditions.json") -> dict:
         path = self.root / filename

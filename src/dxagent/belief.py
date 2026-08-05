@@ -55,11 +55,21 @@ class BayesianProposer:
         if not entries:
             raise ValueError("knowledge base is empty")
 
+        # Correlated findings are down-weighted so the product stops counting
+        # the same information twice. With no correlations supplied every
+        # weight is 1.0 and this is the naive-Bayes product unchanged.
+        weights = (
+            self.kb.redundancy_weights(f.concept for f in findings)
+            if self.kb.correlations
+            else {}
+        )
+
         log_scores: dict[str, float] = {}
         for entry in entries:
             total = math.log(max(entry.prevalence, 1e-9))
             for finding in findings:
-                total += math.log(self.kb.likelihood(entry.label, finding))
+                weight = weights.get(finding.concept, 1.0)
+                total += weight * math.log(self.kb.likelihood(entry.label, finding))
             log_scores[entry.label] = total
 
         # Shift before exponentiating to keep the largest term at 1.0.
