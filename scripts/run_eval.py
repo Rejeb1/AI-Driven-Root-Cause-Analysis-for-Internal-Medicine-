@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+"""Run the diagnostic loop over a case set and print the metrics report.
+
+    python scripts/run_eval.py                       # synthetic fixtures
+    python scripts/run_eval.py --trace               # per-turn reasoning trace
+    python scripts/run_eval.py --noisy               # lossy history taking
+    python scripts/run_eval.py --sweep               # threshold sweep
+    python scripts/run_eval.py --ddxplus /path/to/release --limit 2000
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
+from dxagent import AbstentionGate, DiagnosticAgent, LoopLimits  # noqa: E402
+from dxagent.datasets import build_cases, build_knowledge_base  # noqa: E402
+from dxagent.evaluation import evaluate, split_cases  # noqa: E402
+
+
+def load(args) -> tuple:
+    if args.ddxplus:
+        from dxagent.datasets.ddxplus import DDXPlusLoader
+
+        loader = DDXPlusLoader(root=Path(args.ddxplus))
+        train = loader.load_cases(args.train_file, limit=args.limit)
+        test = loader.load_cases(args.test_file, limit=args.limit)
+        return loader.build_knowledge_base(train), train, test
+
+    kb = build_knowledge_base()
+    cases = build_cases()
+    calibration, evaluation = split_cases(cases, calibration_fraction=0.35)
+    return kb, calibration, evaluation
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--ddxplus", help="path to a local DDXPlus release directory")
+    parser.add_argument("--train-file", default="release_train_patients.csv")
+    parser.add_argument("--test-file", default="release_test_patients.csv")
+    parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--trace", action="store_true", help="print per-turn traces")
+    parser.add_argument("--noisy", action="store_true", help="use the lossy oracle")
+    parser.add_argument("--sweep", action="store_true", help="sweep gate thresholds")
+    parser.add_argument("--min-confidence", type=float, default=0.65)
+    parser.add_argument("--min-margin", type=float, default=0.15)
+    parser.add_argument("--max-turns", type=int, default=12)
+    parser.add_argument("--max-cost", type=float, default=40.0)
+    parser.add_argument("--no-calibration", action="store_true")
+    parser.add_argument("--json", help="write full results to this path")
+    args = parser.parse_args()
+
+    kb, calibration_cases, test_cases = load(args)
+    print(
+        f"knowledge base: {len(kb.diseases())} conditions | "
+        f"calibration: {len(calibration_cases)} cases | "
+        f"evaluation: {len(test_cases)} cases"
+    )
+
+    def build_agent(min_confidence: float, min_margin: float) -> DiagnosticAgent:
+        return DiagnosticAgent(
+            kb=kb,
+            gate=AbstentionGate(
+                kb=kb, min_confidence=min_confidence, min_margin=min_margin
+            ),
+            limits=LoopLimits(max_turns=args.max_turns, max_cost=args.max_cost),
+            trace=args.trace,
+        )
+
+    if args.sweep:
+        print("\nthreshold sweep")
+        header = f"{'conf':>6} {'margin':>7} {'cover':>7} {'sel.acc':>8} {'abst.prec':>10} {'cost':>7}"
+        print(header)
+        print("-" * len(header))
+        for min_confidence in (0.40, 0.50, 0.60, 0.70, 0.80, 0.90):
+            for min_margin in (0.00, 0.10, 0.20):
+                result = evaluate(
+                    build_agent(min_confidence, min_margin),
+                    test_cases,
+                    calibration_cases=calibration_cases,
+                    noisy=args.noisy,
+                    fit_calibration=not args.no_calibration,
+                )
+                s = result.selective
+                sel = "n/a" if s.selective_accuracy != s.selective_accuracy else f"{s.selective_accuracy:.1%}"
+                prec = "n/a" if s.abstention_precision != s.abstention_precision else f"{s.abstention_precision:.1%}"
+                print(
+                    f"{min_confidence:>6.2f} {min_margin:>7.2f} {s.coverage:>7.1%} "
+                    f"{sel:>8} {prec:>10} {s.mean_cost:>7.2f}"
+                )
+        return 0
+
+    if args.trace:
+        print("\nper-case traces")
+    result = evaluate(
+        build_agent(args.min_confidence, args.min_margin),
+        test_cases,
+        calibration_cases=calibration_cases,
+        noisy=args.noisy,
+        fit_calibration=not args.no_calibration,
+    )
+
+    print("\n" + result.report())
+
+    print("\nper-case detail")
+    for outcome in result.outcomes:
+        truth = result.truths[outcome.case_id]
+        top = outcome.differential.top
+        mark = "ok " if top.label == truth else "MISS"
+        verdict = "commit " if not outcome.abstained else "escalate"
+        print(
+            f"  {outcome.case_id} {verdict} {mark} "
+            f"p={top.probability:.2f} top1={top.label} truth={truth} "
+            f"turns={len(outcome.steps)} cost={outcome.budget_spent:.1f}"
+        )
+        if outcome.escalation:
+            print(f"      reason: {outcome.escalation.reason}")
+        if outcome.steps:
+            path = " -> ".join(s.action.target for s in outcome.steps)
+            print(f"      evidence sought: {path}")
+
+    if args.json:
+        result.to_json(Path(args.json))
+        print(f"\nwrote {args.json}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

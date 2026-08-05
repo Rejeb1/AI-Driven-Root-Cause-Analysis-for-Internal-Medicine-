@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.venv/
+venv/
+
+# Downloaded source data. Both are reproducible from a documented command, and
+# together they are large enough to make the repository awkward to clone:
+#   hp.obo            -> scripts/build_vocabulary.py
+#   ddxplus/          -> figshare.com/articles/dataset/DDXPlus_Dataset/20043374
+# data/vocabulary.json is deliberately NOT ignored: it is the frozen concept
+# layer and pinning it is what makes a run reproducible.
+data/hp.obo
+data/ddxplus/
+*.zip
+
+# Evaluation artefacts
+*.eval.json
+
+# Machine-local tool settings: absolute paths from one developer's machine,
+# meaningless and mildly confusing anywhere else.
+.claude/settings.local.json

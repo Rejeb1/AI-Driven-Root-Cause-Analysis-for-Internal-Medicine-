@@ -1,0 +1,258 @@
+{
+  "release": "hp/releases/2026-06-23",
+  "source": "https://github.com/obophenotype/human-phenotype-ontology/releases/latest/download/hp.obo",
+  "concepts": [
+    {
+      "key": "calf_tenderness",
+      "hpo_id": null,
+      "hpo_name": null,
+      "modality": "history",
+      "note": "no adequate HPO term; 'Abnormal calf musculature morphology' HP:0001430 is morphological, not a tenderness sign. Left unmapped deliberately -- see module docstring."
+    },
+    {
+      "key": "cough",
+      "hpo_id": "HP:0012735",
+      "hpo_name": "Cough",
+      "modality": "history",
+      "note": ""
+    },
+    {
+      "key": "dyspnoea_at_rest",
+      "hpo_id": "HP:0002094",
+      "hpo_name": "Dyspnea",
+      "modality": "history",
+      "note": "'Dyspnea'; the at-rest qualifier is not represented in HPO"
+    },
+    {
+      "key": "ecg:st_depression",
+      "hpo_id": "HP:0012250",
+      "hpo_name": "ST segment depression",
+      "modality": "ecg",
+      "note": ""
+    },
+    {
+      "key": "ecg:st_elevation",
+      "hpo_id": "HP:0012251",
+      "hpo_name": "ST segment elevation",
+      "modality": "ecg",
+      "note": ""
+    },
+    {
+      "key": "exam:crackles",
+      "hpo_id": "HP:0030830",
+      "hpo_name": "Crackles",
+      "modality": "exam",
+      "note": "Crackles"
+    },
+    {
+      "key": "exam:deep_vein_thrombosis",
+      "hpo_id": "HP:0002625",
+      "hpo_name": "Deep venous thrombosis",
+      "modality": "exam",
+      "note": "Deep venous thrombosis"
+    },
+    {
+      "key": "exam:ecg_st_changes",
+      "hpo_id": "HP:0012249",
+      "hpo_name": "Abnormal ST segment",
+      "modality": "ecg",
+      "note": "parent 'Abnormal ST segment'; elevation HP:0012251 and depression HP:0012250 are distinct children and should be separated once the case representation supports it -- they carry different implications"
+    },
+    {
+      "key": "exam:friction_rub",
+      "hpo_id": "HP:0034788",
+      "hpo_name": "Pericardial friction rub",
+      "modality": "exam",
+      "note": "Pericardial friction rub"
+    },
+    {
+      "key": "exam:hypoxia",
+      "hpo_id": "HP:0012418",
+      "hpo_name": "Hypoxemia",
+      "modality": "exam",
+      "note": "'Hypoxemia' -- note HP:0005947 'Decreased sensitivity to hypoxemia' is a different concept and a naive search returns it first"
+    },
+    {
+      "key": "exam:raised_jvp",
+      "hpo_id": "HP:0030847",
+      "hpo_name": "Abnormal jugular venous pressure",
+      "modality": "exam",
+      "note": "Abnormal jugular venous pressure"
+    },
+    {
+      "key": "exam:reduced_breath_sounds",
+      "hpo_id": "HP:0030829",
+      "hpo_name": "Abnormal breath sound",
+      "modality": "exam",
+      "note": "mapped to parent 'Abnormal breath sound'; HPO lacks a specific reduced/diminished term, so this is deliberately less specific"
+    },
+    {
+      "key": "exam:tachycardia",
+      "hpo_id": "HP:0001649",
+      "hpo_name": "Tachycardia",
+      "modality": "exam",
+      "note": ""
+    },
+    {
+      "key": "exertional_chest_pain",
+      "hpo_id": "HP:0100749",
+      "hpo_name": "Chest pain",
+      "modality": "history",
+      "note": "mapped to generic 'Chest pain'; HPO has no exertional qualifier, so the exertional character is LOST in normalisation and must be carried in Finding.raw. This is a real information loss, not a tidy mapping."
+    },
+    {
+      "key": "fatigue",
+      "hpo_id": "HP:0012378",
+      "hpo_name": "Fatigue",
+      "modality": "history",
+      "note": ""
+    },
+    {
+      "key": "fever",
+      "hpo_id": "HP:0001945",
+      "hpo_name": "Fever",
+      "modality": "history",
+      "note": ""
+    },
+    {
+      "key": "haemoptysis",
+      "hpo_id": "HP:0002105",
+      "hpo_name": "Hemoptysis",
+      "modality": "history",
+      "note": "Hemoptysis"
+    },
+    {
+      "key": "imaging:ctpa_filling_defect",
+      "hpo_id": null,
+      "hpo_name": null,
+      "modality": "imaging",
+      "note": "radiological finding; see above"
+    },
+    {
+      "key": "imaging:cxr_consolidation",
+      "hpo_id": null,
+      "hpo_name": null,
+      "modality": "imaging",
+      "note": "radiological finding; HPO coverage of imaging descriptors is thin. RadLex is the appropriate vocabulary here."
+    },
+    {
+      "key": "imaging:cxr_pulmonary_oedema",
+      "hpo_id": "HP:0100598",
+      "hpo_name": "Pulmonary edema",
+      "modality": "imaging",
+      "note": "Pulmonary edema"
+    },
+    {
+      "key": "lab:raised_bnp",
+      "hpo_id": "HP:0031138",
+      "hpo_name": "Abnormal circulating B-type natriuretic peptide concentration",
+      "modality": "lab",
+      "note": "'Abnormal circulating BNP concentration' -- parent term; verify whether a raised-specific child exists in this release"
+    },
+    {
+      "key": "lab:raised_d_dimer",
+      "hpo_id": "HP:0033106",
+      "hpo_name": "Elevated circulating D-dimer concentration",
+      "modality": "lab",
+      "note": "Elevated circulating D-dimer"
+    },
+    {
+      "key": "lab:raised_troponin",
+      "hpo_id": "HP:0410173",
+      "hpo_name": "Increased circulating troponin I concentration",
+      "modality": "lab",
+      "note": "troponin I; troponin T is a separate term HP:0410174. Assays differ and conflating them is a real-world error."
+    },
+    {
+      "key": "lab:raised_wcc",
+      "hpo_id": "HP:0001974",
+      "hpo_name": "Increased total leukocyte count",
+      "modality": "lab",
+      "note": "'Increased total leukocyte count'. Chosen over HP:6001425 'Hyperleukocytosis', which denotes a far more extreme elevation (leukostasis territory) than a routine raised white count."
+    },
+    {
+      "key": "leg_swelling",
+      "hpo_id": "HP:0012398",
+      "hpo_name": "Peripheral edema",
+      "modality": "history",
+      "note": "Peripheral edema"
+    },
+    {
+      "key": "night_sweats",
+      "hpo_id": "HP:0030166",
+      "hpo_name": "Night sweats",
+      "modality": "history",
+      "note": ""
+    },
+    {
+      "key": "orthopnoea",
+      "hpo_id": "HP:0012764",
+      "hpo_name": "Orthopnea",
+      "modality": "history",
+      "note": "Orthopnea"
+    },
+    {
+      "key": "palpitations",
+      "hpo_id": "HP:0001962",
+      "hpo_name": "Palpitations",
+      "modality": "history",
+      "note": ""
+    },
+    {
+      "key": "pleuritic_pain",
+      "hpo_id": "HP:0033771",
+      "hpo_name": "Pleuritic chest pain",
+      "modality": "history",
+      "note": "Pleuritic chest pain"
+    },
+    {
+      "key": "productive_cough",
+      "hpo_id": "HP:0031245",
+      "hpo_name": "Productive cough",
+      "modality": "history",
+      "note": "'Productive cough'. NOTE: HP:0031246 is 'Nonproductive cough' -- the adjacent id is the exact opposite concept. An earlier version of this table had that inversion and it was caught only by printing every resolved term name. Adjacent HPO ids are frequently antonyms; never trust an id without rendering its label."
+    },
+    {
+      "key": "recent_immobility",
+      "hpo_id": null,
+      "hpo_name": null,
+      "modality": "history",
+      "note": "risk factor / exposure, not a phenotype. HPO is the wrong ontology for this class; needs its own vocabulary."
+    },
+    {
+      "key": "smoking_history",
+      "hpo_id": null,
+      "hpo_name": null,
+      "modality": "history",
+      "note": "behavioural exposure, not a phenotype. Same class as above."
+    },
+    {
+      "key": "sudden_onset",
+      "hpo_id": null,
+      "hpo_name": null,
+      "modality": "history",
+      "note": "temporal qualifier, not a phenotype; belongs in a separate onset field rather than the findings vocabulary"
+    },
+    {
+      "key": "syncope",
+      "hpo_id": "HP:0001279",
+      "hpo_name": "Syncope",
+      "modality": "history",
+      "note": ""
+    },
+    {
+      "key": "weight_loss",
+      "hpo_id": "HP:0001824",
+      "hpo_name": "Weight loss",
+      "modality": "history",
+      "note": ""
+    },
+    {
+      "key": "wheeze_subjective",
+      "hpo_id": "HP:0030828",
+      "hpo_name": "Wheezing",
+      "modality": "history",
+      "note": "'Wheezing'; HPO does not distinguish reported from auscultated"
+    }
+  ]
+}

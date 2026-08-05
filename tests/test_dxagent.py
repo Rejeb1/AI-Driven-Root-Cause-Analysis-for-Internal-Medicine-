@@ -1,0 +1,1054 @@
+"""Tests.
+
+Emphasis is on the properties that would be dangerous to get wrong silently:
+that probabilities stay normalised, that the gate refuses for the reason it
+claims, that the loop always terminates, and that the metrics do not flatter the
+system. Correctness of the diagnoses themselves is not testable against
+synthetic fixtures and is not attempted here.
+"""
+
+from __future__ import annotations
+
+import math
+
+import pytest
+
+from dxagent import (
+    AbstentionGate,
+    Action,
+    ActionKind,
+    Case,
+    CaseOracle,
+    DiagnosticAgent,
+    Differential,
+    Finding,
+    InformationGainSelector,
+    LoopLimits,
+    NoisyOracle,
+    Polarity,
+    ScriptedLLM,
+    TemperatureScaler,
+    Verdict,
+)
+from dxagent.belief import BayesianProposer, ConsensusProposer, LLMProposer
+from dxagent.datasets import build_cases, build_knowledge_base
+from dxagent.evaluation import evaluate, run_agent, split_cases
+from dxagent.evaluation.metrics import (
+    abstention_metrics,
+    calibration_metrics,
+    differential_metrics,
+    ranking_metrics,
+    risk_coverage_curve,
+    selective_metrics,
+)
+from dxagent.schemas import CaseOutcome, CaseState, Citation, Hypothesis
+
+
+@pytest.fixture
+def kb():
+    return build_knowledge_base()
+
+
+def grounded(kb, scores: dict[str, float]) -> Differential:
+    """Build a differential carrying real KB citations.
+
+    Needed because the gate checks grounding before confidence, so an
+    uncited differential escalates for that reason and never reaches the
+    threshold logic under test.
+    """
+    return Differential.from_scores(
+        scores, support={label: kb.citations_for(label) for label in scores}
+    )
+
+
+@pytest.fixture
+def cases():
+    return build_cases()
+
+
+# --------------------------------------------------------------------------
+# schemas
+
+
+def test_differential_rejects_unnormalised():
+    with pytest.raises(ValueError):
+        Differential((Hypothesis("a", 0.4), Hypothesis("b", 0.4)))
+
+
+def test_differential_rejects_empty():
+    with pytest.raises(ValueError):
+        Differential(())
+
+
+def test_from_scores_normalises_and_sorts():
+    d = Differential.from_scores({"a": 2.0, "b": 6.0, "c": 2.0})
+    assert d.top.label == "b"
+    assert math.isclose(sum(h.probability for h in d.hypotheses), 1.0)
+    assert math.isclose(d.top.probability, 0.6)
+
+
+def test_from_scores_degenerate_falls_back_to_uniform():
+    """All-zero scores must not crash; the gate should see the low confidence."""
+    d = Differential.from_scores({"a": 0.0, "b": 0.0})
+    assert math.isclose(d.top.probability, 0.5)
+
+
+def test_margin_and_entropy():
+    d = Differential.from_scores({"a": 0.5, "b": 0.3, "c": 0.2})
+    assert math.isclose(d.margin, 0.2)
+    assert d.entropy > 0
+    peaked = Differential.from_scores({"a": 0.999, "b": 0.001})
+    assert peaked.entropy < d.entropy
+
+
+def test_absent_findings_are_distinct_from_unknown(kb):
+    """A negative result must inform the posterior; 'not asked' must not."""
+    proposer = BayesianProposer(kb)
+    absent = proposer.propose([Finding("fever", Polarity.ABSENT)])
+    unknown = proposer.propose([Finding("fever", Polarity.UNKNOWN)])
+    baseline = proposer.propose([])
+    assert absent.probability_of("community_acquired_pneumonia") < baseline.probability_of(
+        "community_acquired_pneumonia"
+    )
+    assert math.isclose(
+        unknown.probability_of("community_acquired_pneumonia"),
+        baseline.probability_of("community_acquired_pneumonia"),
+    )
+
+
+# --------------------------------------------------------------------------
+# knowledge base
+
+
+def test_sparse_feature_table_does_not_win_by_default(kb):
+    """Regression: uncharacterised features must back off to the marginal.
+
+    Returning 1.0 for an uncharacterised feature made sparsely-described
+    diseases artificially easy to fit, which produced a wrong top-1 on the
+    fixture set.
+    """
+    finding = Finding("smoking_history", Polarity.PRESENT)
+    # CAP does not characterise smoking history; COPD does, strongly.
+    cap = kb.likelihood("community_acquired_pneumonia", finding)
+    copd = kb.likelihood("copd_exacerbation", finding)
+    assert cap < 1.0, "uncharacterised feature must not be a free pass"
+    assert copd > cap
+
+
+def test_likelihood_is_bounded(kb):
+    for label in (e.label for e in kb.diseases()):
+        for polarity in (Polarity.PRESENT, Polarity.ABSENT):
+            value = kb.likelihood(label, Finding("fever", polarity))
+            assert 0.0 < value < 1.0
+
+
+def test_background_marginal_in_range(kb):
+    assert 0.0 <= kb.background("fever") <= 1.0
+    assert kb.background("nonexistent_concept") == 0.5
+
+
+# --------------------------------------------------------------------------
+# action selection
+
+
+def test_expected_gain_is_non_negative(kb):
+    selector = InformationGainSelector(kb)
+    d = BayesianProposer(kb).propose([Finding("fever")])
+    for concept in ("exam:crackles", "lab:raised_d_dimer", "orthopnoea"):
+        assert selector.expected_gain(d, concept) >= 0.0
+
+
+def test_selector_does_not_repeat_questions(kb, cases):
+    """Regression: asking the same thing twice wastes the turn budget."""
+    agent = DiagnosticAgent(kb=kb)
+    outcome = agent.run(cases[0])
+    targets = [s.action.target for s in outcome.steps]
+    assert len(targets) == len(set(targets))
+
+
+def test_expensive_low_value_test_loses_to_cheap_high_value(kb):
+    """Regression: bare gain/cost made the cheapest action always win."""
+    selector = InformationGainSelector(kb)
+    cheap_useful = Action(ActionKind.EXAMINE, "exam:crackles", cost=1.0,
+                          expected_information_gain=0.5)
+    dear_useless = Action(ActionKind.IMAGING, "imaging:ctpa_filling_defect",
+                          cost=20.0, expected_information_gain=0.05)
+    cheap_useless = Action(ActionKind.ASK, "fever", cost=0.2,
+                           expected_information_gain=0.005)
+    labels = ("community_acquired_pneumonia",)
+    assert selector.value(cheap_useful, labels) > selector.value(dear_useless, labels)
+    assert selector.value(cheap_useful, labels) > selector.value(cheap_useless, labels)
+
+
+def test_ruleout_fires_for_live_red_flag(kb):
+    """A live PE must trigger an exclusion test even at modest probability."""
+    selector = InformationGainSelector(kb)
+    from dxagent.schemas import CaseState
+
+    state = CaseState(case_id="t", presenting_complaint="dyspnoea")
+    d = Differential.from_scores(
+        {
+            "community_acquired_pneumonia": 0.70,
+            "pulmonary_embolism": 0.20,
+            "panic_attack": 0.10,
+        }
+    )
+    action = selector.ruleout_action(state, d)
+    assert action is not None
+    assert "rule out pulmonary_embolism" in action.rationale
+
+
+def test_ruleout_silent_when_no_red_flag_is_live(kb):
+    from dxagent.schemas import CaseState
+
+    selector = InformationGainSelector(kb)
+    state = CaseState(case_id="t", presenting_complaint="cough")
+    d = Differential.from_scores(
+        {"community_acquired_pneumonia": 0.98, "panic_attack": 0.02}
+    )
+    assert selector.ruleout_action(state, d) is None
+
+
+# --------------------------------------------------------------------------
+# gate
+
+
+def test_gate_blocks_low_confidence(kb):
+    gate = AbstentionGate(kb, min_confidence=0.8, min_margin=0.0)
+    d = grounded(
+        kb, {"community_acquired_pneumonia": 0.6, "copd_exacerbation": 0.4}
+    )
+    decision = gate.evaluate(d)
+    assert decision.should_escalate
+    assert "below threshold" in decision.reason
+
+
+def test_gate_blocks_contested_posterior(kb):
+    """Peaked but contested: 46 vs 44 should not be reported as an answer."""
+    gate = AbstentionGate(kb, min_confidence=0.4, min_margin=0.15)
+    d = grounded(
+        kb, {"community_acquired_pneumonia": 0.46, "copd_exacerbation": 0.44,
+         "panic_attack": 0.10}
+    )
+    decision = gate.evaluate(d)
+    assert decision.should_escalate
+    assert "contested" in decision.reason
+
+
+def test_gate_blocks_ungrounded_top_hypothesis(kb):
+    gate = AbstentionGate(kb, min_confidence=0.1, min_margin=0.0)
+    d = Differential((Hypothesis("mystery_illness", 1.0, support=()),))
+    decision = gate.evaluate(d)
+    assert decision.should_escalate
+    assert "citation" in decision.reason
+
+
+def test_gate_blocks_competing_red_flag(kb):
+    gate = AbstentionGate(kb, min_confidence=0.5, min_margin=0.0,
+                          red_flag_tolerance=0.10)
+    d = grounded(
+        kb, {"community_acquired_pneumonia": 0.75, "pulmonary_embolism": 0.25}
+    )
+    decision = gate.evaluate(d)
+    assert decision.should_escalate
+    assert "time-critical" in decision.reason
+
+
+def test_gate_permits_committing_to_the_red_flag_itself(kb):
+    """Regression: the gate once refused to report a PE it had correctly found."""
+    gate = AbstentionGate(kb, min_confidence=0.5, min_margin=0.1)
+    d = grounded(
+        kb, {"pulmonary_embolism": 0.90, "community_acquired_pneumonia": 0.10}
+    )
+    decision = gate.evaluate(d)
+    assert decision.should_commit, decision.reason
+
+
+def test_gate_blocks_on_proposer_disagreement(kb):
+    gate = AbstentionGate(kb, min_confidence=0.5, min_margin=0.0,
+                          max_disagreement=0.3)
+    d = grounded(
+        kb, {"community_acquired_pneumonia": 0.9, "copd_exacerbation": 0.1}
+    )
+    assert gate.evaluate(d, disagreement=0.8).should_escalate
+    assert gate.evaluate(d, disagreement=0.1).should_commit
+
+
+# --------------------------------------------------------------------------
+# calibration
+
+
+def test_evidence_fit_is_high_for_a_textbook_presentation(kb, cases):
+    """A case the KB describes well should be well explained by it."""
+    proposer = BayesianProposer(kb)
+    case = cases[0]
+    findings = [
+        Finding(concept=c, polarity=Polarity.PRESENT if present else Polarity.ABSENT)
+        for c, present in case.features.items()
+    ]
+    proposer.propose(findings)
+    assert proposer.last_evidence_fit > 0.0
+
+
+def test_evidence_fit_falls_when_no_diagnosis_explains_the_findings(kb):
+    """A combination no single disease accounts for scores below the marginal.
+
+    Built from the most characteristic finding of four *different* diseases.
+    Each is individually typical, so this is not a test of implausible
+    findings; it is a test of an implausible combination, which is what an
+    out-of-coverage presentation looks like.
+    """
+    proposer = BayesianProposer(kb)
+    entries = kb.diseases()
+
+    coherent = [
+        Finding(concept=c, polarity=Polarity.PRESENT)
+        for c, p in entries[0].features.items()
+        if p >= 0.7
+    ]
+    incoherent = [
+        Finding(
+            concept=max(entry.features.items(), key=lambda kv: kv[1])[0],
+            polarity=Polarity.PRESENT,
+        )
+        for entry in entries[:4]
+    ]
+
+    proposer.propose(coherent)
+    fit_coherent = proposer.last_evidence_fit
+    proposer.propose(incoherent)
+    fit_incoherent = proposer.last_evidence_fit
+
+    assert fit_incoherent < 0.0 < fit_coherent
+
+
+def test_evidence_fit_does_not_separate_masquerade_errors(kb, cases):
+    """Records the measured limit, so a future change cannot quietly assume more.
+
+    The cases the loop gets wrong are ones where the *wrong* diagnosis explains
+    the evidence well, not ones where nothing does. Their evidence fit
+    therefore sits inside the range of the cases it gets right, and no
+    threshold on it separates them. If that ever stops being true this test
+    should fail and be rewritten -- it is the claim, not the implementation,
+    that is being pinned down here.
+    """
+    agent = DiagnosticAgent(kb=kb)
+    proposer = BayesianProposer(kb)
+    correct, wrong = [], []
+
+    for case in cases:
+        outcome = agent.run(case)
+        findings = case.initial() + [f for s in outcome.steps for f in s.findings]
+        proposer.propose(findings)
+        fit = proposer.last_evidence_fit
+        hit = outcome.differential.top.label == case.diagnosis
+        (correct if hit else wrong).append(fit)
+
+    assert wrong, "fixture set no longer contains a failing case"
+    # The failures are not the worst-explained cases: at least one correct
+    # case is explained no better than the worst failure.
+    assert min(correct) < max(wrong)
+
+
+def test_gate_escalates_unexplained_evidence_however_confident(kb):
+    """The whole point: peaked posterior, still escalated."""
+    gate = AbstentionGate(kb, min_evidence_fit=0.0)
+    labels = [e.label for e in kb.diseases()]
+    confident = grounded(kb, {labels[0]: 0.97, labels[1]: 0.03})
+
+    assert gate.evaluate(confident, evidence_fit=1.5).should_commit
+    unexplained = gate.evaluate(confident, evidence_fit=-0.4)
+    assert unexplained.should_escalate
+    assert "not explained" in unexplained.reason
+
+
+def test_evidence_fit_check_is_inert_without_a_reported_fit(kb):
+    """Callers that do not supply a fit keep the previous behaviour."""
+    gate = AbstentionGate(kb)
+    labels = [e.label for e in kb.diseases()]
+    assert gate.evaluate(grounded(kb, {labels[0]: 0.97, labels[1]: 0.03})).should_commit
+
+
+def test_evidence_fit_is_infinite_before_any_evidence(kb):
+    """No findings means nothing unexplained, not everything unexplained."""
+    proposer = BayesianProposer(kb)
+    proposer.propose([])
+    assert proposer.last_evidence_fit == float("inf")
+
+    unknown_only = [Finding(concept="fever", polarity=Polarity.UNKNOWN)]
+    proposer.propose(unknown_only)
+    assert proposer.last_evidence_fit == float("inf")
+
+
+def test_hypotheses_carry_both_supporting_and_contradicting_citations(kb, cases):
+    """The project's headline claim: every hypothesis tied to evidence both ways.
+
+    ``against`` existed on the schema from the start but nothing ever populated
+    it, so every hypothesis reported an empty case against itself -- which
+    reads as "nothing argues against this" rather than "this was never
+    assessed".
+    """
+    case = cases[0]
+    findings = [
+        Finding(concept=c, polarity=Polarity.PRESENT if present else Polarity.ABSENT)
+        for c, present in case.features.items()
+    ]
+    differential = BayesianProposer(kb).propose(findings, case.presenting_complaint)
+
+    assert any(h.against for h in differential.hypotheses)
+    assert all(h.support for h in differential.hypotheses)
+
+    cited = [c for h in differential.hypotheses for c in h.support + h.against]
+    assert all(c.source_id and c.locator for c in cited)
+
+
+def test_an_expected_finding_that_is_absent_counts_against(kb):
+    """Contradiction is not only about unexpected findings being present.
+
+    A finding a disease strongly predicts, observed absent, argues against it.
+    Scoring only positive findings drops that whole class of reasoning.
+    """
+    entry = max(
+        kb.diseases(), key=lambda e: max(e.features.values(), default=0.0)
+    )
+    concept, probability = max(entry.features.items(), key=lambda kv: kv[1])
+    assert probability >= 0.7, "fixture KB lacks a strongly-predicted feature"
+
+    present = Finding(concept=concept, polarity=Polarity.PRESENT)
+    absent = Finding(concept=concept, polarity=Polarity.ABSENT)
+
+    supporting, _ = kb.evidence_split(entry.label, [present])
+    _, contradicting = kb.evidence_split(entry.label, [absent])
+
+    assert supporting, "a strongly-predicted finding present should support"
+    assert contradicting, "the same finding absent should count against"
+
+
+def test_near_neutral_findings_are_cited_on_neither_side(kb):
+    """Findings that barely move the ratio should be omitted, not padded in."""
+    entry = kb.diseases()[0]
+    concept = next(iter(entry.features))
+    finding = Finding(concept=concept, polarity=Polarity.PRESENT)
+
+    # A threshold beyond any ratio in the fixture KB admits nothing.
+    supporting, against = kb.evidence_split(entry.label, [finding], min_ratio=1e6)
+    assert not supporting and not against
+
+
+def test_grounding_survives_a_hypothesis_with_no_supporting_findings(kb, cases):
+    """A hypothesis nothing supports must still be grounded, or the gate
+    escalates for missing provenance rather than for weak evidence."""
+    case = cases[0]
+    findings = [
+        Finding(concept=c, polarity=Polarity.PRESENT if present else Polarity.ABSENT)
+        for c, present in case.features.items()
+    ]
+    differential = BayesianProposer(kb).propose(findings, case.presenting_complaint)
+    weakest = differential.hypotheses[-1]
+    assert weakest.is_grounded
+
+
+def test_temperature_softens_and_sharpens():
+    d = Differential.from_scores({"a": 0.9, "b": 0.1})
+    assert TemperatureScaler(3.0).apply(d).top.probability < 0.9
+    assert TemperatureScaler(0.5).apply(d).top.probability > 0.9
+    assert math.isclose(TemperatureScaler(1.0).apply(d).top.probability, 0.9)
+
+
+def test_temperature_preserves_normalisation():
+    d = Differential.from_scores({"a": 0.5, "b": 0.3, "c": 0.2})
+    for t in (0.5, 1.0, 2.0, 4.0):
+        scaled = TemperatureScaler(t).apply(d)
+        assert math.isclose(sum(h.probability for h in scaled.hypotheses), 1.0)
+
+
+def test_temperature_refuses_tiny_fit_sets():
+    """Regression: fitting on 2 cases produced T=0.5 and worsened calibration."""
+    scaler = TemperatureScaler(min_fit_samples=30)
+    samples = [(Differential.from_scores({"a": 0.9, "b": 0.1}), "b")] * 3
+    scaler.fit(samples)
+    assert scaler.temperature == 1.0
+    assert not scaler.fitted
+
+
+def test_temperature_fit_softens_overconfident_samples():
+    """Given enough consistently-wrong confident predictions, T must rise."""
+    scaler = TemperatureScaler(min_fit_samples=5)
+    samples = [(Differential.from_scores({"a": 0.95, "b": 0.05}), "b")] * 40
+    scaler.fit(samples)
+    assert scaler.temperature > 1.0
+    assert scaler.fitted
+
+
+# --------------------------------------------------------------------------
+# loop
+
+
+def test_loop_terminates_on_every_fixture(kb, cases):
+    agent = DiagnosticAgent(kb=kb, limits=LoopLimits(max_turns=8, max_cost=30.0))
+    for case in cases:
+        outcome = agent.run(case)
+        assert len(outcome.steps) <= 8
+        assert outcome.budget_spent <= 30.0
+        assert outcome.verdict in (Verdict.COMMITTED, Verdict.ESCALATED)
+
+
+def test_loop_terminates_with_zero_turn_budget(kb, cases):
+    agent = DiagnosticAgent(kb=kb, limits=LoopLimits(max_turns=0))
+    outcome = agent.run(cases[0])
+    assert outcome.steps == ()
+
+
+def test_loop_terminates_with_zero_cost_budget(kb, cases):
+    """With no budget and an unmet threshold, escalate rather than spin."""
+    agent = DiagnosticAgent(
+        kb=kb,
+        gate=AbstentionGate(kb, min_confidence=0.99),
+        limits=LoopLimits(max_cost=0.0),
+    )
+    outcome = agent.run(cases[0])
+    assert outcome.abstained
+    assert outcome.budget_spent == 0.0
+
+
+def test_escalation_packet_is_actionable(kb, cases):
+    """An abstention that carries no evidence transfers no work off the clinician."""
+    agent = DiagnosticAgent(
+        kb=kb, gate=AbstentionGate(kb, min_confidence=0.99, min_margin=0.98)
+    )
+    outcome = agent.run(cases[0])
+    assert outcome.abstained
+    packet = outcome.escalation
+    assert packet.reason
+    assert packet.differential.hypotheses
+    assert packet.turns_used == len(outcome.steps)
+
+
+def test_due_diligence_prevents_turn_zero_commit(kb, cases):
+    """Regression: the loop committed on volunteered symptoms alone.
+
+    Also regression on the flag's semantics: 0.0 must *disable* the rule, not
+    make every action count as outstanding and drive the loop to its limit.
+    """
+    # require_decisive_tests is switched off in both arms so this isolates the
+    # gain flag. Left on, it keeps the loop running in the eager arm too and
+    # the comparison stops measuring the thing it names.
+    eager = DiagnosticAgent(
+        kb=kb,
+        gate=AbstentionGate(kb, min_confidence=0.3, min_margin=0.0),
+        limits=LoopLimits(due_diligence_gain=0.0, require_decisive_tests=False),
+    )
+    careful = DiagnosticAgent(
+        kb=kb,
+        gate=AbstentionGate(kb, min_confidence=0.3, min_margin=0.0),
+        limits=LoopLimits(due_diligence_gain=0.10, require_decisive_tests=False),
+    )
+    case = cases[0]
+    assert len(careful.run(case).steps) > len(eager.run(case).steps)
+
+
+def test_flip_action_is_silent_once_nothing_can_change_the_answer(kb, cases):
+    """A settled differential must not keep ordering tests forever."""
+    selector = InformationGainSelector(kb)
+    agent = DiagnosticAgent(kb=kb)
+    case = cases[1]  # the decisive imaging case
+    outcome = agent.run(case)
+
+    state = CaseState(case_id=case.case_id, presenting_complaint=case.presenting_complaint)
+    state.asked.update(s.action.target for s in outcome.steps)
+    state.asked.update(case.initial_findings)
+
+    assert selector.flip_action(state, outcome.differential) is None
+
+
+def test_flip_action_ignores_outcomes_it_believes_will_not_happen(kb, cases):
+    """The probability floor is what stops it chasing impossible reversals."""
+    selector = InformationGainSelector(kb, min_flip_outcome=0.0)
+    strict = InformationGainSelector(kb, min_flip_outcome=0.95)
+    proposer = BayesianProposer(kb)
+    case = cases[0]
+    differential = proposer.propose(case.initial(), case.presenting_complaint)
+    state = CaseState(case_id=case.case_id, presenting_complaint=case.presenting_complaint)
+    state.asked.update(case.initial_findings)
+
+    permissive_hit = selector.flip_action(state, differential)
+    strict_hit = strict.flip_action(state, differential)
+
+    assert permissive_hit is not None
+    # Demanding a near-certain flipping outcome must not find more than
+    # accepting any outcome does.
+    assert strict_hit is None or strict_hit.target == permissive_hit.target
+
+
+def test_decisive_test_signal_flags_the_masquerade_failures(kb, cases):
+    """A detector, not a fix -- see ``test_decisive_tests_do_not_repair_them``.
+
+    Every case the loop gets wrong has an unasked test that would change the
+    answer; most of the cases it gets right do not. That is the separation
+    ``evidence_fit`` could not provide, recorded here so a regression in the
+    selector shows up as a failed test rather than as a quietly worse gate.
+    """
+    plain = DiagnosticAgent(
+        kb=kb, limits=LoopLimits(require_decisive_tests=False)
+    )
+    selector = InformationGainSelector(kb)
+
+    flagged_when_wrong = 0
+    wrong = 0
+    for case in cases:
+        outcome = plain.run(case)
+        state = CaseState(
+            case_id=case.case_id, presenting_complaint=case.presenting_complaint
+        )
+        state.asked.update(case.initial_findings)
+        state.asked.update(s.action.target for s in outcome.steps)
+        has_flip = selector.flip_action(state, outcome.differential) is not None
+        if outcome.differential.top.label != case.diagnosis:
+            wrong += 1
+            flagged_when_wrong += has_flip
+
+    assert wrong, "fixture set no longer contains a failing case"
+    assert flagged_when_wrong == wrong
+
+
+def test_decisive_tests_do_not_repair_the_masquerade_failures(kb, cases):
+    """Pins the negative result, so the rule is not re-enabled on a hunch.
+
+    Acting on the signal costs more and buys no accuracy: the tests it orders
+    are the ones the current posterior rates as relevant, and the posterior is
+    what is wrong. If a change to the KB or the selector ever makes acting on
+    it pay, this test fails and the default should be revisited.
+    """
+    def run(require: bool):
+        agent = DiagnosticAgent(
+            kb=kb, limits=LoopLimits(require_decisive_tests=require)
+        )
+        outcomes = [agent.run(c) for c in cases]
+        correct = sum(
+            o.differential.top.label == c.diagnosis
+            for o, c in zip(outcomes, cases)
+        )
+        return correct, sum(o.budget_spent for o in outcomes) / len(outcomes)
+
+    off_correct, off_cost = run(False)
+    on_correct, on_cost = run(True)
+
+    assert on_correct <= off_correct
+    assert on_cost > off_cost
+
+
+def test_state_records_realised_information_gain(kb, cases):
+    agent = DiagnosticAgent(kb=kb)
+    outcome = agent.run(cases[1])
+    for step in outcome.steps:
+        assert step.entropy_after >= 0.0
+
+
+def test_unknown_findings_from_oracle_when_feature_absent_from_case(kb):
+    case = Case(
+        case_id="sparse",
+        presenting_complaint="cough",
+        diagnosis="community_acquired_pneumonia",
+        features={"fever": True},
+        initial_findings=("fever",),
+    )
+    oracle = CaseOracle(case)
+    findings = oracle.respond(Action(ActionKind.LAB, "lab:raised_bnp"))
+    assert findings[0].polarity is Polarity.UNKNOWN
+
+
+def _gold_case(differential, diagnosis="pulmonary_embolism"):
+    return Case(
+        case_id="c",
+        presenting_complaint="dyspnoea",
+        diagnosis=diagnosis,
+        features={},
+        differential=differential,
+    )
+
+
+def test_ambiguity_tracks_gold_confidence_in_the_true_diagnosis():
+    """The abstention proxy has to order cases the way a clinician would."""
+    certain = _gold_case((("pulmonary_embolism", 0.95), ("pneumonia", 0.05)))
+    tied = _gold_case((("pulmonary_embolism", 0.5), ("pneumonia", 0.5)))
+    doubtful = _gold_case((("pneumonia", 0.75), ("pulmonary_embolism", 0.25)))
+
+    assert certain.ambiguity == pytest.approx(0.05)
+    assert tied.ambiguity == pytest.approx(0.5)
+    assert doubtful.ambiguity == pytest.approx(0.75)
+    assert certain.ambiguity < tied.ambiguity < doubtful.ambiguity
+
+    # A source with no gold differential must not read as maximally uncertain.
+    assert _gold_case(()).ambiguity == 0.0
+
+
+def test_ambiguity_separates_cases_that_entropy_cannot():
+    """Why the proxy is gold confidence and not gold entropy.
+
+    Both cases below spread mass over five causes, so their entropy is close.
+    They are not equally hard: one puts most of the mass on the truth, the
+    other buries it. On DDXPlus, where nearly every differential is long,
+    entropy saturates and stops separating cases at all.
+    """
+    easy = _gold_case(
+        (("pulmonary_embolism", 0.8), ("a", 0.05), ("b", 0.05), ("c", 0.05), ("d", 0.05))
+    )
+    hard = _gold_case(
+        (("a", 0.8), ("b", 0.05), ("c", 0.05), ("d", 0.05), ("pulmonary_embolism", 0.05))
+    )
+
+    assert easy.differential_entropy == pytest.approx(hard.differential_entropy)
+    assert easy.ambiguity == pytest.approx(0.2)
+    assert hard.ambiguity == pytest.approx(0.95)
+
+
+def test_differential_entropy_is_comparable_across_lengths():
+    """Kept as a secondary signal, so its normalisation still has to hold."""
+    two_way_tie = _gold_case((("a", 0.5), ("b", 0.5)))
+    five_way_tie = _gold_case(tuple((chr(97 + i), 0.2) for i in range(5)))
+    broad_but_peaked = _gold_case(
+        (("a", 0.8), ("b", 0.05), ("c", 0.05), ("d", 0.05), ("e", 0.05))
+    )
+
+    assert two_way_tie.differential_entropy == pytest.approx(1.0)
+    assert five_way_tie.differential_entropy == pytest.approx(1.0)
+    assert broad_but_peaked.differential_entropy < two_way_tie.differential_entropy
+
+
+def test_ddx_recall_rewards_covering_the_gold_differential(kb):
+    labels = [e.label for e in kb.diseases()][:3]
+    outcome = CaseOutcome(
+        case_id="c1",
+        verdict=Verdict.COMMITTED,
+        differential=Differential.from_scores(
+            {labels[0]: 0.6, labels[1]: 0.3, labels[2]: 0.1}
+        ),
+        confidence=0.6,
+        escalation=None,
+        steps=(),
+        budget_spent=0.0,
+    )
+
+    full = differential_metrics(
+        [outcome], {"c1": ((labels[0], 0.7), (labels[1], 0.3))}
+    )
+    assert full.recall_at_gold_length == pytest.approx(1.0)
+
+    missed = differential_metrics(
+        [outcome], {"c1": ((labels[0], 0.7), ("something_absent", 0.3))}
+    )
+    assert missed.recall_at_gold_length == pytest.approx(0.5)
+
+    # Cases without a gold differential are skipped, not scored zero.
+    assert differential_metrics([outcome], {}).n == 0
+
+
+def test_abstention_proxy_scores_deferral_on_ambiguous_cases(kb):
+    label = kb.diseases()[0].label
+
+    def outcome(case_id, verdict):
+        return CaseOutcome(
+            case_id=case_id,
+            verdict=verdict,
+            differential=Differential.from_scores({label: 1.0}),
+            confidence=0.9,
+            escalation=None,
+            steps=(),
+            budget_spent=0.0,
+        )
+
+    outcomes = [
+        outcome("ambiguous_deferred", Verdict.ESCALATED),
+        outcome("ambiguous_answered", Verdict.COMMITTED),
+        outcome("clear_deferred", Verdict.ESCALATED),
+        outcome("clear_answered", Verdict.COMMITTED),
+    ]
+    ambiguity = {
+        "ambiguous_deferred": 0.9,
+        "ambiguous_answered": 0.9,
+        "clear_deferred": 0.1,
+        "clear_answered": 0.1,
+    }
+
+    metrics = abstention_metrics(outcomes, ambiguity, threshold=0.5)
+    assert metrics.n_ambiguous == 2
+    assert metrics.abstention_rate == pytest.approx(0.5)
+    assert metrics.proxy_precision == pytest.approx(0.5)  # 1 of 2 deferrals
+    assert metrics.proxy_recall == pytest.approx(0.5)  # caught 1 of 2 ambiguous
+
+
+def test_closed_world_vocabulary_turns_silence_into_a_negative():
+    """A sparse record that declares its vocabulary answers ABSENT, not UNKNOWN.
+
+    DDXPlus stores positive evidences only. Read open-world, every question
+    about a symptom the patient does not have returns UNKNOWN -- likelihood
+    1.0, no information -- so the agent gathers nothing and times out.
+    """
+    case = Case(
+        case_id="closed",
+        presenting_complaint="cough",
+        diagnosis="community_acquired_pneumonia",
+        features={"fever": True},
+        initial_findings=("fever",),
+        vocabulary=frozenset({"fever", "pleuritic_pain"}),
+    )
+    oracle = CaseOracle(case)
+
+    declared = oracle.respond(Action(ActionKind.ASK, "pleuritic_pain"))
+    assert declared[0].polarity is Polarity.ABSENT
+
+    # Outside the declared vocabulary the record says nothing, so the honest
+    # answer is still UNKNOWN.
+    undeclared = oracle.respond(Action(ActionKind.LAB, "lab:raised_bnp"))
+    assert undeclared[0].polarity is Polarity.UNKNOWN
+
+
+def test_open_world_case_is_unchanged_by_the_vocabulary_field():
+    """Cases that enumerate their features keep the old behaviour."""
+    case = Case(
+        case_id="open",
+        presenting_complaint="cough",
+        diagnosis="community_acquired_pneumonia",
+        features={"fever": True},
+        initial_findings=("fever",),
+    )
+    findings = CaseOracle(case).respond(Action(ActionKind.ASK, "pleuritic_pain"))
+    assert findings[0].polarity is Polarity.UNKNOWN
+
+
+def test_closed_world_negative_moves_the_posterior(kb):
+    """The point of the fix: an ABSENT answer has to change the ranking.
+
+    Guards the actual failure mode rather than the polarity enum -- an UNKNOWN
+    reply leaves the posterior untouched, which is what made the bug silent.
+    """
+    proposer = BayesianProposer(kb)
+    concept = kb.discriminating_features([e.label for e in kb.diseases()])[0]
+
+    before = proposer.propose([])
+    after_absent = proposer.propose(
+        [Finding(concept=concept, polarity=Polarity.ABSENT)]
+    )
+    after_unknown = proposer.propose(
+        [Finding(concept=concept, polarity=Polarity.UNKNOWN)]
+    )
+
+    assert after_unknown.probability_of(before.top.label) == pytest.approx(
+        before.probability_of(before.top.label)
+    )
+    assert after_absent.probability_of(before.top.label) != pytest.approx(
+        before.probability_of(before.top.label)
+    )
+
+
+def test_noisy_oracle_only_degrades_history(kb, cases):
+    case = cases[0]
+    oracle = NoisyOracle(case, recall_failure=1.0, seed=1)
+    asked = oracle.respond(Action(ActionKind.ASK, "pleuritic_pain"))
+    tested = oracle.respond(Action(ActionKind.LAB, "lab:raised_wcc"))
+    assert asked[0].polarity is Polarity.ABSENT  # recall failure
+    assert tested[0].polarity is Polarity.PRESENT  # tests are reliable
+
+
+# --------------------------------------------------------------------------
+# LLM proposer
+
+
+def test_llm_proposer_uses_valid_ranking(kb):
+    llm = ScriptedLLM([
+        ScriptedLLM.ranking([("pulmonary_embolism", 0.7),
+                             ("community_acquired_pneumonia", 0.3)])
+    ])
+    d = LLMProposer(kb, llm).propose([Finding("dyspnoea_at_rest")])
+    assert d.top.label == "pulmonary_embolism"
+
+
+def test_llm_proposer_drops_hallucinated_labels(kb):
+    llm = ScriptedLLM([
+        ScriptedLLM.ranking([("dragon_pox", 0.9), ("pulmonary_embolism", 0.1)])
+    ])
+    d = LLMProposer(kb, llm).propose([Finding("dyspnoea_at_rest")])
+    assert "dragon_pox" not in [h.label for h in d.hypotheses]
+
+
+def test_llm_proposer_falls_back_on_garbage(kb):
+    """A malformed generation must not take the case down."""
+    d = LLMProposer(kb, ScriptedLLM(["not json at all"])).propose([Finding("fever")])
+    assert d.top.probability > 0
+
+
+def test_llm_proposer_falls_back_when_llm_raises(kb):
+    from dxagent import NullLLM
+
+    d = LLMProposer(kb, NullLLM()).propose([Finding("fever")])
+    assert d.top.probability > 0
+
+
+def test_consensus_reports_disagreement(kb):
+    agree = ScriptedLLM([ScriptedLLM.ranking([("community_acquired_pneumonia", 1.0)])])
+    consensus = ConsensusProposer(
+        primary=BayesianProposer(kb), secondary=LLMProposer(kb, agree)
+    )
+    consensus.propose([Finding("fever"), Finding("productive_cough")])
+    assert 0.0 <= consensus.last_disagreement <= 1.0
+
+
+# --------------------------------------------------------------------------
+# metrics
+
+
+def _outcomes(kb, cases):
+    return run_agent(DiagnosticAgent(kb=kb), cases)
+
+
+def test_metrics_are_consistent(kb, cases):
+    outcomes = _outcomes(kb, cases)
+    truths = {c.case_id: c.diagnosis for c in cases}
+    ranking = ranking_metrics(outcomes, truths)
+    assert ranking.top1 <= ranking.top3 <= ranking.top5
+    assert 0.0 <= ranking.mrr <= 1.0
+    calibration = calibration_metrics(outcomes, truths)
+    assert 0.0 <= calibration.ece <= 1.0
+    assert 0.0 <= calibration.brier <= 1.0
+    selective = selective_metrics(outcomes, truths)
+    assert 0.0 <= selective.coverage <= 1.0
+
+
+def test_full_coverage_accuracy_matches_top1(kb, cases):
+    """The gate must not be able to change the ranking numbers."""
+    outcomes = _outcomes(kb, cases)
+    truths = {c.case_id: c.diagnosis for c in cases}
+    assert math.isclose(
+        selective_metrics(outcomes, truths).full_coverage_accuracy,
+        ranking_metrics(outcomes, truths).top1,
+    )
+
+
+def test_risk_coverage_curve_is_monotone_in_coverage(kb, cases):
+    outcomes = _outcomes(kb, cases)
+    truths = {c.case_id: c.diagnosis for c in cases}
+    curve = risk_coverage_curve(outcomes, truths)
+    coverages = [c for c, _ in curve]
+    assert coverages == sorted(coverages)
+    assert all(0.0 <= r <= 1.0 for _, r in curve)
+
+
+def test_metrics_handle_empty_input():
+    assert ranking_metrics([], {}).n == 0
+    assert calibration_metrics([], {}).n == 0
+    assert selective_metrics([], {}).n == 0
+    assert risk_coverage_curve([], {}) == []
+
+
+def test_evaluate_end_to_end(kb, cases):
+    calibration_cases, test_cases = split_cases(cases, calibration_fraction=0.3)
+    result = evaluate(DiagnosticAgent(kb=kb), test_cases,
+                      calibration_cases=calibration_cases)
+    assert result.ranking.n == len(test_cases)
+    assert result.report()
+
+
+def test_split_is_deterministic_and_disjoint(cases):
+    a1, b1 = split_cases(cases)
+    a2, b2 = split_cases(list(reversed(cases)))
+    assert [c.case_id for c in a1] == [c.case_id for c in a2]
+    assert not ({c.case_id for c in b1} & {c.case_id for c in a1})
+
+
+# --------------------------------------------------------------------------
+# vocabulary (HPO concept layer)
+
+
+@pytest.fixture
+def vocab():
+    from dxagent.vocabulary import Vocabulary
+    from pathlib import Path
+
+    obo = Path(__file__).resolve().parent.parent / "data" / "hp.obo"
+    if not obo.exists():
+        pytest.skip("hp.obo not present; run scripts/build_vocabulary.py")
+    return Vocabulary.build(obo)
+
+
+def test_every_curated_id_resolves(vocab):
+    """A mapping table that rots between HPO releases is worse than none."""
+    from dxagent.vocabulary import CURATED
+
+    for key, (hpo_id, _, _) in CURATED.items():
+        if hpo_id is None:
+            continue
+        assert vocab.term(hpo_id) is not None, f"{key} -> {hpo_id} missing"
+
+
+def test_no_mapping_warnings(vocab):
+    assert not [c for c in vocab.concepts.values() if "WARNING" in c.note]
+
+
+def test_productive_cough_is_not_its_own_antonym(vocab):
+    """Regression: HP:0031246 is 'Nonproductive cough', the adjacent id.
+
+    Polarity inversions are the most dangerous mapping error -- they corrupt
+    every posterior silently and look completely normal in a coverage report.
+    """
+    concept = vocab.concept("productive_cough")
+    assert concept.hpo_name == "Productive cough"
+    assert "Nonproductive" not in concept.hpo_name
+
+
+def test_mapped_names_are_not_negations(vocab):
+    """Cheap guard against the whole antonym class, not just the one instance."""
+    for concept in vocab.concepts.values():
+        if not concept.hpo_name:
+            continue
+        lowered = concept.hpo_name.lower()
+        for prefix in ("non", "absent ", "decreased ", "reduced "):
+            if lowered.startswith(prefix):
+                assert "decreased" in concept.key or "reduced" in concept.key or \
+                       "absent" in concept.key, (
+                    f"{concept.key} maps to negated term {concept.hpo_name}"
+                )
+
+
+def test_exact_lookup_rejects_substring_matches(vocab):
+    """'rale' must not resolve to 'P mitrale'."""
+    assert vocab.lookup_exact("rale") is None
+    assert vocab.lookup_exact("Crackles").hpo_id == "HP:0030830"
+
+
+def test_unmapped_concepts_are_explicit_not_approximated(vocab):
+    """Risk factors and exposures are not phenotypes; forcing them is wrong."""
+    for key in ("smoking_history", "recent_immobility", "sudden_onset"):
+        concept = vocab.concept(key)
+        assert not concept.is_grounded
+        assert concept.note, "unmapped concepts must record why"
+
+
+def test_generalisation_walks_up_the_hierarchy(vocab):
+    parent = vocab.generalise("pleuritic_pain")
+    assert vocab.term(parent).name == "Chest pain"
+
+
+def test_generalisation_skips_structural_roots(vocab):
+    for key in vocab.concepts:
+        result = vocab.generalise(key, levels=10)
+        assert result not in ("HP:0000001", "HP:0000118")
+
+
+def test_freeze_and_reload_roundtrip(vocab, tmp_path):
+    """Runs must be reproducible without re-downloading a monthly release."""
+    from dxagent.vocabulary import Vocabulary
+
+    path = tmp_path / "vocab.json"
+    vocab.to_json(path)
+    reloaded = Vocabulary.from_json(path)
+    assert reloaded.release == vocab.release
+    assert len(reloaded.concepts) == len(vocab.concepts)
+    assert reloaded.concept("pleuritic_pain").hpo_id == "HP:0033771"
+
+
+def test_fixture_kb_concepts_are_covered(vocab):
+    """Every finding the KB reasons over should have a vocabulary entry."""
+    from dxagent.datasets.fixtures import COSTS
+
+    missing = [c for c in COSTS if vocab.concept(c) is None]
+    assert not missing, f"no vocabulary entry for: {missing}"
