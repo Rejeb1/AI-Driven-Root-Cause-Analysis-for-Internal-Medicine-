@@ -22,6 +22,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from dxagent import AbstentionGate, DiagnosticAgent, LoopLimits  # noqa: E402
+from dxagent.belief import BayesianProposer, ConsensusProposer  # noqa: E402
 from dxagent.datasets import build_cases, build_knowledge_base  # noqa: E402
 from dxagent.evaluation import evaluate, split_cases  # noqa: E402
 
@@ -39,6 +40,55 @@ def load(args) -> tuple:
     cases = build_cases()
     calibration, evaluation = split_cases(cases, calibration_fraction=0.35)
     return kb, calibration, evaluation
+
+
+def have(module: str) -> bool:
+    from importlib.util import find_spec
+
+    return find_spec(module) is not None
+
+
+def build_proposer(kb, args):
+    """Assemble the proposer stack the flags ask for.
+
+    Grounding is opt-in rather than automatic despite being mandated: the first
+    call downloads BGE-M3 (~2.3 GB) and indexing costs about a minute, and a
+    default that does that to someone running the fixtures once is a bad
+    default. The engine choice below is automatic because LangGraph is light
+    and adds no runtime cost.
+    """
+    proposer = BayesianProposer(kb)
+
+    if args.llm:
+        import os
+
+        if not os.environ.get("ANTHROPIC_API_KEY"):
+            print("  --llm given but ANTHROPIC_API_KEY is unset; skipping")
+        else:
+            from dxagent.belief import LLMProposer
+            from dxagent.llm import AnthropicLLM
+
+            # Consensus rather than replacement: belief.py exists to expose
+            # disagreement between a transparent posterior and a model's
+            # clinical intuition, and averaging them would destroy the signal
+            # the gate reads.
+            proposer = ConsensusProposer(
+                primary=proposer, secondary=LLMProposer(kb, AnthropicLLM())
+            )
+            print("  proposer: consensus (Bayesian + LLM)")
+
+    if args.grounded:
+        if not (have("qdrant_client") and have("sentence_transformers")):
+            print("  --grounded given but retrieval extras are not installed; skipping")
+        else:
+            from dxagent.retrieval import GroundedProposer, GuidelineIndex
+
+            print("  building guideline index (first run downloads BGE-M3)...")
+            index = GuidelineIndex().build()
+            proposer = GroundedProposer(proposer, index)
+            print(f"  proposer: retrieval-grounded over {len(index._passages)} passages")
+
+    return proposer
 
 
 def baseline_comparison(kb, test_cases, result) -> str:
@@ -110,6 +160,22 @@ def main() -> int:
     parser.add_argument("--max-cost", type=float, default=40.0)
     parser.add_argument("--no-calibration", action="store_true")
     parser.add_argument(
+        "--engine",
+        choices=("auto", "loop", "graph"),
+        default="auto",
+        help="auto uses the LangGraph state machine when langgraph is installed",
+    )
+    parser.add_argument(
+        "--grounded",
+        action="store_true",
+        help="ground hypotheses in retrieved guideline passages (downloads BGE-M3)",
+    )
+    parser.add_argument(
+        "--llm",
+        action="store_true",
+        help="add an LLM proposer alongside the Bayesian one (needs ANTHROPIC_API_KEY)",
+    )
+    parser.add_argument(
         "--no-baselines",
         action="store_true",
         help="skip the section 9 baseline comparison",
@@ -124,14 +190,27 @@ def main() -> int:
         f"evaluation: {len(test_cases)} cases"
     )
 
-    def build_agent(min_confidence: float, min_margin: float) -> DiagnosticAgent:
+    proposer = build_proposer(kb, args)
+
+    use_graph = args.engine == "graph" or (args.engine == "auto" and have("langgraph"))
+    print(f"  engine: {'LangGraph state machine' if use_graph else 'reference loop'}")
+
+    def build_agent(min_confidence: float, min_margin: float):
+        gate = AbstentionGate(
+            kb=kb, min_confidence=min_confidence, min_margin=min_margin
+        )
+        limits = LoopLimits(max_turns=args.max_turns, max_cost=args.max_cost)
+        if use_graph:
+            from dxagent.graph import GraphAgent
+
+            # No trace= : the graph's per-node state is the inspectable
+            # artefact, and duplicating the loop's print-based trace would give
+            # two accounts of the same turn that could drift apart.
+            return GraphAgent(
+                kb=kb, proposer=proposer, gate=gate, limits=limits
+            )
         return DiagnosticAgent(
-            kb=kb,
-            gate=AbstentionGate(
-                kb=kb, min_confidence=min_confidence, min_margin=min_margin
-            ),
-            limits=LoopLimits(max_turns=args.max_turns, max_cost=args.max_cost),
-            trace=args.trace,
+            kb=kb, proposer=proposer, gate=gate, limits=limits, trace=args.trace
         )
 
     if args.sweep:

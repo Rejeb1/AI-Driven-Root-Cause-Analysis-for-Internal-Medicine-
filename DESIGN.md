@@ -65,6 +65,12 @@ objectives and should not be collapsed into one score.
 
 ## The headline negative result
 
+> **Revised 5 August 2026 — read the revision below before citing this section.**
+> The claim as written held on the fixture set and on a small DDXPlus sample.
+> It does not hold on a 400-case DDXPlus run, where the gate gains +10.9%
+> accuracy at 78.2% coverage. The mechanism described here is still real; the
+> scope of the claim was wrong.
+
 **On the fixture set, the abstention gate provides no value.** Coverage is 100%
 at every threshold up to 0.8; at 0.9 it fires with abstention precision 0%, i.e.
 every case it escalated was one it would have got right.
@@ -98,6 +104,65 @@ Worth noting for the survey's positioning: this is a concrete instance of
 something the Wen et al. framing implies but does not emphasise — abstention
 mechanisms keyed to confidence are structurally blind to the errors that matter
 most clinically.
+
+## Revision, 5 August 2026: when the gate does and does not earn its keep
+
+Measured on 400 DDXPlus cases with the knowledge base fitted on 400 training
+cases:
+
+    coverage 78.2%   selective accuracy 97.4%   full-coverage 86.5%
+    accuracy gained +10.9%   abstention precision 52.9%
+
+So the gate is not useless. It abstains on one case in five and better than
+half of those it would genuinely have got wrong. That contradicts the section
+above, which generalised from the fixture set and from a 60-case DDXPlus run.
+
+What appears to differ, and this is a hypothesis rather than a result: in the
+earlier runs the KB was fitted on 5,000 cases, and DDXPlus generates evidence
+independently given the pathology, so a naive-Bayes table fitted on that much
+data recovers the generating process almost exactly and the posterior becomes
+extremely peaked. A confidence threshold then has nothing to bite on. Fitted on
+400 cases the same table is appropriately uncertain, and the threshold finds
+real signal. The fitted temperature moved the same way, 0.75 to 0.50.
+
+Two other things changed at the same time -- conformal prediction was added and
+the guideline workup was switched on -- so the attribution is not established.
+A run varying one factor at a time would settle it and is cheap.
+
+If the KB explanation holds, the finding is more interesting than the original
+negative result rather than a retraction of it: **a posterior fitted well
+enough to recover its own generating process becomes too confident for
+confidence-based abstention to have anything to work with.** The blindness to
+confident errors documented above is then a property of over-specified models,
+not of abstention gates as such.
+
+## What five mechanisms could not fix
+
+Recorded because the pattern is more useful than any one attempt. To catch the
+cases the loop gets confidently wrong, these were each built and measured:
+
+1. Confidence threshold — blind to confident errors by construction.
+2. Marginal likelihood (`evidence_fit`) — the failures score inside the range
+   of the successes. They are masquerade, not anomaly: the wrong diagnosis
+   explains the evidence well.
+3. Decision-flip lookahead — a good detector (2/2 failures flagged) and no
+   remedy; acting on it cost 60% more and fixed nothing.
+4. Red-flag rule-out — its 3% floor is itself a posterior threshold, so a
+   diagnosis pushed below it is never revisited.
+5. Guideline workup — does order the D-dimer the posterior would not, because
+   it is triggered by presentation rather than belief.
+
+The fifth works as designed and still does not fix the diagnosis, and the
+measurement that explains why is the important one: in fx-009, fever and
+productive cough multiply under the independence assumption until a **positive
+CTPA** leaves pulmonary embolism at 13.8%, behind COPD. Perfect evidence
+gathering produces the wrong answer.
+
+The defect is therefore in the likelihood model, not in evidence gathering, and
+no test-selection policy can reach it. That leaves option 1 above — correlation
+structure — as the only remaining path, and it is no longer gated on MIMIC:
+1.3M DDXPlus patients with full evidence vectors make feature co-occurrence
+directly estimable.
 
 ## Open questions for the meeting
 
