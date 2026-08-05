@@ -4,10 +4,16 @@ Project 1, DeepShift AI summer internship 2026.
 """
 
 from .actions import InformationGainSelector
+from .baselines import RetrievalOnlyBaseline, SinglePassBaseline
 from .agent import DiagnosticAgent, LoopLimits
 from .belief import BayesianProposer, ConsensusProposer, LLMProposer
 from .environment import Case, CaseOracle, NoisyOracle
-from .gate import AbstentionGate, GateDecision, TemperatureScaler
+from .gate import (
+    AbstentionGate,
+    ConformalPredictor,
+    GateDecision,
+    TemperatureScaler,
+)
 from .knowledge import DiseaseEntry, InMemoryKnowledgeBase
 from .llm import AnthropicLLM, NullLLM, ScriptedLLM
 from .schemas import (
@@ -27,6 +33,8 @@ __version__ = "0.1.0"
 
 __all__ = [
     "AbstentionGate",
+    "RetrievalOnlyBaseline",
+    "SinglePassBaseline",
     "Action",
     "ActionKind",
     "AnthropicLLM",
@@ -34,6 +42,7 @@ __all__ = [
     "Case",
     "CaseOracle",
     "CaseOutcome",
+    "ConformalPredictor",
     "Citation",
     "ConsensusProposer",
     "DiagnosticAgent",

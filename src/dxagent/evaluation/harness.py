@@ -137,6 +137,13 @@ def evaluate(
             for case in calibration_cases
         ]
         agent.gate.scaler.fit(samples)
+        # Conformal is fitted on the *calibrated* differentials, not the raw
+        # ones. Fitting it on raw scores and then applying it after temperature
+        # scaling would break exchangeability between calibration and test --
+        # the quantile would describe a distribution the gate never sees.
+        agent.gate.conformal.fit(
+            [(agent.gate.calibrate(d), truth) for d, truth in samples]
+        )
 
     outcomes = run_agent(agent, cases, noisy=noisy)
     truths = {case.case_id: case.diagnosis for case in cases}

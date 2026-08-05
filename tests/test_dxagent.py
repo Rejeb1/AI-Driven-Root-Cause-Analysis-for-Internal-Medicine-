@@ -26,10 +26,12 @@ from dxagent import (
     LoopLimits,
     NoisyOracle,
     Polarity,
+    ConformalPredictor,
     ScriptedLLM,
     TemperatureScaler,
     Verdict,
 )
+from dxagent.baselines import RetrievalOnlyBaseline, SinglePassBaseline
 from dxagent.belief import BayesianProposer, ConsensusProposer, LLMProposer
 from dxagent.datasets import build_cases, build_knowledge_base
 from dxagent.evaluation import evaluate, run_agent, split_cases
@@ -635,6 +637,131 @@ def test_decisive_tests_do_not_repair_the_masquerade_failures(kb, cases):
 
     assert on_correct <= off_correct
     assert on_cost > off_cost
+
+
+def test_baselines_are_evaluable_by_the_same_harness(kb, cases):
+    """A baseline scored by a different code path is not a comparison."""
+    truths = {c.case_id: c.diagnosis for c in cases}
+    for baseline in (SinglePassBaseline(kb), RetrievalOnlyBaseline(kb)):
+        outcomes = run_agent(baseline, cases)
+        assert len(outcomes) == len(cases)
+        metrics = ranking_metrics(outcomes, truths)
+        assert 0.0 <= metrics.top1 <= 1.0
+        # Neither gathers evidence, and neither abstains -- that is the
+        # property under test, not an omission.
+        assert all(o.steps == () for o in outcomes)
+        assert all(not o.abstained for o in outcomes)
+
+
+def test_single_pass_baseline_sees_negative_findings_too(kb, cases):
+    """Handed only positives, the baseline would face an easier task than the
+    agent, which can ask about anything and get an answer either way."""
+    case = cases[0]
+    assert any(present is False for present in case.features.values())
+    outcome = SinglePassBaseline(kb).run(case)
+    assert outcome.differential.hypotheses
+
+
+def test_retrieval_baseline_does_not_reward_verbose_kb_entries(kb):
+    """Normalisation guards a coverage artefact, not a retrieval result."""
+    from dxagent.knowledge import DiseaseEntry, InMemoryKnowledgeBase
+
+    lopsided = InMemoryKnowledgeBase()
+    lopsided.add(
+        DiseaseEntry(
+            label="sparse_but_matching",
+            prevalence=0.5,
+            features={"a": 0.9},
+            citations=(Citation("T", "sparse"),),
+        )
+    )
+    lopsided.add(
+        DiseaseEntry(
+            label="verbose_but_not_matching",
+            prevalence=0.5,
+            features={"a": 0.9, "b": 0.9, "c": 0.9, "d": 0.9},
+            citations=(Citation("T", "verbose"),),
+        )
+    )
+    case = Case(
+        case_id="c",
+        presenting_complaint="a",
+        diagnosis="sparse_but_matching",
+        features={"a": True},
+    )
+    outcome = RetrievalOnlyBaseline(lopsided).run(case)
+    assert outcome.differential.top.label == "sparse_but_matching"
+
+
+def test_conformal_coverage_guarantee_holds_on_held_out_cases(kb, cases):
+    """The whole point of conformal prediction is that this is checkable."""
+    import random
+
+    proposer = BayesianProposer(kb)
+    rng = random.Random(0)
+    samples = []
+    for _ in range(400):
+        case = rng.choice(cases)
+        observed = [
+            Finding(
+                concept=c,
+                polarity=Polarity.PRESENT if present else Polarity.ABSENT,
+            )
+            for c, present in case.features.items()
+            if rng.random() < 0.4
+        ]
+        samples.append((proposer.propose(observed), case.diagnosis))
+
+    calibration, held_out = samples[:200], samples[200:]
+    for alpha in (0.1, 0.2):
+        predictor = ConformalPredictor(alpha=alpha).fit(calibration)
+        assert predictor.fitted
+        coverage, mean_size = predictor.coverage(held_out)
+        # Finite-sample slack: the guarantee is 1-alpha in expectation, so a
+        # single split can land slightly under. Anything far below means the
+        # quantile is wrong, not that the sample was unlucky.
+        assert coverage >= (1 - alpha) - 0.1
+        assert 1 <= mean_size <= len(kb.diseases())
+
+
+def test_conformal_refuses_to_certify_from_too_few_samples(kb, cases):
+    proposer = BayesianProposer(kb)
+    samples = [(proposer.propose(c.initial()), c.diagnosis) for c in cases[:5]]
+    predictor = ConformalPredictor().fit(samples)
+    assert not predictor.fitted
+    assert predictor.fit_n == 5
+
+
+def test_conformal_set_is_never_empty(kb, cases):
+    """An empty prediction set is not a usable answer for a clinician."""
+    proposer = BayesianProposer(kb)
+    differential = proposer.propose(cases[0].initial())
+    predictor = ConformalPredictor()
+    predictor.fitted = True
+    predictor.threshold = 1.5  # unreachable: no probability can clear it
+    assert predictor.predict_set(differential) == (differential.top.label,)
+
+
+def test_gate_ignores_conformal_until_it_is_fitted(kb):
+    """An unfitted predictor must leave prior gate behaviour untouched."""
+    gate = AbstentionGate(kb)
+    labels = [e.label for e in kb.diseases()]
+    assert not gate.conformal.fitted
+    assert gate.evaluate(grounded(kb, {labels[0]: 0.97, labels[1]: 0.03})).should_commit
+
+
+def test_gate_escalates_when_the_conformal_set_stays_wide(kb):
+    gate = AbstentionGate(kb, max_conformal_set=1)
+    # Red flags are checked before the conformal set, and correctly so -- an
+    # unexcluded time-critical diagnosis is a more specific reason to hand over
+    # than a wide set. Use benign labels so this isolates the conformal rule.
+    benign = [e.label for e in kb.diseases() if not e.red_flag]
+    assert len(benign) >= 2, "fixture KB needs two non-red-flag entries"
+    gate.conformal.fitted = True
+    gate.conformal.threshold = 0.01  # admits almost everything
+    decision = gate.evaluate(grounded(kb, {benign[0]: 0.6, benign[1]: 0.4}))
+    assert decision.should_escalate
+    assert "coverage" in decision.reason
 
 
 def test_state_records_realised_information_gain(kb, cases):

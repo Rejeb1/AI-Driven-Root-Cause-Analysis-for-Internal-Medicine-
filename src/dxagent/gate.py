@@ -81,6 +81,106 @@ class TemperatureScaler:
         return self
 
 
+@dataclass
+class ConformalPredictor:
+    """Split conformal prediction over the differential.
+
+    Temperature scaling makes a probability *mean* what it says on average.
+    Conformal prediction answers a different question: give me a set of
+    diagnoses that contains the truth at least (1 - alpha) of the time. The
+    guarantee is distribution-free and finite-sample -- it needs no assumption
+    that the model is well specified, which matters here because the naive-Bayes
+    independence assumption is known to be wrong.
+
+    The two belong together rather than in competition. A calibrated top-1
+    probability says how much to trust the leading answer; a conformal set says
+    how many answers still have to stay on the table. A set of size one is a
+    clean commit; a set of size six is a differential that has not been
+    narrowed, whatever the top-1 confidence claims.
+
+    Method. On held-out cases, score each by nonconformity ``1 - p(truth)``.
+    Take the ceil((n+1)(1-alpha))/n empirical quantile of those scores as the
+    threshold ``q``, and at prediction time return every label with
+    ``p(label) >= 1 - q``. The (n+1) correction is what makes the coverage
+    guarantee exact rather than approximate, and it is the part most
+    implementations quietly drop.
+
+    Validity depends on exchangeability between the calibration and test sets.
+    Fit it on cases drawn the same way as those it will be used on, and refit
+    when the case mix changes -- a threshold carried over from a different
+    population is a guarantee in name only.
+    """
+
+    alpha: float = 0.1  # target miscoverage; 0.1 means 90% coverage
+    threshold: float = 0.0  # 1 - q; labels at or above this enter the set
+    fitted: bool = False
+    fit_n: int = 0
+    min_fit_samples: int = 30
+
+    def fit(
+        self, samples: list[tuple[Differential, str]]
+    ) -> "ConformalPredictor":
+        """Calibrate on (differential, true label) pairs."""
+        if len(samples) < self.min_fit_samples:
+            # Same reasoning as TemperatureScaler.fit: a quantile of a handful
+            # of scores is noise wearing the costume of a guarantee. Report the
+            # refusal rather than emitting an interval nobody should rely on.
+            self.fitted = False
+            self.fit_n = len(samples)
+            return self
+
+        scores = sorted(
+            1.0 - differential.probability_of(truth) for differential, truth in samples
+        )
+        n = len(scores)
+        rank = math.ceil((n + 1) * (1.0 - self.alpha))
+        if rank > n:
+            # Too few samples to certify this alpha at all: the quantile falls
+            # outside the sample. Admit everything rather than pretend.
+            q = 1.0
+        else:
+            q = scores[rank - 1]
+        self.threshold = 1.0 - q
+        self.fitted = True
+        self.fit_n = n
+        return self
+
+    def predict_set(self, differential: Differential) -> tuple[str, ...]:
+        """Labels retained at the calibrated coverage level, most likely first.
+
+        Never returns empty: if no label clears the threshold the top one is
+        returned anyway, because an empty prediction set is not a usable answer
+        for a clinician and the honest signal in that case is set size one with
+        low confidence, which the gate already reads.
+        """
+        if not self.fitted:
+            return (differential.top.label,)
+        retained = tuple(
+            h.label for h in differential.hypotheses if h.probability >= self.threshold
+        )
+        return retained or (differential.top.label,)
+
+    def coverage(
+        self, samples: list[tuple[Differential, str]]
+    ) -> tuple[float, float]:
+        """Empirical (coverage, mean set size) on held-out cases.
+
+        Report both. Coverage alone is trivially satisfiable by returning every
+        label, and set size alone says nothing about correctness; the pair is
+        the result.
+        """
+        if not samples:
+            return float("nan"), float("nan")
+        hits = 0
+        total_size = 0
+        for differential, truth in samples:
+            predicted = self.predict_set(differential)
+            hits += truth in predicted
+            total_size += len(predicted)
+        n = len(samples)
+        return hits / n, total_size / n
+
+
 @dataclass(frozen=True)
 class GateDecision:
     """Outcome of the gate, with the reason exposed."""
@@ -135,7 +235,14 @@ class AbstentionGate:
     # base rates did not already. Raise it to demand a positive explanation,
     # and sweep it rather than quoting one value.
     min_evidence_fit: float = 0.0
+
+    # Largest conformal prediction set the gate will still commit on. One means
+    # "commit only when the calibrated set has narrowed to a single diagnosis".
+    # Inert until the predictor is fitted, so an unfitted gate behaves exactly
+    # as it did before conformal prediction existed.
+    max_conformal_set: int = 1
     scaler: TemperatureScaler = field(default_factory=TemperatureScaler)
+    conformal: ConformalPredictor = field(default_factory=ConformalPredictor)
 
     def calibrate(self, differential: Differential) -> Differential:
         return self.scaler.apply(differential)
@@ -199,6 +306,23 @@ class AbstentionGate:
                 confidence,
             )
 
+        # Read before the point estimate: the set is a statement about how many
+        # diagnoses remain admissible at the calibrated coverage level, which is
+        # a stronger thing to act on than one number's distance from a
+        # hand-picked threshold.
+        if self.conformal.fitted:
+            predicted = self.conformal.predict_set(differential)
+            if len(predicted) > self.max_conformal_set:
+                shown = ", ".join(predicted[:4])
+                more = f" and {len(predicted) - 4} more" if len(predicted) > 4 else ""
+                return GateDecision(
+                    False,
+                    f"at {1 - self.conformal.alpha:.0%} coverage the differential "
+                    f"still admits {len(predicted)} diagnoses ({shown}{more}); "
+                    f"more than the {self.max_conformal_set} this gate commits on",
+                    confidence,
+                )
+
         if confidence < self.min_confidence:
             return GateDecision(
                 False,
@@ -231,4 +355,9 @@ class AbstentionGate:
         )
 
 
-__all__ = ["AbstentionGate", "GateDecision", "TemperatureScaler"]
+__all__ = [
+    "AbstentionGate",
+    "ConformalPredictor",
+    "GateDecision",
+    "TemperatureScaler",
+]
