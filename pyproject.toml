@@ -12,6 +12,17 @@ dependencies = []
 [project.optional-dependencies]
 dev = ["pytest>=7"]
 llm = ["anthropic>=0.40"]
+# The mandated stack, kept optional so the core package, its tests and the
+# evaluation harness all still run on a clean checkout with nothing installed.
+# The hand-rolled loop is the dependency-free reference the graph is checked
+# against, and losing that would mean no way to tell a refactor from a change.
+graph = ["langgraph>=0.2"]
+retrieval = ["sentence-transformers>=3", "qdrant-client>=1.9"]
+stack = [
+    "langgraph>=0.2",
+    "sentence-transformers>=3",
+    "qdrant-client>=1.9",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
