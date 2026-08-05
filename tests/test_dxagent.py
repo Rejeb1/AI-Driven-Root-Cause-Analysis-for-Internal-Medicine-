@@ -590,8 +590,12 @@ def test_decisive_test_signal_flags_the_masquerade_failures(kb, cases):
     ``evidence_fit`` could not provide, recorded here so a regression in the
     selector shows up as a failed test rather than as a quietly worse gate.
     """
+    # Both policy flags pinned: this test is about the flip signal, and either
+    # one left at its default changes which evidence is gathered and so which
+    # differential the signal is computed over.
     plain = DiagnosticAgent(
-        kb=kb, limits=LoopLimits(require_decisive_tests=False)
+        kb=kb,
+        limits=LoopLimits(require_decisive_tests=False, require_workup=False),
     )
     selector = InformationGainSelector(kb)
 
@@ -623,7 +627,10 @@ def test_decisive_tests_do_not_repair_the_masquerade_failures(kb, cases):
     """
     def run(require: bool):
         agent = DiagnosticAgent(
-            kb=kb, limits=LoopLimits(require_decisive_tests=require)
+            kb=kb,
+            limits=LoopLimits(
+                require_decisive_tests=require, require_workup=False
+            ),
         )
         outcomes = [agent.run(c) for c in cases]
         correct = sum(
@@ -762,6 +769,101 @@ def test_gate_escalates_when_the_conformal_set_stays_wide(kb):
     decision = gate.evaluate(grounded(kb, {benign[0]: 0.6, benign[1]: 0.4}))
     assert decision.should_escalate
     assert "coverage" in decision.reason
+
+
+def test_rule_kinds_are_distinguished(kb):
+    """A severity score must not be usable as diagnostic support."""
+    from dxagent.guidelines import CURB65, PERC, WELLS_PE, RuleKind
+
+    assert PERC.kind is RuleKind.RULE_OUT
+    assert WELLS_PE.kind is RuleKind.RISK_STRATIFY
+    assert CURB65.kind is RuleKind.SEVERITY
+    assert "category error" in CURB65.note
+
+
+def test_unmappable_criteria_are_reported_not_dropped():
+    """A rule scored on part of itself is a different, weaker rule."""
+    from dxagent.guidelines import PERC, vocabulary_gaps
+
+    assert PERC.unmappable, "PERC has criteria the fixture vocabulary lacks"
+    assert 0.0 < PERC.coverage < 1.0
+    gaps = vocabulary_gaps()
+    assert any("Haemoptysis" in c for c in gaps[PERC.name])
+    assert PERC.interpret([]).endswith("not expressible in the current vocabulary")
+
+
+def test_unasked_criteria_do_not_count_as_negative():
+    """The way rule-out rules are most often misused in practice."""
+    from dxagent.guidelines import PERC
+
+    nothing_asked = PERC.score([])
+    assert nothing_asked == 0.0
+    # ...but the rule must report itself as incomplete rather than negative.
+    assert PERC.unobserved([]) == PERC.mappable
+    assert "unanswered" in PERC.interpret([])
+
+    answered_negative = [
+        Finding(concept=c.concept, polarity=Polarity.ABSENT) for c in PERC.mappable
+    ]
+    assert PERC.unobserved(answered_negative) == ()
+
+
+def test_mandatory_workup_triggers_on_presentation_not_posterior(kb):
+    """The property that makes this work where four other mechanisms failed."""
+    from dxagent.guidelines import PE_WORKUP
+
+    presenting = [Finding("pleuritic_pain", Polarity.PRESENT)]
+    assert PE_WORKUP.is_triggered(presenting)
+    assert "lab:raised_d_dimer" in PE_WORKUP.outstanding(presenting)
+
+    # Nothing about the differential is consulted: the same findings trigger it
+    # whether or not the model rates PE as plausible.
+    answered = presenting + [Finding("lab:raised_d_dimer", Polarity.ABSENT)]
+    assert PE_WORKUP.outstanding(answered) == ()
+
+    assert not PE_WORKUP.is_triggered([Finding("fever", Polarity.PRESENT)])
+
+
+def test_workup_orders_the_test_the_posterior_would_not(kb, cases):
+    """fx-009: PE sits at 0.5%, so no posterior-driven rule requests a D-dimer.
+
+    The guideline rule does, because it never asks what the model believes.
+    Whether the model can then *use* the result is a separate defect -- see
+    ``test_confirmatory_evidence_cannot_rescue_a_buried_diagnosis``.
+    """
+    case = {c.case_id: c for c in cases}["fx-009"]
+
+    without = DiagnosticAgent(kb=kb, limits=LoopLimits(require_workup=False))
+    with_workup = DiagnosticAgent(kb=kb, limits=LoopLimits(require_workup=True))
+
+    asked_without = {s.action.target for s in without.run(case).steps}
+    asked_with = {s.action.target for s in with_workup.run(case).steps}
+
+    assert "lab:raised_d_dimer" not in asked_without
+    assert "lab:raised_d_dimer" in asked_with
+
+
+def test_confirmatory_evidence_cannot_rescue_a_buried_diagnosis(kb):
+    """The finding that locates the defect in inference, not in evidence gathering.
+
+    Two findings typical of pneumonia and atypical of PE are enough, under the
+    independence assumption, that a *positive confirmatory test* for PE still
+    leaves it far from the top. No test-selection policy can fix this, which is
+    why the remaining work is the likelihood model rather than the loop.
+    """
+    proposer = BayesianProposer(kb)
+    misleading = [
+        Finding("fever", Polarity.PRESENT),
+        Finding("productive_cough", Polarity.PRESENT),
+    ]
+    confirmatory = misleading + [
+        Finding("imaging:ctpa_filling_defect", Polarity.PRESENT)
+    ]
+
+    assert kb.get("pulmonary_embolism").features["imaging:ctpa_filling_defect"] >= 0.9
+    after = proposer.propose(confirmatory)
+    assert after.probability_of("pulmonary_embolism") < 0.5
+    assert after.top.label != "pulmonary_embolism"
 
 
 def test_state_records_realised_information_gain(kb, cases):

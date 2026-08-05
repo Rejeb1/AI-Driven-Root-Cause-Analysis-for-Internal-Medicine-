@@ -17,10 +17,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .actions import InformationGainSelector
+from .actions import InformationGainSelector, classify
 from .belief import BayesianProposer, ConsensusProposer, Proposer
 from .environment import Case, CaseOracle, Environment
 from .gate import AbstentionGate
+from .guidelines import outstanding_workup
 from .knowledge import InMemoryKnowledgeBase
 from .schemas import (
     Action,
@@ -55,6 +56,14 @@ class LoopLimits:
     # measurement; the signal is still worth reading, so ``flip_action``
     # remains available to the gate and to analysis.
     require_decisive_tests: bool = False
+
+    # Gather the evidence a published guideline requires for the presentation,
+    # before committing, regardless of the current differential. The only
+    # stopping criterion here that does not consult the posterior -- which is
+    # what lets it recover a diagnosis the posterior has dismissed. Costs
+    # unnecessary tests on patients who do not need them; that trade is a
+    # clinical policy decision, not an engineering one.
+    require_workup: bool = True
 
 
 @dataclass
@@ -102,6 +111,15 @@ class DiagnosticAgent:
                 calibrated, disagreement=disagreement, evidence_fit=evidence_fit
             )
 
+            # Presentation-triggered workup outranks everything below it,
+            # because it is the only criterion here that does not read the
+            # posterior. The others all ask "given what I believe, what should
+            # I check?", which cannot recover a diagnosis the belief has
+            # already dismissed.
+            mandated = (
+                self._mandatory_action(state) if self.limits.require_workup else None
+            )
+
             action = self.selector.select(state, calibrated)
             # Priority order, most overriding first: excluding a dangerous
             # diagnosis, then settling a question that would change the answer,
@@ -118,6 +136,8 @@ class DiagnosticAgent:
             ruleout = self.selector.ruleout_action(state, calibrated)
             if ruleout is not None:
                 action = ruleout
+            if mandated is not None:
+                action = mandated
             affordable = (
                 action is not None
                 and state.budget_spent + action.cost <= self.limits.max_cost
@@ -129,7 +149,8 @@ class DiagnosticAgent:
                 affordable
                 and not out_of_turns
                 and (
-                    ruleout is not None
+                    mandated is not None
+                    or ruleout is not None
                     or flip is not None
                     or (
                         self.limits.due_diligence_gain > 0.0
@@ -177,6 +198,25 @@ class DiagnosticAgent:
 
             findings = list(environment.respond(action))
             state.record(action, findings, calibrated)
+
+    def _mandatory_action(self, state: CaseState) -> Action | None:
+        """The next unsatisfied item of a triggered guideline workup, if any.
+
+        Deliberately reads only ``state.findings`` -- never the differential.
+        Consulting the posterior here would reintroduce exactly the dependence
+        this rule exists to escape.
+        """
+        for concept, workup in outstanding_workup(state.findings):
+            if concept in state.asked or state.observed(concept) is not None:
+                continue
+            return Action(
+                kind=classify(concept),
+                target=concept,
+                cost=self.kb.cost_of(concept),
+                expected_information_gain=0.0,
+                rationale=f"required by guideline workup: {workup}",
+            )
+        return None
 
     def _escalate(
         self,
