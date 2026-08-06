@@ -116,9 +116,15 @@ def from_narrative(
 def measured(
     value: float, citation: Citation, low: float | None = None,
     high: float | None = None, note: str = "",
-) -> LikelihoodSource:
-    """Provenance for a frequency taken from a study."""
-    return LikelihoodSource(
+) -> tuple[float, LikelihoodSource]:
+    """A frequency taken from a study, with its provenance.
+
+    Returns the pair rather than the source alone, matching
+    ``from_narrative``, so both go into ``_SOURCED`` the same way. An earlier
+    version took ``value`` and discarded it, which meant the value had to be
+    written twice per entry and could disagree with itself.
+    """
+    return value, LikelihoodSource(
         provenance=Provenance.MEASURED,
         citation=citation,
         low=low,

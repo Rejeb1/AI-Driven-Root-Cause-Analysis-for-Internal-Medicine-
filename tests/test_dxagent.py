@@ -1421,10 +1421,16 @@ def test_provenance_counts_by_tier(kb):
     entry = kb.get(label)
     concepts = list(entry.features)[:2]
 
+    # Both helpers return (value, source), so an entry destined for _SOURCED
+    # reads the same either way and the value cannot disagree with itself.
     _, narrative_source = from_narrative("rare", Citation("MSD", "x", "rare"))
+    measured_value, measured_source = measured(
+        0.14, Citation("PIOPED", "table 2"), 0.10, 0.19
+    )
+    assert measured_value == pytest.approx(0.14)
     sources = {
         concepts[0]: narrative_source,
-        concepts[1]: measured(0.14, Citation("PIOPED", "table 2"), 0.10, 0.19),
+        concepts[1]: measured_source,
     }
     kb.entries[label] = dataclasses.replace(entry, sources=sources)
 
