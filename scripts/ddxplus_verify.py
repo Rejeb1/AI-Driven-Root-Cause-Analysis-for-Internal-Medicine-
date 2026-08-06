@@ -366,10 +366,10 @@ def check_differential(samples: list[dict]) -> None:
             print(f"    {float(prob):.3f}  {name}")
 
     print(
-        "\n  Note: DDXPlusLoader names this column but load_cases() never reads it,\n"
-        "  and Case carries only `diagnosis: str` while metrics.py takes\n"
-        "  truths: dict[str, str]. DDx recall and any abstention proxy keyed on\n"
-        "  differential breadth need that plumbed through first."
+        "\n  This column is read into Case.differential, scored by\n"
+        "  evaluation.differential_metrics as DDx recall, and used by\n"
+        "  Case.ambiguity as the abstention proxy -- the gold probability\n"
+        "  withheld from the true diagnosis."
     )
 
 
