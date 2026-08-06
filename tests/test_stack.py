@@ -257,3 +257,37 @@ def test_case_query_uses_positive_findings_only():
     assert "pleuritic pain" in query
     assert "leg swelling" not in query
     assert "fever" not in query
+
+
+def test_llm_prompt_carries_retrieved_passages(kb, cases):
+    """What makes it retrieval-augmented *generation* rather than decoration."""
+    pytest.importorskip("qdrant_client")
+    from dxagent.belief import LLMProposer
+    from dxagent.llm import ScriptedLLM
+    from dxagent.retrieval import GuidelineIndex
+
+    index = GuidelineIndex(model_name="stub", model=StubEncoder()).build()
+    scripted = ScriptedLLM(['{"ranking": [{"label": "pulmonary_embolism", '
+                            '"probability": 1.0, "why": "x"}]}'])
+    proposer = LLMProposer(kb, scripted, index=index)
+    case = cases[0]
+    prompt = proposer._render(
+        [e.label for e in kb.diseases()], case.initial(), case.presenting_complaint
+    )
+
+    assert "Retrieved guideline passages" in prompt
+    assert "WELLS-2000" in prompt or "PERC-2008" in prompt
+    assert "Reason from these rather than" in prompt
+
+
+def test_llm_prompt_is_unchanged_without_an_index(kb, cases):
+    """No index means no retrieval section, not an empty or broken one."""
+    from dxagent.belief import LLMProposer
+    from dxagent.llm import ScriptedLLM
+
+    proposer = LLMProposer(kb, ScriptedLLM(["{}"]))
+    prompt = proposer._render(
+        [e.label for e in kb.diseases()], cases[0].initial(), "cough"
+    )
+    assert "Retrieved guideline passages" not in prompt
+    assert "Candidate diagnoses" in prompt

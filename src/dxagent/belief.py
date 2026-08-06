@@ -197,6 +197,14 @@ class LLMProposer:
     kb: InMemoryKnowledgeBase
     llm: LLMClient
     fallback: BayesianProposer | None = None
+    # Optional GuidelineIndex. Supplied, the retrieved passages go into the
+    # prompt and the model is told to reason from them -- which is what makes
+    # this retrieval-augmented *generation* rather than retrieval that decorates
+    # a generated answer afterwards. Absent, the model answers from parametric
+    # memory and nothing marks the difference, so the distinction is worth
+    # keeping visible at the call site.
+    index: object | None = None
+    passages_per_disease: int = 2
 
     def propose(self, findings: list[Finding], complaint: str = "") -> Differential:
         labels = [e.label for e in self.kb.diseases()]
@@ -222,12 +230,52 @@ class LLMProposer:
             + (f" (value: {f.value})" if f.value is not None else "")
             for f in findings
         ) or "- none yet"
-        return (
+        prompt = (
             f"Presenting complaint: {complaint or 'unspecified'}\n\n"
             f"Observed findings:\n{observed}\n\n"
             f"Candidate diagnoses:\n"
             + "\n".join(f"- {l}" for l in labels)
         )
+        evidence = self._retrieved_context(labels, findings, complaint)
+        if evidence:
+            prompt += (
+                "\n\nRetrieved guideline passages. Reason from these rather than "
+                "from memory, and say so when they do not cover a candidate:\n"
+                + evidence
+            )
+        return prompt
+
+    def _retrieved_context(
+        self, labels: list[str], findings: list[Finding], complaint: str
+    ) -> str:
+        """Guideline text for each candidate, as prompt context.
+
+        Silent when no index is configured, so the LLM path keeps working
+        without the retrieval extras installed. A retrieval failure degrades to
+        an ungrounded answer rather than taking the case down, which is the
+        same choice ``propose`` already makes for a malformed generation --
+        but the resulting hypotheses then carry no retrieved citation, so the
+        gate can still see that they are unsupported.
+        """
+        if self.index is None:
+            return ""
+        from .retrieval import case_query
+
+        query = case_query(findings, complaint)
+        blocks: list[str] = []
+        for label in labels:
+            try:
+                hits = self.index.search(
+                    query, k=self.passages_per_disease, target=label
+                )
+            except Exception:
+                continue
+            for passage, score in hits:
+                blocks.append(
+                    f"- [{passage.citation.source_id}] ({label}, similarity "
+                    f"{score:.2f}) {passage.text}"
+                )
+        return "\n".join(blocks)
 
     @staticmethod
     def _parse(raw: str, labels: list[str]) -> dict[str, float]:

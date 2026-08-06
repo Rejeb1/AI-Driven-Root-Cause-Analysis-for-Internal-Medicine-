@@ -16,6 +16,7 @@ Python 3.10+. The core runs with no install, no API key and no credentials.
 ```bash
 python3 -m pytest tests/ -q     # 103 pass
 python3 scripts/run_eval.py     # evaluation report, with the required baselines
+python3 scripts/demo.py         # one consultation, as a readable transcript
 ```
 
 Everything above is offline and deterministic. Tests that need the optional
@@ -33,6 +34,9 @@ python3 scripts/run_eval.py --engine loop   # force the reference loop
 python3 scripts/run_eval.py --ddxplus /path/to/release --limit 200
 python3 scripts/ddxplus_verify.py --root /path/to/release
 python3 scripts/build_vocabulary.py     # downloads hp.obo (11 MB)
+python3 scripts/demo.py --case fx-009   # a case it gets wrong, and why
+python3 scripts/demo.py --list          # available cases
+python3 scripts/sensitivity.py          # which invented numbers actually matter
 ```
 
 `--ddxplus` reads the published `.zip` splits directly; nothing needs
