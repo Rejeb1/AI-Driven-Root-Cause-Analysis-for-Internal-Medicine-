@@ -205,6 +205,12 @@ class LLMProposer:
     # keeping visible at the call site.
     index: object | None = None
     passages_per_disease: int = 2
+    # The model's own stated confidence in its top choice, from the last call.
+    # Kept separate from the probability it assigned that label: the two are
+    # different claims, and treating a stated confidence as a probability is
+    # the error VerbalisedCalibrator exists to correct. NaN until a call has
+    # returned one, so "never stated" is distinguishable from "stated zero".
+    last_verbalised_confidence: float = float("nan")
 
     def propose(self, findings: list[Finding], complaint: str = "") -> Differential:
         labels = [e.label for e in self.kb.diseases()]
@@ -212,6 +218,7 @@ class LLMProposer:
         try:
             raw = self.llm.complete(prompt, system=_PROPOSE_SYSTEM)
             scores = self._parse(raw, labels)
+            self.last_verbalised_confidence = self._parse_confidence(raw)
         except Exception:
             # A malformed or failed generation must not take the case down.
             # Degrade to the statistical posterior and let the gate see the
@@ -276,6 +283,25 @@ class LLMProposer:
                     f"{score:.2f}) {passage.text}"
                 )
         return "\n".join(blocks)
+
+    @staticmethod
+    def _parse_confidence(raw: str) -> float:
+        """The stated confidence, or NaN when the model did not give one.
+
+        NaN rather than a default, because a missing statement and a stated
+        0.5 are different facts and a calibrator fitted on invented 0.5s would
+        be measuring this parser.
+        """
+        import math
+
+        try:
+            text = raw.strip()
+            if text.startswith("```"):
+                text = text.split("```")[1].removeprefix("json").strip()
+            value = float(json.loads(text).get("confidence"))
+        except (ValueError, TypeError, AttributeError, json.JSONDecodeError, IndexError):
+            return float("nan")
+        return value if 0.0 <= value <= 1.0 else float("nan")
 
     @staticmethod
     def _parse(raw: str, labels: list[str]) -> dict[str, float]:

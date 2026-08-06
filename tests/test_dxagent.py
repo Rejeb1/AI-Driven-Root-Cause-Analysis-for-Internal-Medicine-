@@ -1537,3 +1537,63 @@ def test_screen_reports_what_it_discarded_and_why(kb):
     assert report["generated"] == 3
     assert report["rejected_for_phi"] == 1
     assert report["rejected_by_critique"] == 1
+
+
+# --------------------------------------------------------------------------
+# verbalised confidence
+
+
+def test_verbalised_confidence_is_parsed_and_bounded(kb):
+    """A stated confidence is a separate claim from the probability assigned."""
+    import json as _json
+    import math as _math
+
+    reply = _json.dumps(
+        {
+            "ranking": [{"label": kb.diseases()[0].label, "probability": 1.0, "why": ""}],
+            "confidence": 0.9,
+        }
+    )
+    proposer = LLMProposer(kb, ScriptedLLM([reply]))
+    proposer.propose([Finding("fever", Polarity.PRESENT)])
+    assert proposer.last_verbalised_confidence == pytest.approx(0.9)
+
+    # Out of range and absent both read as "not stated", not as a number.
+    for bad in ('{"ranking": [], "confidence": 4}', '{"ranking": []}', "junk"):
+        p2 = LLMProposer(kb, ScriptedLLM([bad]))
+        p2.propose([Finding("fever", Polarity.PRESENT)])
+        assert _math.isnan(p2.last_verbalised_confidence)
+
+
+def test_verbalised_calibrator_refuses_small_fits():
+    from dxagent.gate import VerbalisedCalibrator
+
+    calibrator = VerbalisedCalibrator().fit([(0.9, True)] * 5)
+    assert not calibrator.fitted
+    assert calibrator.apply(0.9) == 0.9  # unchanged passthrough
+
+
+def test_verbalised_calibrator_corrects_overconfidence():
+    """The documented failure: models claim more than they earn."""
+    from dxagent.gate import VerbalisedCalibrator
+
+    # States 0.9 every time, right half the time.
+    samples = [(0.9, i % 2 == 0) for i in range(60)]
+    calibrator = VerbalisedCalibrator().fit(samples)
+
+    assert calibrator.fitted
+    assert calibrator.apply(0.9) == pytest.approx(0.5, abs=0.05)
+    assert calibrator.overconfidence == pytest.approx(0.4, abs=0.05)
+
+
+def test_verbalised_calibrator_leaves_a_calibrated_model_alone():
+    """A model that earns what it claims should come back roughly unchanged."""
+    from dxagent.gate import VerbalisedCalibrator
+
+    samples = [(0.9, i % 10 != 0) for i in range(40)]  # 0.9 stated, 90% correct
+    samples += [(0.5, i % 2 == 0) for i in range(40)]  # 0.5 stated, 50% correct
+    calibrator = VerbalisedCalibrator().fit(samples)
+
+    assert calibrator.apply(0.9) == pytest.approx(0.9, abs=0.1)
+    assert calibrator.apply(0.5) == pytest.approx(0.5, abs=0.1)
+    assert abs(calibrator.overconfidence) < 0.05

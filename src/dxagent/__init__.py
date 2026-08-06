@@ -13,6 +13,7 @@ from .gate import (
     ConformalPredictor,
     GateDecision,
     TemperatureScaler,
+    VerbalisedCalibrator,
 )
 from .knowledge import DiseaseEntry, InMemoryKnowledgeBase
 from .llm import AnthropicLLM, NullLLM, ScriptedLLM
@@ -61,5 +62,6 @@ __all__ = [
     "Polarity",
     "ScriptedLLM",
     "TemperatureScaler",
+    "VerbalisedCalibrator",
     "Verdict",
 ]

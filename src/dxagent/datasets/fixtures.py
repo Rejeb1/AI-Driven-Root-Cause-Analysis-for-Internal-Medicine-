@@ -199,7 +199,7 @@ def build_knowledge_base(correlated: bool = False) -> InMemoryKnowledgeBase:
     )
     kb.add(
         DiseaseEntry(
-            label="heart_failure_exacerbation",
+            label="acute_pulmonary_oedema",
             prevalence=0.18,
             features={
                 "orthopnoea": 0.85,
@@ -409,7 +409,7 @@ def build_cases() -> list[Case]:
         Case(
             case_id="fx-003",
             presenting_complaint="orthopnoea and ankle swelling worsening over a week",
-            diagnosis="heart_failure_exacerbation",
+            diagnosis="acute_pulmonary_oedema",
             initial_findings=("orthopnoea", "leg_swelling"),
             features={
                 "fever": False,
@@ -587,7 +587,7 @@ def build_cases() -> list[Case]:
         Case(
             case_id="fx-008",
             presenting_complaint="breathless smoker with swollen ankles and wheeze",
-            diagnosis="heart_failure_exacerbation",
+            diagnosis="acute_pulmonary_oedema",
             initial_findings=("smoking_history", "wheeze_subjective", "leg_swelling"),
             features={
                 "fever": False,
@@ -670,7 +670,7 @@ def build_cases() -> list[Case]:
         Case(
             case_id="fx-010",
             # Silent ischaemia: breathlessness as the sole complaint, no chest
-            # pain at all. The history alone points at heart failure or COPD.
+            # pain at all. The history alone points at acute pulmonary oedema or COPD.
             presenting_complaint="breathlessness at rest, no chest pain",
             diagnosis="acute_coronary_syndrome",
             initial_findings=("dyspnoea_at_rest", "smoking_history"),

@@ -82,6 +82,84 @@ class TemperatureScaler:
 
 
 @dataclass
+class VerbalisedCalibrator:
+    """Recalibrates a model's stated confidence against what it earns.
+
+    The brief pairs conformal prediction with verbalised-confidence
+    elicitation: asking the model how sure it is, in words. The number that
+    comes back is usable and must not be used raw. Verbalised confidence is
+    systematically overconfident -- a well-documented finding, and one this
+    project has independent reason to expect, since a model asked to grade
+    itself is not observing anything it did not already use to produce the
+    answer.
+
+    So it is treated as a *score*, not a probability: something monotonically
+    related to correctness whose mapping onto correctness must be measured.
+    ``fit`` bins held-out cases by stated confidence and records the accuracy
+    actually achieved in each bin; ``apply`` maps a new statement through that
+    empirical curve.
+
+    Binned rather than a fitted curve, because the shape of the miscalibration
+    is not known in advance and assuming one -- a temperature, a Platt sigmoid
+    -- would impose it. Bins assume only monotonicity, and ``overconfidence``
+    reports the gap so the raw claim and the earned one stay comparable.
+    """
+
+    bins: int = 5
+    min_fit_samples: int = 30
+    fitted: bool = False
+    fit_n: int = 0
+    # Empirical accuracy per bin, index 0 the lowest stated confidence.
+    curve: tuple[float, ...] = ()
+    mean_stated: float = 0.0
+    mean_correct: float = 0.0
+
+    @property
+    def overconfidence(self) -> float:
+        """Positive when the model claims more than it delivers."""
+        return self.mean_stated - self.mean_correct
+
+    def _bin(self, stated: float) -> int:
+        index = int(min(max(stated, 0.0), 0.999999) * self.bins)
+        return min(index, self.bins - 1)
+
+    def fit(self, samples: list[tuple[float, bool]]) -> "VerbalisedCalibrator":
+        """``samples`` are (stated confidence, was the answer correct)."""
+        if len(samples) < self.min_fit_samples:
+            # Same refusal as TemperatureScaler: an accuracy computed from three
+            # cases per bin is noise, and a calibrator that reports it as a
+            # correction is worse than one that declines.
+            self.fitted = False
+            self.fit_n = len(samples)
+            return self
+
+        buckets: list[list[bool]] = [[] for _ in range(self.bins)]
+        for stated, correct in samples:
+            buckets[self._bin(stated)].append(correct)
+
+        overall = sum(1 for _, c in samples if c) / len(samples)
+        curve: list[float] = []
+        for bucket in buckets:
+            # An empty bin means the model never made a claim in that range;
+            # fall back to the overall accuracy rather than to zero, which
+            # would read as "claims in this range are always wrong".
+            curve.append(sum(bucket) / len(bucket) if bucket else overall)
+
+        self.curve = tuple(curve)
+        self.fitted = True
+        self.fit_n = len(samples)
+        self.mean_stated = sum(s for s, _ in samples) / len(samples)
+        self.mean_correct = overall
+        return self
+
+    def apply(self, stated: float) -> float:
+        """The accuracy this level of stated confidence actually earned."""
+        if not self.fitted:
+            return stated
+        return self.curve[self._bin(stated)]
+
+
+@dataclass
 class ConformalPredictor:
     """Split conformal prediction over the differential.
 
@@ -360,4 +438,5 @@ __all__ = [
     "ConformalPredictor",
     "GateDecision",
     "TemperatureScaler",
+    "VerbalisedCalibrator",
 ]
