@@ -37,6 +37,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from dxagent.belief import BayesianProposer  # noqa: E402
 from dxagent.datasets import build_cases, build_knowledge_base  # noqa: E402
+from dxagent.provenance import report as provenance_report  # noqa: E402
 from dxagent.schemas import Finding, Polarity  # noqa: E402
 
 
@@ -66,6 +67,73 @@ def perturbed(kb, label: str, concept: str, value: float):
     return clone
 
 
+def band_sweep(kb, cases, baseline) -> int:
+    """Re-run at the edges of every recorded uncertainty band.
+
+    A likelihood taken from a reference text is a range, not a point, and the
+    question that matters is whether a conclusion survives the range. If it
+    does, the uncertainty is quantified rather than merely admitted; if it does
+    not, the sweep names the number the conclusion actually rests on, which is
+    the one worth a better source.
+
+    Only sourced likelihoods have bands, so with none recorded there is nothing
+    to sweep -- and saying that is more useful than sweeping invented numbers
+    across invented bands, which would produce a robustness figure with no
+    content.
+    """
+    banded = [
+        (entry.label, concept, source)
+        for entry in kb.diseases()
+        for concept, source in entry.sources.items()
+        if source.band is not None
+    ]
+    if not banded:
+        print(
+            "\nNo likelihood carries an uncertainty band yet, so there is "
+            "nothing to sweep.\nBands arrive with provenance: see "
+            "dxagent.provenance.from_narrative, which\nrecords the range a "
+            "reference-text phrase implies. Sweeping invented numbers\nacross "
+            "invented bands would produce a robustness figure with no content."
+        )
+        return 0
+
+    print(f"\nsweeping {len(banded)} banded likelihoods across their ranges\n")
+    fragile = []
+    for label, concept, source in banded:
+        low, high = source.band
+        changed = max(
+            sum(
+                1
+                for before, after in zip(
+                    baseline, top_labels(perturbed(kb, label, concept, edge), cases)
+                )
+                if before != after
+            )
+            for edge in (low, high)
+        )
+        if changed:
+            fragile.append((changed, label, concept, low, high))
+
+    fragile.sort(reverse=True)
+    if not fragile:
+        print(
+            "Every conclusion survives every band. The uncertainty in the "
+            "sourced\nlikelihoods does not change any diagnosis on this case "
+            "set."
+        )
+    else:
+        print(f"{'cases':>6}  {'disease':<30} {'finding':<26} band")
+        print("-" * 80)
+        for changed, label, concept, low, high in fragile:
+            print(f"{changed:>6}  {label:<30} {concept:<26} {low:.2f}-{high:.2f}")
+        print(
+            f"\n{len(fragile)} conclusions depend on where inside its band a "
+            f"number sits.\nThose need a measured frequency, not a converted "
+            f"phrase."
+        )
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -80,11 +148,22 @@ def main() -> int:
         action="store_true",
         help="use the correlation-aware knowledge base",
     )
+    parser.add_argument(
+        "--bands",
+        action="store_true",
+        help="sweep sourced likelihoods across their recorded uncertainty bands",
+    )
     args = parser.parse_args()
 
     kb = build_knowledge_base(correlated=args.correlated)
     cases = build_cases()
     baseline = top_labels(kb, cases)
+
+    coverage = provenance_report(kb)
+    print(coverage.summary())
+
+    if args.bands:
+        return band_sweep(kb, cases, baseline)
 
     parameters = [
         (entry.label, concept)

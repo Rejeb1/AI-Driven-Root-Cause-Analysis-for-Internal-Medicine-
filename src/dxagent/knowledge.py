@@ -26,9 +26,12 @@ prevalence data is available.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Iterable, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Iterable, Protocol, runtime_checkable
 
 from .schemas import Citation, Finding, Polarity
+
+if TYPE_CHECKING:  # pragma: no cover - import cycle avoidance
+    from .provenance import LikelihoodSource
 
 # Likelihood floor/ceiling. Prevents a single unexpected finding from driving a
 # posterior to exactly zero, which would make the diagnosis unrecoverable no
@@ -46,6 +49,10 @@ class DiseaseEntry:
     citations: tuple[Citation, ...] = ()
     red_flag: bool = False  # time-critical: raises the bar for committing
     notes: str = ""
+    # Where each likelihood came from, keyed by concept. A concept missing from
+    # this map is invented -- absence is the honest default, since every number
+    # started that way and only becomes sourced when someone does the work.
+    sources: dict[str, "LikelihoodSource"] = field(default_factory=dict)
 
     def likelihood(self, finding: Finding, background: float = 0.5) -> float:
         """P(this finding | this disease).

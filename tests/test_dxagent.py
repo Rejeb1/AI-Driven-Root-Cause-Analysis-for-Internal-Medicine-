@@ -1371,3 +1371,65 @@ def test_correlation_alone_does_not_repair_the_case(kb):
     aware = BayesianProposer(build_knowledge_base(correlated=True)).propose(evidence)
     assert aware.top.label != "pulmonary_embolism"
     assert aware.probability_of("pulmonary_embolism") < 0.5
+
+
+# --------------------------------------------------------------------------
+# provenance
+
+
+def test_unsourced_likelihoods_report_as_invented(kb):
+    """Absence is the honest default: everything starts invented."""
+    from dxagent.provenance import report
+
+    coverage = report(kb)
+    assert coverage.total == sum(len(e.features) for e in kb.diseases())
+    assert coverage.invented == coverage.total
+    assert coverage.coverage == 0.0
+    assert "invented" in coverage.summary()
+
+
+def test_narrative_rubric_returns_a_band_not_a_point():
+    """A converted phrase is a range; hardening it into a point loses the
+    only honest thing about it."""
+    from dxagent.provenance import Provenance, from_narrative
+
+    value, source = from_narrative(
+        "common", Citation("MSD", "cap", "fever is common")
+    )
+    assert source.provenance is Provenance.NARRATIVE
+    assert source.band is not None
+    low, high = source.band
+    assert low < value < high
+    assert source.is_sourced
+
+
+def test_unknown_phrase_is_rejected_rather_than_defaulted():
+    """A silent default would manufacture a number that looks derived and
+    is not -- exactly the confusion the module exists to prevent."""
+    from dxagent.provenance import from_narrative
+
+    with pytest.raises(KeyError, match="not in the rubric"):
+        from_narrative("fairly often ish", Citation("X", "y"))
+
+
+def test_provenance_counts_by_tier(kb):
+    import dataclasses
+
+    from dxagent.provenance import Provenance, from_narrative, measured, report
+
+    label = kb.diseases()[0].label
+    entry = kb.get(label)
+    concepts = list(entry.features)[:2]
+
+    _, narrative_source = from_narrative("rare", Citation("MSD", "x", "rare"))
+    sources = {
+        concepts[0]: narrative_source,
+        concepts[1]: measured(0.14, Citation("PIOPED", "table 2"), 0.10, 0.19),
+    }
+    kb.entries[label] = dataclasses.replace(entry, sources=sources)
+
+    coverage = report(kb)
+    assert coverage.measured == 1
+    assert coverage.narrative == 1
+    assert coverage.sourced == 2
+    assert coverage.invented == coverage.total - 2
