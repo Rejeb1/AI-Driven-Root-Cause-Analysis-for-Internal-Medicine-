@@ -24,7 +24,10 @@ abstention gate do observable work.
 from __future__ import annotations
 
 from ..environment import Case
+import dataclasses
+
 from ..knowledge import Citation, DiseaseEntry, InMemoryKnowledgeBase, register_costs
+from ..provenance import LikelihoodSource, from_narrative, measured
 
 # Acquisition costs in arbitrary consistent units, ordered by tier: history is
 # near-free, bedside exam cheap, bloods moderate, cross-sectional imaging dear.
@@ -101,6 +104,73 @@ def correlation_pairs() -> dict[frozenset[str], float]:
             for second in members[index + 1 :]:
                 pairs[frozenset((first, second))] = strength
     return pairs
+
+
+# ---------------------------------------------------------------------------
+# Sourced likelihoods.
+#
+# Every number in the tables below is invented. This is where they get replaced
+# one at a time, as each is looked up and cited. Add an entry here and it
+# overrides the invented value *and* records where the replacement came from,
+# so `scripts/sensitivity.py` can report coverage and sweep the uncertainty.
+#
+# Do not source all 135. `scripts/sensitivity.py` shows that 30 of them decide
+# anything at all on this case set, and 26 of those sit in the acute coronary
+# syndrome / acute pulmonary oedema pair -- start there.
+#
+# Two ways to add one:
+#
+#   ("acute_pulmonary_oedema", "lab:raised_bnp"): measured(
+#       0.00,                                  # <- the frequency from the paper
+#       Citation("AUTHOR-YEAR", "table 2", "quote the sentence you took it from"),
+#       low=0.00, high=0.00,                   # <- the reported CI, if given
+#   ),
+#
+#   ("pericarditis", "exam:friction_rub"): from_narrative(
+#       "common",                              # <- the phrase the reference uses
+#       Citation("MSD", "pericarditis", "a friction rub is common"),
+#   ),
+#
+# `from_narrative` returns the value and the source together, so it is written
+# as the whole entry; `measured` returns only the source, so it is paired with
+# the value. The rubric behind `from_narrative` is fixed in advance in
+# `provenance.py` -- look the phrase up rather than picking a number that seems
+# right, because choosing values after seeing which ones score well is how a
+# knowledge base gets fitted to its own benchmark.
+#
+# Leave this empty rather than filling it with plausible guesses. An invented
+# number labelled invented is honest; an invented number labelled "measured" is
+# not, and it is the only thing here that would actually be misconduct.
+_SOURCED: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {}
+
+
+def _apply_sources(kb: InMemoryKnowledgeBase) -> None:
+    """Overwrite invented likelihoods with sourced ones, recording provenance."""
+    by_disease: dict[str, dict[str, tuple[float, LikelihoodSource]]] = {}
+    for (label, concept), pair in _SOURCED.items():
+        by_disease.setdefault(label, {})[concept] = pair
+
+    for label, replacements in by_disease.items():
+        entry = kb.entries.get(label)
+        if entry is None:
+            raise KeyError(
+                f"_SOURCED names {label!r}, which is not in the knowledge base. "
+                "A typo here would silently source nothing."
+            )
+        features = dict(entry.features)
+        sources = dict(entry.sources)
+        for concept, (value, source) in replacements.items():
+            if concept not in features:
+                raise KeyError(
+                    f"_SOURCED names {label}/{concept}, which that entry does "
+                    "not characterise."
+                )
+            features[concept] = value
+            sources[concept] = source
+        kb.entries[label] = dataclasses.replace(
+            entry, features=features, sources=sources
+        )
+    kb._marginals.clear()
 
 
 def build_knowledge_base(correlated: bool = False) -> InMemoryKnowledgeBase:
@@ -322,6 +392,7 @@ def build_knowledge_base(correlated: bool = False) -> InMemoryKnowledgeBase:
             citations=_cite("FIXTURE-KB", "panic", "synthetic entry, not sourced"),
         )
     )
+    _apply_sources(kb)
     if correlated:
         kb.set_correlations(correlation_pairs())
     return kb
