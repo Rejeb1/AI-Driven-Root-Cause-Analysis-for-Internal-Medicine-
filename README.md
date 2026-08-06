@@ -37,6 +37,8 @@ python3 scripts/build_vocabulary.py     # downloads hp.obo (11 MB)
 python3 scripts/demo.py --case fx-009   # a case it gets wrong, and why
 python3 scripts/demo.py --list          # available cases
 python3 scripts/sensitivity.py          # which invented numbers actually matter
+python3 scripts/sensitivity.py --bands  # do the sourced ranges change anything
+python3 scripts/synthesize.py --dry-run # synthetic case plan (section 5.2)
 ```
 
 `--ddxplus` reads the published `.zip` splits directly; nothing needs
@@ -70,6 +72,8 @@ instead of it, so their disagreement stays visible to the gate.
 | `guidelines.py` | Wells, PERC, CURB-65, HEART; presentation-triggered workup |
 | `retrieval.py` | BGE-M3 + Qdrant over the guideline corpus; grounded proposer |
 | `baselines.py` | The two comparisons the brief requires |
+| `provenance.py` | Where each likelihood came from: measured, narrative, invented |
+| `synthesis.py` | Synthetic case generation, critique and screening |
 | `environment.py` | Case oracle, noisy oracle |
 | `datasets/` | Synthetic fixtures; DDXPlus adapter |
 | `evaluation/` | Ranking, calibration, selective prediction, DDx recall |

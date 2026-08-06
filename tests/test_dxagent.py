@@ -1433,3 +1433,107 @@ def test_provenance_counts_by_tier(kb):
     assert coverage.narrative == 1
     assert coverage.sourced == 2
     assert coverage.invented == coverage.total - 2
+
+
+# --------------------------------------------------------------------------
+# synthetic case generation
+
+
+def test_synthetic_cases_are_marked_in_their_id(kb):
+    """The quality gate depends on a synthetic case being visible if it leaks
+    into an evaluation set, rather than on someone remembering."""
+    from dxagent.synthesis import SyntheticCase
+
+    case = SyntheticCase(
+        case_id="pe-000",
+        narrative="sudden breathlessness",
+        present=("sudden_onset",),
+        absent=("fever",),
+        diagnosis="pulmonary_embolism",
+        reasoning="",
+    ).to_case()
+    assert case.case_id.startswith("synthetic-")
+    assert case.features == {"sudden_onset": True, "fever": False}
+
+
+def test_confusability_is_not_an_artefact_of_sparse_entries(kb):
+    """Comparing over the intersection makes thinly-described diseases look
+    confusable with everything; the union with marginal backoff does not."""
+    from dxagent.synthesis import confusable_pairs
+
+    pairs = confusable_pairs(kb, limit=6)
+    assert pairs
+    assert all(0.0 <= distance <= 1.0 for _, _, distance in pairs)
+    # Sorted closest-first.
+    assert list(pairs) == sorted(pairs, key=lambda row: row[2])
+    # The sparsest entry must not monopolise the ranking.
+    sparsest = min(kb.diseases(), key=lambda e: len(e.features)).label
+    involving_sparsest = sum(1 for a, b, _ in pairs if sparsest in (a, b))
+    assert involving_sparsest < len(pairs)
+
+
+def test_phi_scan_catches_structured_identifiers():
+    from dxagent.synthesis import phi_scan
+
+    found = dict(phi_scan("ring 555-123-4567 or email a@b.com re MRN 8827361"))
+    assert "phone" in found
+    assert "email" in found
+    assert "record number" in found
+    # And is honest about what it cannot do: a bare name is not an identifier
+    # any regular expression can find.
+    assert phi_scan("the patient, John Smith, reports chest pain") == ()
+
+
+def test_near_duplicates_are_flagged():
+    from dxagent.synthesis import SyntheticCase, near_duplicates
+
+    def make(case_id, narrative):
+        return SyntheticCase(
+            case_id=case_id,
+            narrative=narrative,
+            present=("fever",),
+            absent=(),
+            diagnosis="community_acquired_pneumonia",
+            reasoning="",
+        )
+
+    text = "a patient presents with fever and a productive cough for three days"
+    cases = [make("a", text), make("b", text), make("c", "sudden severe pleuritic pain on exertion today")]
+    flagged = near_duplicates(cases, threshold=0.5)
+    assert [(a, b) for a, b, _ in flagged] == [("a", "b")]
+
+
+def test_failed_critique_rejects_rather_than_passes(kb):
+    """An unusable checker must not let cases through looking validated."""
+    from dxagent.synthesis import CaseGenerator, SyntheticCase
+
+    case = SyntheticCase(
+        case_id="x", narrative="n", present=("fever",), absent=(),
+        diagnosis="community_acquired_pneumonia", reasoning="",
+    )
+    broken = CaseGenerator(ScriptedLLM(["not json at all"]), kb)
+    checked = broken.critique(case)
+    assert not checked.accepted
+    assert "unavailable" in checked.critique
+
+
+def test_screen_reports_what_it_discarded_and_why(kb):
+    from dxagent.synthesis import SyntheticCase, screen
+
+    def make(case_id, narrative, accepted=True):
+        return SyntheticCase(
+            case_id=case_id, narrative=narrative, present=("fever",), absent=(),
+            diagnosis="community_acquired_pneumonia", reasoning="",
+            accepted=accepted,
+        )
+
+    cases = [
+        make("clean", "a distinctive vignette about breathlessness at rest"),
+        make("phi", "contact the patient on 555-123-4567 about the result"),
+        make("rejected", "another quite different vignette entirely", accepted=False),
+    ]
+    kept, report = screen(cases)
+    assert [c.case_id for c in kept] == ["clean"]
+    assert report["generated"] == 3
+    assert report["rejected_for_phi"] == 1
+    assert report["rejected_by_critique"] == 1
