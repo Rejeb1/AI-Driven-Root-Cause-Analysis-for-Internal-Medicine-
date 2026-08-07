@@ -279,6 +279,46 @@ That is the caution for every number sourced from DDXPlus in this project.
 They are measured, and measured from a generating model; a conclusion about
 mechanism that rests on them has not yet met a real frequency.
 
+## The guideline workup costs a case, and the reason is instructive
+
+With the correlation structure on and likelihoods part-sourced:
+
+    correlated  workup  decisive   top-1   cost
+          yes      no        no    10/10   16.9
+          yes      no       yes     9/10   26.0
+          yes     yes        no     9/10   17.0
+          yes     yes       yes     9/10   22.1
+
+The workup is on by default and it is what loses fx-009.
+
+The mechanism is not that the D-dimer is unhelpful. Left to itself the loop
+orders a chest X-ray early, it comes back negative, and that negative is what
+undermines the pneumonia hypothesis and keeps the embolism alive long enough
+for the CTPA to be ordered eleven turns in -- final probability 0.68, correct.
+With the workup the D-dimer is forced to turn zero, the X-ray is never ordered
+at all, pneumonia stays high, the embolism falls below the 3% rule-out floor,
+and the loop commits after five turns having never ordered the confirmatory
+test. Final probability 0.013.
+
+Two distinct faults, and the second is the design error:
+
+**The mandated test displaced a more informative one.** Ordering by checklist
+rather than by value is the point of a mandatory workup, and the cost of that
+is a test sequence chosen without regard to what the case needs.
+
+**Satisfying the checklist removed a reason to continue.** The loop treats an
+outstanding workup item as one of several conditions that make it keep going.
+Once the D-dimer is done that condition is discharged, and if nothing else
+happens to be outstanding the loop stops. A mandatory workup should be a floor
+on investigation, not a substitute for it, and this implementation makes it
+both.
+
+The floor reading is fixable -- the workup should not be able to license
+stopping -- and whether the default should change before that is a clinical
+policy question rather than an engineering one. Ordering a D-dimer for a
+hypoxic patient with pleuritic pain is correct whatever it costs this case set,
+and ten fixture cases are not grounds for switching off a safety rule.
+
 ## Open questions for the meeting
 
 1. Mandatory minimum workup per presenting complaint (see #4)?

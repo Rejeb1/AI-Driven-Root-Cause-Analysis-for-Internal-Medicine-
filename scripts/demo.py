@@ -65,6 +65,11 @@ def main() -> int:
     parser.add_argument("--list", action="store_true", help="list available cases")
     parser.add_argument("--grounded", action="store_true", help="retrieve citations")
     parser.add_argument("--min-confidence", type=float, default=0.65)
+    parser.add_argument(
+        "--no-workup",
+        action="store_true",
+        help="disable the guideline workup (see fx-009: it costs that case)",
+    )
     args = parser.parse_args()
     _force_utf8_stdout()
 
@@ -96,7 +101,7 @@ def main() -> int:
         kb=kb,
         proposer=proposer,
         gate=AbstentionGate(kb=kb, min_confidence=args.min_confidence),
-        limits=LoopLimits(),
+        limits=LoopLimits(require_workup=not args.no_workup),
     )
     outcome = agent.run(case)
 
@@ -160,10 +165,12 @@ def main() -> int:
     if not correct:
         print(
             wrap(
-                "This failure is documented in DESIGN.md. The true diagnosis is "
-                "driven down by several correlated findings multiplying against "
-                "it, and the knowledge base's likelihood values are invented and "
-                "too extreme. Both causes had to be present for the case to fail.",
+                "This failure is documented in DESIGN.md. The guideline workup "
+                "forces the D-dimer to the first turn, which displaces the chest "
+                "X-ray the loop would otherwise have ordered early; that X-ray "
+                "comes back negative and is what undermines the wrong diagnosis. "
+                "Without the workup this case is correct. Run with "
+                "--no-workup to see it.",
                 indent="  ",
             )
         )
