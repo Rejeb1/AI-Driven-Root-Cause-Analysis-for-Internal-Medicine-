@@ -617,13 +617,47 @@ def test_decisive_test_signal_flags_the_masquerade_failures(kb, cases):
     assert flagged_when_wrong == wrong
 
 
-def test_decisive_tests_do_not_repair_the_masquerade_failures(kb, cases):
-    """Pins the negative result, so the rule is not re-enabled on a hunch.
+def test_decisive_tests_now_pay_once_likelihoods_are_sourced(kb, cases):
+    """The negative result this replaces, and why it stopped holding.
 
-    Acting on the signal costs more and buys no accuracy: the tests it orders
+    Until 25 of the fixture likelihoods were sourced from DDXPlus, acting on
+    the decisive-test signal cost more and bought no accuracy: the tests it
+    ordered were the ones the posterior already rated relevant, and the
+    posterior was wrong. The predecessor of this test pinned that, and failed
+    when sourcing changed it -- which is what it was for.
+
+    With sourced likelihoods the rule earns its keep, but only alongside the
+    correlation structure and only at roughly three times the cost. Both halves
+    are asserted, because "it works now" without the price is the half of the
+    result that flatters.
+    """
+    from dxagent.datasets.fixtures import build_knowledge_base as build
+
+    def run(correlated: bool, decisive: bool):
+        agent = DiagnosticAgent(
+            kb=build(correlated=correlated),
+            limits=LoopLimits(require_decisive_tests=decisive, require_workup=False),
+        )
+        outcomes = [agent.run(c) for c in cases]
+        correct = sum(
+            o.differential.top.label == c.diagnosis
+            for o, c in zip(outcomes, cases)
+        )
+        return correct, sum(o.budget_spent for o in outcomes) / len(outcomes)
+
+    plain, plain_cost = run(False, False)
+    both, both_cost = run(True, True)
+
+    assert both > plain, "sourcing plus correlation should beat the plain loop"
+    assert both_cost > 2 * plain_cost, "and it should still be visibly dearer"
+
+
+def _superseded_test_decisive_tests_do_not_repair(kb, cases):
+    """Kept unrun as a record of what was true before sourcing.
+
+    Acting on the signal cost more and bought no accuracy: the tests it orders
     are the ones the current posterior rates as relevant, and the posterior is
-    what is wrong. If a change to the KB or the selector ever makes acting on
-    it pay, this test fails and the default should be revisited.
+    what is wrong.
     """
     def run(require: bool):
         agent = DiagnosticAgent(
@@ -1377,15 +1411,37 @@ def test_correlation_alone_does_not_repair_the_case(kb):
 # provenance
 
 
-def test_unsourced_likelihoods_report_as_invented(kb):
-    """Absence is the honest default: everything starts invented."""
+def test_unsourced_likelihoods_report_as_invented():
+    """Absence is the honest default: a likelihood with no source is invented.
+
+    Built on a bare knowledge base rather than the fixtures, which now carry 25
+    sourced entries. Asserting the fixtures are 0% sourced was correct when
+    written and became a test of how much work had been done rather than of the
+    mechanism.
+    """
+    from dxagent.knowledge import DiseaseEntry, InMemoryKnowledgeBase
+    from dxagent.provenance import report
+
+    bare = InMemoryKnowledgeBase()
+    bare.add(
+        DiseaseEntry(label="x", prevalence=1.0, features={"a": 0.5, "b": 0.5})
+    )
+    coverage = report(bare)
+    assert coverage.total == 2
+    assert coverage.invented == 2
+    assert coverage.coverage == 0.0
+    assert "invented" in coverage.summary()
+
+
+def test_fixture_coverage_is_partial_and_reported(kb):
+    """The fixtures are part-sourced, and the figure has to be visible."""
     from dxagent.provenance import report
 
     coverage = report(kb)
     assert coverage.total == sum(len(e.features) for e in kb.diseases())
-    assert coverage.invented == coverage.total
-    assert coverage.coverage == 0.0
-    assert "invented" in coverage.summary()
+    assert coverage.measured > 0, "expected the DDXPlus-sourced entries"
+    assert coverage.invented > 0, "and the rest still invented"
+    assert coverage.measured + coverage.narrative + coverage.invented == coverage.total
 
 
 def test_narrative_rubric_returns_a_band_not_a_point():
@@ -1417,9 +1473,12 @@ def test_provenance_counts_by_tier(kb):
 
     from dxagent.provenance import Provenance, from_narrative, measured, report
 
+    before = report(kb)
     label = kb.diseases()[0].label
     entry = kb.get(label)
-    concepts = list(entry.features)[:2]
+    # Pick concepts that are not already sourced, so the delta is unambiguous.
+    concepts = [c for c in entry.features if c not in entry.sources][:2]
+    assert len(concepts) == 2, "fixture entry has too few unsourced features"
 
     # Both helpers return (value, source), so an entry destined for _SOURCED
     # reads the same either way and the value cannot disagree with itself.
@@ -1428,17 +1487,21 @@ def test_provenance_counts_by_tier(kb):
         0.14, Citation("PIOPED", "table 2"), 0.10, 0.19
     )
     assert measured_value == pytest.approx(0.14)
-    sources = {
-        concepts[0]: narrative_source,
-        concepts[1]: measured_source,
-    }
+    # Merged, not replaced: this entry already carries sourced likelihoods, and
+    # overwriting the dict would remove them and make the delta below wrong in
+    # a way that looks like a counting bug.
+    sources = dict(entry.sources)
+    sources[concepts[0]] = narrative_source
+    sources[concepts[1]] = measured_source
     kb.entries[label] = dataclasses.replace(entry, sources=sources)
 
-    coverage = report(kb)
-    assert coverage.measured == 1
-    assert coverage.narrative == 1
-    assert coverage.sourced == 2
-    assert coverage.invented == coverage.total - 2
+    # Counted as a delta against whatever the fixtures already carry, so this
+    # tests the tallying rather than how many entries have been sourced so far.
+    after = report(kb)
+    assert after.measured == before.measured + 1
+    assert after.narrative == before.narrative + 1
+    assert after.sourced == before.sourced + 2
+    assert after.invented == before.invented - 2
 
 
 # --------------------------------------------------------------------------
