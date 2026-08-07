@@ -125,16 +125,42 @@ extremely peaked. A confidence threshold then has nothing to bite on. Fitted on
 400 cases the same table is appropriately uncertain, and the threshold finds
 real signal. The fitted temperature moved the same way, 0.75 to 0.50.
 
-Two other things changed at the same time -- conformal prediction was added and
-the guideline workup was switched on -- so the attribution is not established.
-A run varying one factor at a time would settle it and is cheap.
+### The controlled run, and what it settled
 
-If the KB explanation holds, the finding is more interesting than the original
-negative result rather than a retraction of it: **a posterior fitted well
+Three factors varied one at a time, on 120 held-out DDXPlus cases:
+
+    KB train  conformal  workup   coverage  sel.acc    gain  abst.prec
+         400      False   False      88.3%    97.2%   +8.0%     71.4%
+         400      False    True      88.3%    97.2%   +8.0%     71.4%
+         400       True   False      78.3%    98.9%   +8.9%     42.3%
+         400       True    True      78.3%    98.9%   +8.9%     42.3%
+        5000      False   False      91.7%    99.1%   +0.8%     10.0%
+        5000      False    True      91.7%    99.1%   +0.8%     10.0%
+        5000       True   False      88.3%   100.0%   +0.8%      7.1%
+        5000       True    True      88.3%   100.0%   +0.8%      7.1%
+
+**Knowledge-base size decides it.** Ten times the training data takes the
+gate's accuracy gain from +8.0% to +0.8% and its abstention precision from
+71.4% to 10.0%. The hypothesis above is confirmed: **a posterior fitted well
 enough to recover its own generating process becomes too confident for
-confidence-based abstention to have anything to work with.** The blindness to
-confident errors documented above is then a property of over-specified models,
-not of abstention gates as such.
+confidence-based abstention to have anything left to find.** The blindness to
+confident errors documented earlier is a property of over-specified models
+rather than of abstention gates as such.
+
+**Conformal prediction trades precision for coverage.** It abstains more --
+coverage 88.3% to 78.3% -- and less accurately, precision 71.4% to 42.3%.
+Worth having for the coverage guarantee, and not an improvement to the gate's
+judgement; report the two separately rather than as one calibration story.
+
+**The guideline workup has no effect on abstention at all.** Every paired row
+is identical to three significant figures. That is a clean null and it is
+consistent with what the workup does: it changes which evidence is gathered,
+not how confident the posterior becomes, and this gate reads confidence.
+
+The practical consequence is uncomfortable and worth stating: on this
+benchmark, the better the knowledge base fits, the less the safety mechanism
+contributes. Any abstention result here has to be reported with the size of
+the knowledge base that produced it.
 
 ## What five mechanisms could not fix
 
