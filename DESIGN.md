@@ -247,6 +247,38 @@ value DDXPlus is structurally incapable of showing. A benchmark that a
 naive-Bayes model recovers by construction cannot reward relaxing the naive
 assumption.
 
+## What sourcing changed, and one conclusion it took back
+
+Likelihoods were sourced in two passes: 17 from DDXPlus co-occurrence, then 4
+from a published cohort of 360 real pulmonary embolism patients (Miniati et
+al., PLoS ONE 2012;7(2):e30891). Coverage is 14%, and the remaining 116 are
+still invented.
+
+    knowledge base            plain   +corr   +decisive   +both
+    invented                   8/10    8/10        8/10    8/10
+    17 from DDXPlus            9/10      --          --   10/10
+    + 4 from the literature    9/10   10/10        9/10    9/10
+
+Two things follow.
+
+**fx-010 is fixed, and by symptom frequencies rather than by the tests that
+decide it.** The sensitivity analysis named BNP and troponin as the numbers
+that case turns on; DDXPlus holds neither, and replacing the surrounding
+symptom likelihoods was enough. Worth remembering when reading a sensitivity
+list: it names what is decisive given everything else, not the only route in.
+
+**The decisive-test rule appeared to start working and then stopped.** On
+DDXPlus-sourced numbers it reached 10/10; on literature-sourced numbers
+correlation alone reaches 10/10 and adding decisive tests drops back to 9/10 at
+half again the cost. The difference is one figure: DDXPlus records pleuritic
+pain in 71% of its pulmonary embolism patients, Miniati's real cohort shows
+33%. The simulator overstates it twofold, and a mechanism that looked
+vindicated on the inflated number was not.
+
+That is the caution for every number sourced from DDXPlus in this project.
+They are measured, and measured from a generating model; a conclusion about
+mechanism that rests on them has not yet met a real frequency.
+
 ## Open questions for the meeting
 
 1. Mandatory minimum workup per presenting complaint (see #4)?

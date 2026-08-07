@@ -93,11 +93,6 @@ CONCEPT_MAP: dict[str, str | tuple[str, ...]] = {
         "E_152_@_V_43", "E_152_@_V_44",     # lateral foot R / L
     ),
 
-    # --- uncertain: check before quoting anything derived from these ----
-    # E_66 is "shortness of breath in a significant way", which is dyspnoea but
-    # not specifically *at rest*. E_64 ("out of breath with minimal effort") is
-    # nearer to exertional. Neither is exact; E_66 is the closer of the two.
-    "dyspnoea_at_rest": "E_66",
 }
 
 # Concepts DDXPlus is not expected to cover, recorded so that an empty mapping
@@ -131,6 +126,13 @@ EXPECTED_ABSENT: frozenset[str] = frozenset({
     # E_152 records calf *swelling*, not tenderness. Nothing in the release
     # asks about tenderness on palpation, which is an examination sign.
     "calf_tenderness",
+    # Mapped to E_66 initially and withdrawn. Every breathlessness question in
+    # the release was read: E_66 is "shortness of breath in a significant way"
+    # and E_64 is "out of breath with minimal physical effort". Neither asks
+    # about breathlessness at rest, and E_66 is a superset that includes the
+    # exertional case, so counting it here would inflate the figure and label
+    # the result measured over several thousand patients.
+    "dyspnoea_at_rest",
 })
 
 

@@ -617,19 +617,22 @@ def test_decisive_test_signal_flags_the_masquerade_failures(kb, cases):
     assert flagged_when_wrong == wrong
 
 
-def test_decisive_tests_now_pay_once_likelihoods_are_sourced(kb, cases):
-    """The negative result this replaces, and why it stopped holding.
+def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
+    """Which mechanism helps, and the reversal that produced this answer.
 
-    Until 25 of the fixture likelihoods were sourced from DDXPlus, acting on
-    the decisive-test signal cost more and bought no accuracy: the tests it
-    ordered were the ones the posterior already rated relevant, and the
-    posterior was wrong. The predecessor of this test pinned that, and failed
-    when sourcing changed it -- which is what it was for.
+    The history matters more than the assertion. On the invented knowledge base
+    the loop scored 8/10 and neither mechanism helped. Sourcing 17 likelihoods
+    from DDXPlus lifted it to 9/10 and appeared to make the decisive-test rule
+    pay, reaching 10/10 alongside the correlation structure. Replacing four of
+    those with frequencies from a real cohort reversed it: correlation alone
+    reaches 10/10 and adding decisive tests drops back to 9/10 at half again
+    the cost.
 
-    With sourced likelihoods the rule earns its keep, but only alongside the
-    correlation structure and only at roughly three times the cost. Both halves
-    are asserted, because "it works now" without the price is the half of the
-    result that flatters.
+    The apparent value of the decisive-test rule was an artefact of the
+    simulator. DDXPlus records pleuritic pain in 71% of its pulmonary embolism
+    patients; Miniati's 360 real ones show 33%. Conclusions about mechanism
+    drawn on simulator-derived numbers did not survive contact with measured
+    ones, which is the caution to carry into any result sourced this way.
     """
     from dxagent.datasets.fixtures import build_knowledge_base as build
 
@@ -646,10 +649,12 @@ def test_decisive_tests_now_pay_once_likelihoods_are_sourced(kb, cases):
         return correct, sum(o.budget_spent for o in outcomes) / len(outcomes)
 
     plain, plain_cost = run(False, False)
+    correlated, correlated_cost = run(True, False)
     both, both_cost = run(True, True)
 
-    assert both > plain, "sourcing plus correlation should beat the plain loop"
-    assert both_cost > 2 * plain_cost, "and it should still be visibly dearer"
+    assert correlated > plain, "correlation should beat the plain loop"
+    assert both <= correlated, "decisive tests should not improve on it"
+    assert both_cost > correlated_cost, "and should cost more for that"
 
 
 def _superseded_test_decisive_tests_do_not_repair(kb, cases):
