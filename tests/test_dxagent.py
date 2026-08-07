@@ -1671,3 +1671,51 @@ def test_verbalised_calibrator_leaves_a_calibrated_model_alone():
     assert calibrator.apply(0.9) == pytest.approx(0.9, abs=0.1)
     assert calibrator.apply(0.5) == pytest.approx(0.5, abs=0.1)
     assert abs(calibrator.overconfidence) < 0.05
+
+
+def test_workup_is_a_floor_on_investigation_not_a_substitute(kb, cases):
+    """The distinction that cost fx-009 when it was got wrong.
+
+    A mandatory workup must guarantee its items are gathered before the loop
+    commits. It must not seize the turn to do so: preempting the selector meant
+    the D-dimer was ordered first and displaced the chest X-ray, whose negative
+    result is what undermines the wrong diagnosis on that case. The checklist
+    was cleared and the investigation was worse.
+
+    Both halves are asserted -- the item is still gathered, and it is not
+    gathered first -- because either alone is satisfiable by a broken version.
+    """
+    from dxagent.guidelines import PE_WORKUP
+
+    case = {c.case_id: c for c in cases}["fx-009"]
+    agent = DiagnosticAgent(
+        kb=build_knowledge_base(correlated=True),
+        limits=LoopLimits(require_workup=True),
+    )
+    outcome = agent.run(case)
+    asked = [s.action.target for s in outcome.steps]
+
+    required = set(PE_WORKUP.required)
+    assert required & set(asked), "the workup item must still be gathered"
+    assert asked[0] not in required, "but it must not preempt the first turn"
+    assert outcome.differential.top.label == case.diagnosis
+
+
+def test_workup_still_fills_in_when_nothing_else_is_worth_a_turn(kb):
+    """The floor has to bite, or it is not a floor.
+
+    A differential with nothing informative left must still order the
+    outstanding workup item rather than committing without it.
+    """
+    from dxagent.guidelines import PE_WORKUP
+
+    case = Case(
+        case_id="quiet",
+        presenting_complaint="pleuritic chest pain",
+        diagnosis="pulmonary_embolism",
+        features={"pleuritic_pain": True, "lab:raised_d_dimer": True},
+        initial_findings=("pleuritic_pain",),
+    )
+    outcome = DiagnosticAgent(kb=kb).run(case)
+    asked = [s.action.target for s in outcome.steps]
+    assert set(PE_WORKUP.required) & set(asked)

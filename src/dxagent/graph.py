@@ -4,8 +4,9 @@ The brief mandates LangGraph with explicit nodes and state persisted between
 them, so the chain of reasoning is inspectable rather than buried in a
 ``while`` loop's local variables. This module provides that without
 reimplementing any reasoning: every node delegates to the same proposer,
-selector and gate that ``DiagnosticAgent`` uses, so the two are different
-orchestrations of identical logic.
+selector and gate that ``DiagnosticAgent`` uses, and to the same
+``choose_action`` -- which is shared rather than copied because the copies
+drifted the first time one side was changed.
 
 That equivalence is the property worth protecting, and it is asserted by test.
 A refactor that quietly changes behaviour while claiming to be a refactor is
@@ -17,7 +18,7 @@ The nodes
     propose   -> differential from all findings so far, grounded in the KB
     calibrate -> temperature scaling, then the conformal set
     decide    -> the gate; also resolves what evidence is still outstanding
-    select    -> choose the next action, guideline workup first
+    select    -> choose the next action; the workup is a floor, not first
     observe   -> execute it against the environment and record the result
 
 ``decide`` is the conditional branch: it routes to ``select`` to keep going or
@@ -39,7 +40,7 @@ from dataclasses import dataclass, field
 from typing import Annotated, Any, TypedDict
 
 from .actions import InformationGainSelector, classify
-from .agent import LoopLimits
+from .agent import LoopLimits, choose_action, still_outstanding
 from .belief import BayesianProposer, ConsensusProposer, Proposer
 from .environment import Case, CaseOracle, Environment
 from .gate import AbstentionGate
@@ -118,41 +119,16 @@ class GraphAgent:
         )
 
         case_state = state["state"]
-        mandated = (
-            self._mandatory_action(case_state) if self.limits.require_workup else None
+        action, mandated, ruleout, flip = choose_action(
+            self.selector, self.kb, case_state, differential, self.limits
         )
-        action = self.selector.select(case_state, differential)
-        flip = (
-            self.selector.flip_action(case_state, differential)
-            if self.limits.require_decisive_tests
-            else None
-        )
-        if flip is not None:
-            action = flip
-        ruleout = self.selector.ruleout_action(case_state, differential)
-        if ruleout is not None:
-            action = ruleout
-        if mandated is not None:
-            action = mandated
-
         affordable = (
             action is not None
             and case_state.budget_spent + action.cost <= self.limits.max_cost
         )
         out_of_turns = case_state.turn >= self.limits.max_turns
-        outstanding = (
-            affordable
-            and not out_of_turns
-            and (
-                mandated is not None
-                or ruleout is not None
-                or flip is not None
-                or (
-                    self.limits.due_diligence_gain > 0.0
-                    and action.expected_information_gain
-                    >= self.limits.due_diligence_gain
-                )
-            )
+        outstanding = still_outstanding(
+            action, mandated, ruleout, flip, affordable, out_of_turns, self.limits
         )
 
         outcome: CaseOutcome | None = None
@@ -208,19 +184,6 @@ class GraphAgent:
         return "finish" if state.get("finished") else "observe"
 
     # -- helpers shared with DiagnosticAgent -------------------------------
-
-    def _mandatory_action(self, state: CaseState) -> Action | None:
-        for concept, workup in outstanding_workup(state.findings):
-            if concept in state.asked or state.observed(concept) is not None:
-                continue
-            return Action(
-                kind=classify(concept),
-                target=concept,
-                cost=self.kb.cost_of(concept),
-                expected_information_gain=0.0,
-                rationale=f"required by guideline workup: {workup}",
-            )
-        return None
 
     @staticmethod
     def _escalate(
