@@ -47,45 +47,50 @@ DISEASE_MAP: dict[str, tuple[str, ...]] = {
     "panic_attack": ("panic_attack",),
 }
 
-# Fixture concept -> DDXPlus evidence code.
+# Fixture concept -> DDXPlus evidence code, or several codes counted as a
+# disjunction (the patient has the finding if any of them is recorded).
 #
-# For a binary evidence, the code alone: "fever": "E_91"
-# For one value of a categorical, the full form: "pleuritic_pain": "E_54_@_V_12"
+#   binary evidence          "fever": "E_91"
+#   one categorical value    "x": "E_54_@_V_12"
+#   several values           "leg_swelling": ("E_152_@_V_119", "E_152_@_V_120", ...)
 #
-# Run `python scripts/map_concepts.py --search cough` to find candidates, and
-# read the question text before committing to one.
-CONCEPT_MAP: dict[str, str] = {
-    # --- history -------------------------------------------------------
-    # "fever": "",
-    # "productive_cough": "",
-    # "pleuritic_pain": "",
-    # "dyspnoea_at_rest": "",
-    # "sudden_onset": "",
-    # "orthopnoea": "",
-    # "leg_swelling": "",
-    # "calf_tenderness": "",
-    # "smoking_history": "",
-    # "exertional_chest_pain": "",
-    # "palpitations": "",
-    # "wheeze_subjective": "",
-    # "recent_immobility": "",
-    # --- examination ---------------------------------------------------
-    # "exam:crackles": "",
-    # "exam:tachycardia": "",
-    # "exam:hypoxia": "",
-    # "exam:raised_jvp": "",
-    # "exam:reduced_breath_sounds": "",
-    # "exam:friction_rub": "",
-    # "exam:ecg_st_changes": "",
-    # --- laboratory ----------------------------------------------------
-    # "lab:raised_wcc": "",
-    # "lab:raised_d_dimer": "",
-    # "lab:raised_troponin": "",
-    # "lab:raised_bnp": "",
-    # --- imaging -------------------------------------------------------
-    # "imaging:cxr_consolidation": "",
-    # "imaging:cxr_pulmonary_oedema": "",
-    # "imaging:ctpa_filling_defect": "",
+# The disjunction is not a convenience. DDXPlus records swelling by anatomical
+# site across sixteen leg-ish values, so mapping `leg_swelling` to any single
+# one of them would count a fraction of the patients who have it and report the
+# result as measured.
+#
+# Confidence is noted per entry. Anything marked uncertain is a judgement about
+# whether two phrasings mean the same clinical thing, and should be checked
+# before the numbers derived from it are quoted.
+CONCEPT_MAP: dict[str, str | tuple[str, ...]] = {
+    # --- confident: the two phrasings ask the same question -------------
+    "fever": "E_91",                     # Do you have a fever?
+    "productive_cough": "E_77",          # cough producing coloured/abundant sputum
+    "pleuritic_pain": "E_220",           # pain increased when breathing in deeply
+    "orthopnoea": "E_217",               # worse lying down, better sitting up
+    "smoking_history": "E_79",           # Do you smoke cigarettes?
+    "exertional_chest_pain": "E_218",    # worse on exertion, relieved by rest
+    "palpitations": "E_155",             # heart racing / irregular / pounding
+    "wheeze_subjective": "E_214",        # wheezing sound when you exhale
+    "recent_immobility": "E_110",        # immobile 3+ days in the last 4 weeks
+
+    # leg swelling is recorded by site, so it is the union of the leg-ish ones
+    "leg_swelling": (
+        "E_152_@_V_119", "E_152_@_V_120",   # calf R / L
+        "E_152_@_V_34", "E_152_@_V_35",     # ankle R / L
+        "E_152_@_V_23", "E_152_@_V_24",     # posterior ankle R / L
+        "E_152_@_V_51", "E_152_@_V_52",     # thigh R / L
+        "E_152_@_V_92", "E_152_@_V_93",     # knee R / L
+        "E_152_@_V_172", "E_152_@_V_173",   # tibia R / L
+        "E_152_@_V_72", "E_152_@_V_73",     # dorsum of foot R / L
+        "E_152_@_V_43", "E_152_@_V_44",     # lateral foot R / L
+    ),
+
+    # --- uncertain: check before quoting anything derived from these ----
+    # E_66 is "shortness of breath in a significant way", which is dyspnoea but
+    # not specifically *at rest*. E_64 ("out of breath with minimal effort") is
+    # nearer to exertional. Neither is exact; E_66 is the closer of the two.
+    "dyspnoea_at_rest": "E_66",
 }
 
 # Concepts DDXPlus is not expected to cover, recorded so that an empty mapping
@@ -94,7 +99,32 @@ CONCEPT_MAP: dict[str, str] = {
 # and imaging results are largely outside it. Those keep their invented values
 # and must be sourced from the literature instead -- which is also where the
 # numbers deciding fx-010 sit, so this is not a small remainder.
-EXPECTED_ABSENT: frozenset[str] = frozenset()
+EXPECTED_ABSENT: frozenset[str] = frozenset({
+    # DDXPlus is a telemedicine questionnaire: it records what a patient can
+    # report. Examination signs, laboratory results and imaging are outside it
+    # entirely, and no amount of searching will find them.
+    "exam:crackles",
+    "exam:tachycardia",
+    "exam:hypoxia",
+    "exam:raised_jvp",
+    "exam:reduced_breath_sounds",
+    "exam:friction_rub",
+    "exam:ecg_st_changes",
+    "lab:raised_wcc",
+    "lab:raised_d_dimer",
+    "lab:raised_troponin",
+    "lab:raised_bnp",
+    "imaging:cxr_consolidation",
+    "imaging:cxr_pulmonary_oedema",
+    "imaging:ctpa_filling_defect",
+    # Recorded as E_59, "how fast did the pain appear", on a 0-10 scale. Which
+    # point on that scale counts as "sudden" is a clinical threshold, not a
+    # lookup, so it is left out rather than guessed.
+    "sudden_onset",
+    # E_152 records calf *swelling*, not tenderness. Nothing in the release
+    # asks about tenderness on palpation, which is an examination sign.
+    "calf_tenderness",
+})
 
 
 __all__ = ["CONCEPT_MAP", "DISEASE_MAP", "EXPECTED_ABSENT"]
