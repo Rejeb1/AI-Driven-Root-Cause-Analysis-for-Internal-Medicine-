@@ -1,8 +1,15 @@
 """Mapping between the fixture vocabulary and DDXPlus evidence codes.
 
 Filling this in lets `scripts/map_concepts.py` read P(finding | disease) off
-1.3M patients instead of leaving it invented. One afternoon of work replaces
-most of the knowledge base's numbers with measured ones.
+1.3M patients instead of leaving it invented.
+
+How far it gets, measured rather than hoped: 25 of 135 likelihoods, 19%. Not
+"most of the knowledge base", which is what this file claimed before the
+mapping was done and the counting was run. Three things cap it -- DDXPlus holds
+no examination signs, laboratory results or imaging; a finding its rule base
+omits is generated for nobody, so the zero is the simulator's and not a
+frequency; and a pairing the fixture entry does not already carry cannot be
+sourced without extending the model rather than grounding it.
 
 A mapping is a claim
 --------------------
