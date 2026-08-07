@@ -98,6 +98,14 @@ def baseline_comparison(kb, test_cases, result) -> str:
     with no baseline beside it invites the reader to supply their own -- and
     on DDXPlus a ranker with no inference at all scores in the nineties, which
     is not what anyone assumes when they see an accuracy figure.
+
+    The evidence column is what makes the comparison fair. Both baselines are
+    handed the complete record; the loop has to ask for what it wants and pays
+    per question. On the fixtures that is 27 findings against 9.3, so a table
+    reporting only accuracy shows the loop losing slightly on a task the
+    baselines were given a third more information to solve. MEDDxAgent makes
+    exactly this criticism of complete-profile evaluation, and a baseline table
+    that omits the column commits the error it warns about.
     """
     from dxagent.baselines import RetrievalOnlyBaseline, SinglePassBaseline
     from dxagent.evaluation import run_agent
@@ -120,27 +128,42 @@ def baseline_comparison(kb, test_cases, result) -> str:
     lines = [
         "",
         "baselines (project brief section 9)",
-        f"  {'system':<32}{'top-1':>8}{'top-5':>8}{'MRR':>8}{'DDx@5':>9}{'turns':>8}",
+        f"  {'system':<32}{'top-1':>8}{'top-5':>8}{'MRR':>8}{'DDx@5':>9}"
+        f"{'evidence':>10}",
     ]
 
-    def row(name: str, outcomes) -> str:
+    complete = sum(len(c.features) for c in test_cases) / max(len(test_cases), 1)
+
+    def row(name: str, outcomes, evidence: float) -> str:
         ranking = ranking_metrics(outcomes, truths)
-        selective = selective_metrics(outcomes, truths)
         ddx = differential_metrics(outcomes, gold) if gold else None
         recall = f"{ddx.recall_at_5:>8.1%}" if ddx and ddx.n else "     n/a"
         return (
             f"  {name:<32}{ranking.top1:>8.1%}{ranking.top5:>8.1%}"
-            f"{ranking.mrr:>8.3f}{recall:>9}{selective.mean_turns:>8.1f}"
+            f"{ranking.mrr:>8.3f}{recall:>9}{evidence:>10.1f}"
         )
 
     for name, baseline in rows:
-        lines.append(row(name, run_agent(baseline, test_cases)))
-    lines.append(row("agentic loop", result.outcomes))
+        lines.append(row(name, run_agent(baseline, test_cases), complete))
 
+    by_id = {case.case_id: case for case in test_cases}
+    gathered = [
+        len(by_id[o.case_id].initial_findings) + len(o.steps)
+        for o in result.outcomes
+        if o.case_id in by_id
+    ]
+    loop_evidence = sum(gathered) / max(len(gathered), 1)
+    lines.append(row("agentic loop", result.outcomes, loop_evidence))
+
+    share = loop_evidence / complete if complete else 0.0
     lines.append(
-        "\n  A retrieval-only baseline that does no inference is the floor the "
-        "loop\n  has to clear. Where it does not clear it by much, the benchmark "
-        "is the\n  finding, not the system."
+        "\n  evidence = findings the system saw. Both baselines are handed the "
+        "complete\n  record; the loop asks for what it wants and pays per "
+        f"question -- here {loop_evidence:.1f}\n  of {complete:.1f} findings, "
+        f"{share:.0%} of the evidence, for the same top-1. Comparing\n  accuracy "
+        "without that column is the complete-profile flattery MEDDxAgent\n"
+        "  criticises, and a retrieval-only baseline scoring near the loop is a\n"
+        "  finding about the benchmark rather than about the system."
     )
     return "\n".join(lines)
 
