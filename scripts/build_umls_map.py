@@ -32,6 +32,19 @@ about as often as the right one. Each term is written by hand so that a wrong
 resolution is a visible line in this file rather than a silent transformation,
 and every result is printed with its preferred name so the mapping can be
 checked against what UMLS thought you meant.
+
+That check is not optional, and a first pass through this script proves it. It
+resolved without error, printed a SNOMED CT code for every hit, and five of
+those hits were the wrong concept: ``smoking_history`` came back as the
+patient's *mother's* smoking history, ``lab:raised_wcc`` as a cerebrospinal-
+fluid-specific leukocytosis, ``imaging:cxr_pulmonary_oedema`` as a risk
+assessment rather than a finding, and ``imaging:ctpa_filling_defect`` as a
+diagnosis-suspicion code because the search term used the disease's name
+instead of the imaging sign. All four had a CUI, a SNOMED code and a plausible-
+looking preferred name. ``_WRONG_SENSE`` now filters known bad patterns
+(maternal/paternal history, "risk of", CSF-specific, etc.) as a backstop, and
+the search terms below were corrected -- but the filter is a backstop, not a
+substitute for reading the printed output.
 """
 
 from __future__ import annotations
@@ -58,9 +71,40 @@ BASE = "https://uts-ws.nlm.nih.gov/rest"
 #   T033 Finding          T184 Sign or Symptom      T046 Pathologic Function
 #   T047 Disease/Syndrome T048 Mental/Behavioral    T034 Lab or Test Result
 #   T060 Diagnostic Procedure                       T201 Clinical Attribute
+#   T080 Qualifier Value (needed for pure temporal/severity qualifiers, which
+#        SNOMED often models as qualifier values rather than findings)
 _FINDING_TYPES = "T033,T184,T046,T201"
 _RESULT_TYPES = "T034,T060,T033,T184"
 _DISEASE_TYPES = "T047,T046,T048,T033"
+_QUALIFIER_TYPES = "T080,T033,T184"
+
+# Substrings that mark a UMLS/SNOMED hit as the wrong sense even though it
+# matched the search string. Found the hard way: a first pass through this
+# script resolved "smoking_history" to "Maternal history of harmful pattern of
+# tobacco use" (the patient's mother, not the patient), "lab:raised_wcc" to a
+# cerebrospinal-fluid-specific leukocytosis concept, and
+# "imaging:cxr_pulmonary_oedema" to a risk-assessment concept rather than the
+# finding itself. All three had SNOMED CT codes and preferred names, and none
+# of that made them right. Matched case-insensitively against the preferred
+# name; a candidate that matches is skipped rather than accepted with a
+# warning, because a warning is easy to scroll past and a missing entry is not.
+_WRONG_SENSE = (
+    "maternal",
+    "paternal",
+    "family history",
+    "risk of",
+    "risk for",
+    "csf:",
+    "cerebrospinal",
+    "suspected",
+    "screening for",
+    "exposure to",
+)
+
+
+def _wrong_sense(preferred_name: str) -> bool:
+    lowered = preferred_name.lower()
+    return any(marker in lowered for marker in _WRONG_SENSE)
 
 # Vocabulary key -> (term to search, semantic types to accept).
 # Checked by eye against the UMLS preferred name the script prints back.
@@ -70,15 +114,17 @@ SEARCH_TERMS: dict[str, tuple[str, str]] = {
     "productive_cough": ("Productive cough", _FINDING_TYPES),
     "pleuritic_pain": ("Pleuritic pain", _FINDING_TYPES),
     "dyspnoea_at_rest": ("Dyspnea at rest", _FINDING_TYPES),
-    "sudden_onset": ("Sudden onset", _FINDING_TYPES),
     "orthopnoea": ("Orthopnea", _FINDING_TYPES),
-    "leg_swelling": ("Swelling of lower extremity", _FINDING_TYPES),
-    "calf_tenderness": ("Calf tenderness", _FINDING_TYPES),
-    "smoking_history": ("History of tobacco use", _FINDING_TYPES),
+    "leg_swelling": ("Swelling of leg", _FINDING_TYPES),
+    "calf_tenderness": ("Pain in calf", _FINDING_TYPES),
+    # "History of tobacco use" ranked a maternal/antenatal SNOMED concept
+    # first. "Cigarette smoker" is the patient's own status and is what the
+    # fixture concept means -- a Wells/PERC risk factor, not a family history.
+    "smoking_history": ("Cigarette smoker", _FINDING_TYPES),
     "exertional_chest_pain": ("Exertional chest pain", _FINDING_TYPES),
     "palpitations": ("Palpitations", _FINDING_TYPES),
     "wheeze_subjective": ("Wheezing", _FINDING_TYPES),
-    "recent_immobility": ("Immobility", _FINDING_TYPES),
+    "recent_immobility": ("Immobilization", _FINDING_TYPES),
     # examination
     "exam:crackles": ("Crackles", _FINDING_TYPES),
     "exam:tachycardia": ("Tachycardia", _FINDING_TYPES),
@@ -88,14 +134,31 @@ SEARCH_TERMS: dict[str, tuple[str, str]] = {
     "exam:friction_rub": ("Pericardial friction rub", _FINDING_TYPES),
     "exam:ecg_st_changes": ("ST segment changes", _RESULT_TYPES),
     # laboratory
-    "lab:raised_wcc": ("Leukocytosis", _RESULT_TYPES),
-    "lab:raised_d_dimer": ("Elevated D-dimer", _RESULT_TYPES),
-    "lab:raised_troponin": ("Elevated troponin", _RESULT_TYPES),
-    "lab:raised_bnp": ("Elevated brain natriuretic peptide", _RESULT_TYPES),
+    # "Leukocytosis" alone ranked a CSF-specific (cerebrospinal fluid) subtype
+    # first, which is a different body fluid entirely. "White blood cell count
+    # raised" names the blood test result the fixture concept actually means.
+    "lab:raised_wcc": ("White blood cell count raised", _RESULT_TYPES),
+    "lab:raised_d_dimer": ("D-dimer above reference range", _RESULT_TYPES),
+    "lab:raised_troponin": ("Troponin raised", _RESULT_TYPES),
+    "lab:raised_bnp": ("Brain natriuretic peptide raised", _RESULT_TYPES),
     # imaging
-    "imaging:cxr_consolidation": ("Pulmonary consolidation", _RESULT_TYPES),
-    "imaging:cxr_pulmonary_oedema": ("Pulmonary edema", _RESULT_TYPES),
-    "imaging:ctpa_filling_defect": ("Pulmonary embolism", _RESULT_TYPES),
+    "imaging:cxr_consolidation": ("Consolidation of lung", _RESULT_TYPES),
+    # Searching "Pulmonary edema" under result types (T034/T060/T033/T184)
+    # skipped the disorder concept and matched a risk-assessment one instead.
+    # SNOMED does not separately model "CXR shows pulmonary edema" from the
+    # disorder itself, so this deliberately reuses the disease semantic types.
+    "imaging:cxr_pulmonary_oedema": ("Pulmonary edema", _DISEASE_TYPES),
+    # The original term here was "Pulmonary embolism" -- the disease name, not
+    # the imaging finding -- which is what matched a diagnosis-suspicion
+    # concept instead of a CT finding. "Filling defect of pulmonary artery"
+    # names the actual radiological sign a CTPA is read for.
+    "imaging:ctpa_filling_defect": (
+        "Filling defect of pulmonary artery", _RESULT_TYPES,
+    ),
+    # "Sudden onset" alone matched an unrelated, over-specific finding
+    # ("Edema of extremity of sudden onset") because SNOMED models onset as a
+    # qualifier value (T080), which the finding-restricted search excluded.
+    "sudden_onset": ("Sudden onset", _QUALIFIER_TYPES),
 }
 
 DISEASE_TERMS: dict[str, str] = {
@@ -104,7 +167,10 @@ DISEASE_TERMS: dict[str, str] = {
     "acute_coronary_syndrome": "Acute coronary syndrome",
     "acute_pulmonary_oedema": "Acute pulmonary edema",
     "copd_exacerbation": "Acute exacerbation of COPD",
-    "asthma_exacerbation": "Acute asthma exacerbation",
+    # "Acute asthma exacerbation" resolved to the intrinsic-asthma-specific
+    # subtype (excludes allergic/extrinsic asthma), narrower than the fixture
+    # condition, which does not distinguish asthma phenotype.
+    "asthma_exacerbation": "Exacerbation of asthma",
     "pericarditis": "Pericarditis",
     "panic_attack": "Panic attack",
 }
@@ -128,18 +194,26 @@ def request(path: str, api_key: str, **params) -> dict:
 
 
 def resolve(term: str, semantic_types: str, api_key: str) -> dict | None:
-    """Best-matching CUI for ``term``, restricted to SNOMED CT."""
+    """Best-matching CUI for ``term``, restricted to SNOMED CT.
+
+    Skips candidates whose preferred name marks them as the wrong sense (see
+    ``_WRONG_SENSE``) rather than taking the first hit unconditionally. The
+    first version took the first hit, and that is what produced the maternal-
+    history and CSF-leukocytosis mismatches: both ranked first for their
+    search string and both were wrong.
+    """
     payload = request(
         "/search/current",
         api_key,
         string=term,
         sabs="SNOMEDCT_US",
         semanticTypes=semantic_types,
-        pageSize=5,
+        pageSize=10,
     )
     for item in payload.get("result", {}).get("results", []):
-        if item.get("ui") and item["ui"] != "NONE":
-            return {"cui": item["ui"], "preferred_name": item.get("name", "")}
+        name = item.get("name", "")
+        if item.get("ui") and item["ui"] != "NONE" and not _wrong_sense(name):
+            return {"cui": item["ui"], "preferred_name": name}
     return None
 
 
