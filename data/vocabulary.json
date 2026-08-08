@@ -8,9 +8,9 @@
       "hpo_name": null,
       "modality": "history",
       "note": "no adequate HPO term; 'Abnormal calf musculature morphology' HP:0001430 is morphological, not a tenderness sign. Left unmapped deliberately -- see module docstring.",
-      "cui": null,
-      "snomed_ct": null,
-      "umls_name": null
+      "cui": "C0236040",
+      "snomed_ct": "300954003",
+      "umls_name": "Pain in calf"
     },
     {
       "key": "cough",
@@ -178,9 +178,9 @@
       "hpo_name": null,
       "modality": "imaging",
       "note": "radiological finding; see above",
-      "cui": "C1563135",
-      "snomed_ct": "417113001",
-      "umls_name": "Pulmonary embolism suspected"
+      "cui": null,
+      "snomed_ct": null,
+      "umls_name": null
     },
     {
       "key": "imaging:cxr_consolidation",
@@ -188,9 +188,9 @@
       "hpo_name": null,
       "modality": "imaging",
       "note": "radiological finding; HPO coverage of imaging descriptors is thin. RadLex is the appropriate vocabulary here.",
-      "cui": null,
-      "snomed_ct": null,
-      "umls_name": null
+      "cui": "C5395703",
+      "snomed_ct": "846749001",
+      "umls_name": "Consolidation of lung present"
     },
     {
       "key": "imaging:cxr_pulmonary_oedema",
@@ -198,9 +198,9 @@
       "hpo_name": "Pulmonary edema",
       "modality": "imaging",
       "note": "Pulmonary edema",
-      "cui": "C5924023",
-      "snomed_ct": "55151000087101",
-      "umls_name": "At increased risk of pulmonary edema"
+      "cui": "C0034063",
+      "snomed_ct": "19242006",
+      "umls_name": "Pulmonary Edema"
     },
     {
       "key": "lab:raised_bnp",
@@ -238,9 +238,9 @@
       "hpo_name": "Increased total leukocyte count",
       "modality": "lab",
       "note": "'Increased total leukocyte count'. Chosen over HP:6001425 'Hyperleukocytosis', which denotes a far more extreme elevation (leukostasis territory) than a routine raised white count.",
-      "cui": "C0427876",
-      "snomed_ct": "167718001",
-      "umls_name": "CSF: polymorphonuclear leukocytosis"
+      "cui": null,
+      "snomed_ct": null,
+      "umls_name": null
     },
     {
       "key": "leg_swelling",
@@ -248,9 +248,9 @@
       "hpo_name": "Peripheral edema",
       "modality": "history",
       "note": "Peripheral edema",
-      "cui": null,
-      "snomed_ct": null,
-      "umls_name": null
+      "cui": "C0424811",
+      "snomed_ct": "248480008",
+      "umls_name": "Leg swelling symptom"
     },
     {
       "key": "night_sweats",
@@ -308,9 +308,9 @@
       "hpo_name": null,
       "modality": "history",
       "note": "risk factor / exposure, not a phenotype. HPO is the wrong ontology for this class; needs its own vocabulary.",
-      "cui": "C0231440",
-      "snomed_ct": "67759008",
-      "umls_name": "Musculoskeletal immobility"
+      "cui": "C5817601",
+      "snomed_ct": "1279533009",
+      "umls_name": "Thromboembolism of vein due to prolonged immobilization"
     },
     {
       "key": "smoking_history",
@@ -318,9 +318,9 @@
       "hpo_name": null,
       "modality": "history",
       "note": "behavioural exposure, not a phenotype. Same class as above.",
-      "cui": "C5967814",
-      "snomed_ct": "1343586009",
-      "umls_name": "Maternal history of harmful pattern of tobacco use"
+      "cui": "C0337667",
+      "snomed_ct": "65568007",
+      "umls_name": "Cigarette smoker (finding)"
     },
     {
       "key": "sudden_onset",

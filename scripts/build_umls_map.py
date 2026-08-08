@@ -76,7 +76,16 @@ BASE = "https://uts-ws.nlm.nih.gov/rest"
 _FINDING_TYPES = "T033,T184,T046,T201"
 _RESULT_TYPES = "T034,T060,T033,T184"
 _DISEASE_TYPES = "T047,T046,T048,T033"
-_QUALIFIER_TYPES = "T080,T033,T184"
+# Qualifiers only. Including T033 here let "Sudden onset" match the finding
+# "Edema of extremity of sudden onset", which contains the phrase and is not
+# the concept: a temporal qualifier has to resolve to a qualifier.
+_QUALIFIER_TYPES = "T080"
+# Risk factors and exposures. T046 Pathologic Function is deliberately absent:
+# with it, "Immobilization" resolved to "Thromboembolism of vein due to
+# prolonged immobilization" -- the disorder the exposure causes rather than the
+# exposure. A risk factor must not resolve to its own consequence, or the
+# knowledge base asserts the conclusion in the premise.
+_EXPOSURE_TYPES = "T033,T184,T201,T080"
 
 # Substrings that mark a UMLS/SNOMED hit as the wrong sense even though it
 # matched the search string. Found the hard way: a first pass through this
@@ -120,11 +129,11 @@ SEARCH_TERMS: dict[str, tuple[str, str]] = {
     # "History of tobacco use" ranked a maternal/antenatal SNOMED concept
     # first. "Cigarette smoker" is the patient's own status and is what the
     # fixture concept means -- a Wells/PERC risk factor, not a family history.
-    "smoking_history": ("Cigarette smoker", _FINDING_TYPES),
+    "smoking_history": ("Cigarette smoker", _EXPOSURE_TYPES),
     "exertional_chest_pain": ("Exertional chest pain", _FINDING_TYPES),
     "palpitations": ("Palpitations", _FINDING_TYPES),
     "wheeze_subjective": ("Wheezing", _FINDING_TYPES),
-    "recent_immobility": ("Immobilization", _FINDING_TYPES),
+    "recent_immobility": ("Immobile", _EXPOSURE_TYPES),
     # examination
     "exam:crackles": ("Crackles", _FINDING_TYPES),
     "exam:tachycardia": ("Tachycardia", _FINDING_TYPES),
@@ -134,13 +143,16 @@ SEARCH_TERMS: dict[str, tuple[str, str]] = {
     "exam:friction_rub": ("Pericardial friction rub", _FINDING_TYPES),
     "exam:ecg_st_changes": ("ST segment changes", _RESULT_TYPES),
     # laboratory
-    # "Leukocytosis" alone ranked a CSF-specific (cerebrospinal fluid) subtype
-    # first, which is a different body fluid entirely. "White blood cell count
-    # raised" names the blood test result the fixture concept actually means.
-    "lab:raised_wcc": ("White blood cell count raised", _RESULT_TYPES),
+    # "Leukocytosis" first ranked a CSF-specific (cerebrospinal fluid) subtype,
+    # a different body fluid entirely. Rewriting the query as "White blood cell
+    # count raised" then matched nothing at all. "Leukocytosis" is the term UMLS
+    # actually indexes, so the query stands and the wrong subtype is excluded by
+    # _WRONG_SENSE instead -- filtering the result is the right lever here,
+    # contorting the query was not.
+    "lab:raised_wcc": ("Leukocytosis", _RESULT_TYPES),
     "lab:raised_d_dimer": ("D-dimer above reference range", _RESULT_TYPES),
-    "lab:raised_troponin": ("Troponin raised", _RESULT_TYPES),
-    "lab:raised_bnp": ("Brain natriuretic peptide raised", _RESULT_TYPES),
+    "lab:raised_troponin": ("Troponin increased", _RESULT_TYPES),
+    "lab:raised_bnp": ("Brain natriuretic peptide increased", _RESULT_TYPES),
     # imaging
     "imaging:cxr_consolidation": ("Consolidation of lung", _RESULT_TYPES),
     # Searching "Pulmonary edema" under result types (T034/T060/T033/T184)
@@ -159,6 +171,7 @@ SEARCH_TERMS: dict[str, tuple[str, str]] = {
     # ("Edema of extremity of sudden onset") because SNOMED models onset as a
     # qualifier value (T080), which the finding-restricted search excluded.
     "sudden_onset": ("Sudden onset", _QUALIFIER_TYPES),
+
 }
 
 DISEASE_TERMS: dict[str, str] = {
@@ -237,12 +250,58 @@ def snomed_code(cui: str, api_key: str) -> str:
     return ""
 
 
+def suggest(term: str, api_key: str) -> None:
+    """Print what UMLS actually holds for a term, unfiltered.
+
+    For diagnosing a failure rather than guessing at it. When a search returns
+    nothing, the question is whether the concept is absent from SNOMED or the
+    query is simply not how UMLS words it -- and those need different fixes.
+    Semantic types and the wrong-sense filter are both disabled here, so the
+    output shows every candidate along with the type that would have excluded
+    it.
+    """
+    payload = request(
+        "/search/current", api_key, string=term, sabs="SNOMEDCT_US", pageSize=20
+    )
+    results = payload.get("result", {}).get("results", [])
+    if not results or results[0].get("ui") == "NONE":
+        print(f"  nothing in SNOMEDCT_US for {term!r}")
+        # Retry across all of UMLS: a concept can exist without a SNOMED atom,
+        # which is a different problem from the term being wrong.
+        payload = request("/search/current", api_key, string=term, pageSize=10)
+        results = payload.get("result", {}).get("results", [])
+        if results and results[0].get("ui") != "NONE":
+            print("  but present elsewhere in UMLS:")
+        else:
+            print("  and nothing anywhere in UMLS -- the term is wrong.")
+            return
+
+    for item in results:
+        if item.get("ui") == "NONE":
+            continue
+        name = item.get("name", "")
+        flag = "  <-- excluded by _WRONG_SENSE" if _wrong_sense(name) else ""
+        print(f"  {item['ui']:<10} {item.get('rootSource', ''):<12} {name}{flag}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--api-key", default=os.environ.get("UMLS_API_KEY"))
     parser.add_argument("--out", default="data/umls_concepts.json")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--suggest",
+        metavar="TERM",
+        help="show unfiltered UMLS candidates for a term, to diagnose a failure",
+    )
     args = parser.parse_args()
+
+    if args.suggest:
+        if not args.api_key:
+            print('Set UMLS_API_KEY first.')
+            return 1
+        suggest(args.suggest, args.api_key)
+        return 0
 
     kb = build_knowledge_base()
     concepts = sorted({c for e in kb.diseases() for c in e.features})
