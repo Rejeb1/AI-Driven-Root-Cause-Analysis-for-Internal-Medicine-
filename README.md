@@ -70,7 +70,8 @@ instead of it, so their disagreement stays visible to the gate.
 | `agent.py` | The reference loop |
 | `graph.py` | The same loop as a LangGraph state machine (asserted equivalent) |
 | `guidelines.py` | Wells, PERC, CURB-65, HEART; presentation-triggered workup |
-| `retrieval.py` | BGE-M3 + Qdrant over the guideline corpus; grounded proposer |
+| `retrieval.py` | BGE-M3 + Qdrant over the decision rules and MSD Manual sentences; grounded proposer |
+| `merck.py` | The Merck Manual quotes: one source, cited both as likelihoods and as retrievable passages |
 | `baselines.py` | The two comparisons the brief requires |
 | `provenance.py` | Where each likelihood came from: measured, narrative, invented |
 | `synthesis.py` | Synthetic case generation, critique and screening |

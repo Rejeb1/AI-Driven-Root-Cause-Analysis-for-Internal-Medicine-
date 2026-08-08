@@ -111,6 +111,31 @@ def test_guideline_corpus_is_per_criterion_and_cited():
         assert passage.citation.locator
 
 
+def test_merck_corpus_matches_the_narrative_likelihoods():
+    """The retrieval corpus and the KB's narrative-tier numbers must agree.
+
+    Both are built from ``dxagent.merck.QUOTES``. If they ever disagree, the
+    single-source-of-truth reason for that module not existing separately
+    per consumer has failed silently.
+    """
+    from dxagent.datasets.fixtures import _FROM_NARRATIVE
+    from dxagent.merck import QUOTES
+    from dxagent.retrieval import merck_passages
+
+    passages = merck_passages()
+    assert len(passages) == len(QUOTES)
+    for passage in passages:
+        assert passage.kind == "narrative"
+        assert passage.citation.source_id
+        assert passage.target
+
+    # Every quote sources exactly one _FROM_NARRATIVE entry, and the
+    # citation text is identical, not just similarly worded.
+    for quote in QUOTES:
+        _, source = _FROM_NARRATIVE[(quote.disease, quote.concept)]
+        assert source.citation == quote.citation
+
+
 def test_index_search_returns_cited_passages():
     pytest.importorskip("qdrant_client")
     from dxagent.retrieval import GuidelineIndex

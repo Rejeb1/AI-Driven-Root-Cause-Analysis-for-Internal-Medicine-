@@ -28,6 +28,7 @@ from ..environment import Case
 import dataclasses
 
 from ..knowledge import Citation, DiseaseEntry, InMemoryKnowledgeBase, register_costs
+from ..merck import QUOTES as _MERCK_QUOTES
 from ..provenance import LikelihoodSource, from_narrative, measured
 
 # Acquisition costs in arbitrary consistent units, ordered by tier: history is
@@ -240,90 +241,14 @@ _FROM_DDXPLUS: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
 # full, including its "Symptoms and Signs" section) discusses cardiac workup
 # only as "general medical evaluation to exclude" other causes -- never a
 # stated frequency for troponin or ECG. Both stay invented on purpose.
+#
+# The quotes themselves live in ``dxagent.merck``, not here -- the same nine
+# sentences also back the retrieval corpus (``retrieval.merck_passages``),
+# and a number and a retrieved citation for the same finding must never be
+# free to say different things about what the source actually said.
 _FROM_NARRATIVE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
-    ("acute_pulmonary_oedema", "dyspnoea_at_rest"): from_narrative(
-        "common",
-        Citation(
-            "MSD-19E",
-            "Ch. 211 Heart Failure, Symptoms and Signs",
-            "the most common symptoms are dyspnea, reflecting pulmonary "
-            "congestion, and fatigue",
-        ),
-    ),
-    ("acute_pulmonary_oedema", "exam:tachycardia"): from_narrative(
-        "common",
-        Citation(
-            "MSD-19E",
-            "Ch. 211 Heart Failure",
-            "sinus tachycardia, a common compensatory change in HF",
-        ),
-    ),
-    ("community_acquired_pneumonia", "dyspnoea_at_rest"): from_narrative(
-        "rare",
-        Citation(
-            "MSD-19E",
-            "Ch. 196 Pneumonia, Symptoms and Signs",
-            "dyspnea usually is mild and exertional and is rarely present "
-            "at rest",
-        ),
-    ),
-    ("community_acquired_pneumonia", "imaging:cxr_consolidation"): from_narrative(
-        "always",
-        Citation(
-            "MSD-19E",
-            "Ch. 196 Pneumonia, Diagnosis",
-            "chest x-ray almost always shows some degree of infiltrate; "
-            "rarely, an infiltrate is absent in the first 24 to 48 h",
-        ),
-    ),
-    ("pulmonary_embolism", "exam:tachycardia"): from_narrative(
-        "common",
-        Citation(
-            "MSD-19E",
-            "Ch. 194 Pulmonary Embolism, Symptoms and Signs",
-            "the most common signs of PE are tachycardia and tachypnea",
-        ),
-    ),
-    ("pericarditis", "fever"): from_narrative(
-        "common",
-        Citation(
-            "MSD-19E",
-            "Ch. 216 Pericarditis, Symptoms and Signs",
-            "fever, chills, and weakness are common",
-        ),
-    ),
-    ("pericarditis", "dyspnoea_at_rest"): from_narrative(
-        "sometimes",
-        Citation(
-            "MSD-19E",
-            "Ch. 216 Pericarditis, Symptoms and Signs",
-            "acute pericarditis tends to cause chest pain and a pericardial "
-            "rub, sometimes with dyspnea",
-        ),
-    ),
-    ("pericarditis", "lab:raised_troponin"): from_narrative(
-        "always",
-        Citation(
-            "MSD-19E",
-            "Ch. 216 Pericarditis, Diagnosis",
-            "troponin is almost always elevated in acute pericarditis due "
-            "to epicardial involvement",
-        ),
-    ),
-    # The DSM definition itself, not a frequency claim about a population --
-    # "hallmark" fits a defining criterion better than "common" would, and
-    # the value happens to land exactly where the invented guess already
-    # was. Recorded anyway: an invented number that turns out right is still
-    # invented until something backs it.
-    ("panic_attack", "sudden_onset"): from_narrative(
-        "hallmark",
-        Citation(
-            "MSD-19E",
-            "Ch. 158 Anxiety Disorders, Panic Disorder",
-            "a panic attack is the sudden onset of a discrete, brief period "
-            "of intense discomfort, anxiety, or fear",
-        ),
-    ),
+    (q.disease, q.concept): from_narrative(q.phrase, q.citation)
+    for q in _MERCK_QUOTES
 }
 
 # Frequencies from a published cohort of real patients. These take precedence

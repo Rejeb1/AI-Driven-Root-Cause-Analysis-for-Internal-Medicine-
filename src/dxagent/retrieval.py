@@ -3,8 +3,12 @@
 The brief requires that every claim about a candidate cause cite a retrieved
 passage rather than the model's parametric memory, and that hypotheses which
 cannot be grounded are rejected or flagged. This module supplies the retrieval
-half of that: a corpus built from the encoded clinical rules, embedded and
-searchable, where every hit carries the citation of the source it came from.
+half of that: a corpus built from two sources, embedded and searchable, where
+every hit carries the citation of the source it came from --
+``guideline_passages`` (the four encoded decision rules) and
+``merck_passages`` (the Merck Manual sentences that also source the
+narrative-tier likelihoods in ``datasets.fixtures``, see ``dxagent.merck``).
+Both default into ``GuidelineIndex.build()``.
 
 The distinction from what the knowledge base already does is worth being
 precise about, because it is easy to claim more grounding than is delivered.
@@ -35,6 +39,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .guidelines import RULES, WORKUPS
+from .merck import QUOTES as MERCK_QUOTES
 from .schemas import Citation, Finding, Polarity
 
 
@@ -108,6 +113,31 @@ def guideline_passages() -> tuple[Passage, ...]:
     return tuple(passages)
 
 
+def merck_passages() -> tuple[Passage, ...]:
+    """The narrative-tier corpus: MSD sentences, one passage per sentence.
+
+    Same source as the narrative-tier likelihoods in ``datasets.fixtures``
+    (``dxagent.merck.QUOTES``) -- a number derived from a sentence and a
+    retrieved citation for the same finding should be traceable to the exact
+    same words, not two independently-typed copies of them.
+
+    ``kind="narrative"`` so these are never excluded the way severity
+    passages are by default: an MSD statement about a finding's frequency is
+    ordinary diagnostic support, not the category error ``guidelines``
+    warns about.
+    """
+    return tuple(
+        Passage(
+            text=f'{quote.citation.locator}: "{quote.citation.snippet}"',
+            citation=quote.citation,
+            concepts=(quote.concept,),
+            target=quote.disease,
+            kind="narrative",
+        )
+        for quote in MERCK_QUOTES
+    )
+
+
 @dataclass
 class GuidelineIndex:
     """Embedded, searchable guideline corpus.
@@ -139,7 +169,11 @@ class GuidelineIndex:
         from qdrant_client import QdrantClient
         from qdrant_client.models import Distance, PointStruct, VectorParams
 
-        passages = passages if passages is not None else guideline_passages()
+        passages = (
+            passages
+            if passages is not None
+            else guideline_passages() + merck_passages()
+        )
         if not passages:
             raise ValueError("cannot build an index from an empty corpus")
 
@@ -323,4 +357,5 @@ __all__ = [
     "Passage",
     "case_query",
     "guideline_passages",
+    "merck_passages",
 ]
