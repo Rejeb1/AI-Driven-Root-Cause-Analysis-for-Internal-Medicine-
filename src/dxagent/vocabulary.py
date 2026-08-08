@@ -66,13 +66,29 @@ class Concept:
     hpo_name: str | None
     modality: str  # history | exam | lab | ecg | imaging
     note: str = ""
+    # UMLS and SNOMED CT identifiers, from data/umls_concepts.json when it has
+    # been built. Carried alongside the HPO id rather than replacing it: HPO is
+    # a phenotype ontology with a hierarchy this vocabulary already uses, and
+    # SNOMED CT is what a clinical system would exchange. They answer different
+    # questions and collapsing them would lose one of the answers.
+    cui: str | None = None
+    snomed_ct: str | None = None
+    umls_name: str | None = None
 
     @property
     def is_grounded(self) -> bool:
         return self.hpo_id is not None
 
+    @property
+    def is_umls_grounded(self) -> bool:
+        """Whether section 6's mandated ontology layer covers this concept."""
+        return self.cui is not None
+
     def __str__(self) -> str:  # pragma: no cover - display only
-        return f"{self.key} [{self.hpo_id or 'UNMAPPED'}]"
+        ids = self.hpo_id or "UNMAPPED"
+        if self.cui:
+            ids += f" / {self.cui}"
+        return f"{self.key} [{ids}]"
 
 
 # ---------------------------------------------------------------------------
@@ -281,12 +297,29 @@ class Vocabulary:
     concepts: dict[str, Concept] = field(default_factory=dict)
     release: str = HPO_RELEASE
 
+    @property
+    def umls_coverage(self) -> tuple[int, int]:
+        """(concepts carrying a CUI, total). Reportable, not assumed."""
+        grounded = sum(1 for c in self.concepts.values() if c.is_umls_grounded)
+        return grounded, len(self.concepts)
+
     @classmethod
     def build(
-        cls, obo_path: str | Path, curated: dict | None = None
+        cls,
+        obo_path: str | Path,
+        curated: dict | None = None,
+        umls_path: str | Path | None = None,
     ) -> "Vocabulary":
         terms = parse_obo(obo_path)
         curated = curated or CURATED
+        # Section 6's ontology layer, when it has been built. Absent, concepts
+        # simply carry no CUI and `umls_coverage` reports 0 -- the vocabulary
+        # stays usable rather than requiring a licence to load.
+        umls: dict[str, dict] = {}
+        if umls_path is not None and Path(umls_path).exists():
+            umls = json.loads(
+                Path(umls_path).read_text(encoding="utf-8")
+            ).get("findings", {})
         concepts: dict[str, Concept] = {}
         for key, (hpo_id, modality, note) in curated.items():
             term = terms.get(hpo_id) if hpo_id else None
@@ -299,12 +332,16 @@ class Vocabulary:
                     f"WARNING: {hpo_id} not found in release {HPO_RELEASE}"
                 )
                 hpo_id = None
+            coded = umls.get(key, {})
             concepts[key] = Concept(
                 key=key,
                 hpo_id=hpo_id,
                 hpo_name=term.name if term else None,
                 modality=modality,
                 note=note,
+                cui=coded.get("cui"),
+                snomed_ct=coded.get("snomed_ct") or None,
+                umls_name=coded.get("umls_preferred_name"),
             )
         return cls(terms=terms, concepts=concepts)
 
@@ -404,6 +441,9 @@ class Vocabulary:
                     "hpo_name": c.hpo_name,
                     "modality": c.modality,
                     "note": c.note,
+                    "cui": c.cui,
+                    "snomed_ct": c.snomed_ct,
+                    "umls_name": c.umls_name,
                 }
                 for c in sorted(self.concepts.values(), key=lambda x: x.key)
             ],
@@ -421,6 +461,9 @@ class Vocabulary:
                 hpo_name=c["hpo_name"],
                 modality=c["modality"],
                 note=c.get("note", ""),
+                cui=c.get("cui"),
+                snomed_ct=c.get("snomed_ct"),
+                umls_name=c.get("umls_name"),
             )
             for c in payload["concepts"]
         }

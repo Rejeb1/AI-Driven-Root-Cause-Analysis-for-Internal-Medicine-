@@ -101,21 +101,29 @@ physician-curated cases. Substitutes:
 | Which cases are genuinely uncertain | Gold-differential confidence in the true diagnosis, as an abstention proxy |
 | Grading the evidence chain | **No substitute.** This capability is not delivered. |
 
-**The mandated ontology layer was not used.** Section 6 specifies UMLS, SNOMED
-CT and RxNorm. The UMLS licence cleared and `scripts/umls_probe.py` measured
-what it offers for these eight conditions: its relations are overwhelmingly
-translations, ICD crosswalks and MedDRA groupings, and the one clinically
-meaningful label mixes symptoms, risk factors and treatment complications
-without distinguishing them. It is a good concept vocabulary and not a source
-of supports/contradicts edges. SNOMED CT was used only as the probe's search
-vocabulary. RxNorm was not used at all, and nothing in scope reasons about
-medication.
+**The mandated ontology layer, delivered in halves.** Section 6 specifies UMLS,
+SNOMED CT and RxNorm for "authoritative concepts and relations".
 
-The concept layer is therefore HPO (`VOCABULARY.md`), and the edges are
-hand-encoded from published decision rules with citations. This is a deviation
-from a mandated item and the brief requires the mentor's written agreement for
-one; it is recorded here so that agreement can be sought against the
-measurement rather than against a preference.
+*Concepts* — delivered. `scripts/build_umls_map.py` resolves all 27 findings
+and all 8 conditions to a UMLS CUI and a SNOMED CT code, restricted to
+SNOMEDCT_US and to the semantic types appropriate to each kind of concept.
+Every concept carries them alongside its HPO identifier, and
+`Vocabulary.umls_coverage` reports how many are bound rather than assuming all
+are. HPO is kept as well rather than replaced: it supplies the hierarchy this
+vocabulary already uses, and SNOMED CT is what a clinical system would
+exchange.
+
+*Relations* — not delivered, and the reason is measured. `scripts/umls_probe.py`
+found that for these eight conditions UMLS relations are overwhelmingly
+translations, ICD crosswalks and MedDRA groupings, and its one clinically
+meaningful label mixes symptoms, risk factors and treatment complications
+without marking which is which. Supports/contradicts edges are therefore
+hand-encoded from Wells, PERC, CURB-65 and HEART with citations.
+
+*RxNorm* — not applicable. It names drugs and their ingredients; the vocabulary
+here holds symptoms, signs, laboratory results and imaging findings, and
+nothing in scope reasons about medication. That is a scope fact rather than a
+substitution.
 
 **The likelihood tables are largely invented.** UMLS was probed and found
 unusable for this purpose — mostly translations and billing crosswalks, and its

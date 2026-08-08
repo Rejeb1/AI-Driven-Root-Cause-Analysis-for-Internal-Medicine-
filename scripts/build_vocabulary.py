@@ -46,7 +46,9 @@ def main() -> int:
     args = parser.parse_args()
 
     download(force=args.refresh)
-    vocab = Vocabulary.build(OBO)
+    # Picks up data/umls_concepts.json when scripts/build_umls_map.py has been
+    # run, so the frozen vocabulary carries section 6's identifiers too.
+    vocab = Vocabulary.build(OBO, umls_path=Path("data/umls_concepts.json"))
     coverage = vocab.coverage()
 
     print(f"\nHPO release   {coverage['release']}")

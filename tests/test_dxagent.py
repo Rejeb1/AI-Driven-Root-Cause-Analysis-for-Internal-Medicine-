@@ -1719,3 +1719,61 @@ def test_workup_still_fills_in_when_nothing_else_is_worth_a_turn(kb):
     outcome = DiagnosticAgent(kb=kb).run(case)
     asked = [s.action.target for s in outcome.steps]
     assert set(PE_WORKUP.required) & set(asked)
+
+
+# --------------------------------------------------------------------------
+# UMLS / SNOMED concept layer (brief section 6)
+
+
+def test_concept_carries_umls_identifiers_alongside_hpo():
+    """Section 6 mandates UMLS and SNOMED CT; HPO is not a substitute for them.
+
+    Both are kept. HPO supplies the hierarchy this vocabulary already uses;
+    SNOMED CT is what a clinical system would exchange. Collapsing them into
+    one identifier would lose whichever question the other answers.
+    """
+    from dxagent.vocabulary import Concept
+
+    coded = Concept(
+        key="fever",
+        hpo_id="HP:0001945",
+        hpo_name="Fever",
+        modality="history",
+        cui="C0015967",
+        snomed_ct="386661006",
+        umls_name="Fever",
+    )
+    assert coded.is_grounded and coded.is_umls_grounded
+    assert "HP:0001945" in str(coded) and "C0015967" in str(coded)
+
+    # A concept with no CUI is still usable; the layer is reported, not required.
+    plain = Concept(key="x", hpo_id="HP:1", hpo_name="x", modality="history")
+    assert plain.is_grounded and not plain.is_umls_grounded
+
+
+def test_umls_coverage_is_reported_rather_than_assumed():
+    from dxagent.vocabulary import Concept, Vocabulary
+
+    vocab = Vocabulary(
+        concepts={
+            "a": Concept("a", "HP:1", "a", "history", cui="C1"),
+            "b": Concept("b", "HP:2", "b", "history"),
+        }
+    )
+    assert vocab.umls_coverage == (1, 2)
+
+
+def test_every_vocabulary_concept_has_a_umls_search_term():
+    """A concept with no written term would resolve by accident or not at all."""
+    import importlib.util
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "build_umls_map", Path("scripts/build_umls_map.py")
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    concepts = {c for e in build_knowledge_base().diseases() for c in e.features}
+    assert not concepts - set(module.SEARCH_TERMS)
+    assert set(module.DISEASE_TERMS) == {e.label for e in build_knowledge_base().diseases()}
