@@ -1,9 +1,18 @@
 """The vetted knowledge base.
 
-Every hypothesis the system ranks must be traceable to an entry here. The
-backend is behind a Protocol because the real KB is blocked on the UMLS licence
-and MIMIC credentialing; the in-memory backend below is a working stand-in with
-the same interface, so no downstream code changes when the real one lands.
+Every hypothesis the system ranks must be traceable to an entry here.
+
+The backend is behind a Protocol so a sourced KB can replace this one without
+touching call sites. The brief mandates UMLS, SNOMED CT and RxNorm for that
+role; the licence cleared and ``scripts/umls_probe.py`` measured what UMLS
+actually offers for these eight conditions. Its relations are overwhelmingly
+bookkeeping -- translations, ICD crosswalks, MedDRA groupings -- and the one
+clinically meaningful label, ``clinically_associated_with``, mixes symptoms,
+risk factors and treatment complications without distinguishing them. It is a
+usable concept vocabulary and not a source of supports/contradicts edges, so
+the concept layer is HPO (see VOCABULARY.md) and the edges are hand-encoded
+from published decision rules. That is a documented deviation from the
+mandated stack, not an unmet dependency.
 
 The KB stores, per disease, a conditional feature likelihood table:
 

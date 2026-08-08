@@ -9,11 +9,12 @@ ways a physician would notice immediately. Nothing here should be read as
 clinical information, and no result computed from it says anything about real
 diagnostic performance.
 
-The fixtures exist so that the loop, the gate, the calibrator, and the metrics
-can be developed and tested before MIMIC credentialing and the UMLS licence
-clear. They are the first thing to delete once real data is available, and the
-KB numbers should be replaced with sourced prevalences and likelihood ratios
-under clinician review rather than incrementally patched.
+The fixtures exist so that the loop, the gate, the calibrator and the metrics
+can be developed and tested without credentialed data. They are the first thing
+to delete once real cases are available, and the numbers should be replaced
+with sourced prevalences and likelihood ratios under clinician review rather
+than incrementally patched. That replacement has started: see ``_SOURCED``
+below and ``dxagent.provenance`` for which entries now carry a citation.
 
 The eight conditions cover a differential that is genuinely hard for the right
 reason: several of them share their presenting features and separate only on

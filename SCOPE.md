@@ -101,7 +101,23 @@ physician-curated cases. Substitutes:
 | Which cases are genuinely uncertain | Gold-differential confidence in the true diagnosis, as an abstention proxy |
 | Grading the evidence chain | **No substitute.** This capability is not delivered. |
 
-**The likelihood tables are invented.** UMLS was probed and its relations found
+**The mandated ontology layer was not used.** Section 6 specifies UMLS, SNOMED
+CT and RxNorm. The UMLS licence cleared and `scripts/umls_probe.py` measured
+what it offers for these eight conditions: its relations are overwhelmingly
+translations, ICD crosswalks and MedDRA groupings, and the one clinically
+meaningful label mixes symptoms, risk factors and treatment complications
+without distinguishing them. It is a good concept vocabulary and not a source
+of supports/contradicts edges. SNOMED CT was used only as the probe's search
+vocabulary. RxNorm was not used at all, and nothing in scope reasons about
+medication.
+
+The concept layer is therefore HPO (`VOCABULARY.md`), and the edges are
+hand-encoded from published decision rules with citations. This is a deviation
+from a mandated item and the brief requires the mentor's written agreement for
+one; it is recorded here so that agreement can be sought against the
+measurement rather than against a preference.
+
+**The likelihood tables are largely invented.** UMLS was probed and found
 unusable for this purpose — mostly translations and billing crosswalks, and its
 one clinical relation mixes symptoms, risk factors and treatment complications
 without distinguishing them. HPO supplies concepts but no disease-to-finding

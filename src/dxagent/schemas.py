@@ -8,7 +8,7 @@ severity/acuity are represented, what an escalation packet must contain), so
 everything here is structured to be extended rather than rewritten:
 
   * ``Finding`` carries a free-text ``raw`` alongside a normalised ``concept``,
-    so UMLS/SNOMED normalisation can be dropped in once the licence clears
+    so a UMLS/SNOMED identifier can be carried alongside the HPO one
     without touching call sites.
   * ``Hypothesis`` carries ``support`` as a list of ``Citation`` objects rather
     than prose, so the grounding requirement is enforced structurally.
