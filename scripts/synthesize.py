@@ -46,6 +46,16 @@ def main() -> int:
         action="store_true",
         help="print what would be generated without calling a model",
     )
+    parser.add_argument(
+        "--provider",
+        choices=("anthropic", "gemini"),
+        default="anthropic",
+        help=(
+            "anthropic is the brief's mandated model (needs ANTHROPIC_API_KEY, "
+            "paid). gemini is a free-tier substitute (needs GEMINI_API_KEY) -- "
+            "using it is a deviation from the spec and belongs in the write-up."
+        ),
+    )
     args = parser.parse_args()
 
     kb = build_knowledge_base()
@@ -64,17 +74,29 @@ def main() -> int:
         print("\n--dry-run: nothing generated.")
         return 0
 
-    if not os.environ.get("ANTHROPIC_API_KEY"):
+    env_var = "ANTHROPIC_API_KEY" if args.provider == "anthropic" else "GEMINI_API_KEY"
+    if not os.environ.get(env_var):
         print(
-            "\nANTHROPIC_API_KEY is not set, so there is no model to generate "
-            "with.\nRun with --dry-run to see the plan, or set the key.\n"
+            f"\n{env_var} is not set, so there is no model to generate with.\n"
+            "Run with --dry-run to see the plan, or set the key.\n"
             "Nothing was written."
         )
         return 1
 
-    from dxagent.llm import AnthropicLLM
+    if args.provider == "gemini":
+        from dxagent.llm import GeminiLLM
 
-    generator = CaseGenerator(AnthropicLLM(), kb, seed=args.seed)
+        print(
+            "\nusing Gemini, not the brief's mandated model -- record this "
+            "substitution in the write-up."
+        )
+        llm = GeminiLLM()
+    else:
+        from dxagent.llm import AnthropicLLM
+
+        llm = AnthropicLLM()
+
+    generator = CaseGenerator(llm, kb, seed=args.seed)
 
     generated = []
     for entry in kb.diseases():

@@ -96,4 +96,43 @@ class AnthropicLLM:
         )
 
 
-__all__ = ["AnthropicLLM", "LLMClient", "NullLLM", "ScriptedLLM"]
+@dataclass
+class GeminiLLM:
+    """Thin wrapper over the Gemini API.
+
+    Not the brief's mandated model -- a free-tier substitute for exercising
+    the synthesis pipeline without a paid Anthropic key. Using this instead of
+    ``AnthropicLLM`` is a deviation from the spec and belongs in the write-up
+    as one, the same way the UMLS and clinician deviations are recorded rather
+    than left implicit.
+    """
+
+    model: str = "gemini-2.0-flash"
+    api_key: str | None = None
+
+    def __post_init__(self) -> None:
+        self.api_key = self.api_key or os.environ.get("GEMINI_API_KEY")
+
+    def complete(self, prompt: str, system: str = "", max_tokens: int = 1024) -> str:
+        if not self.api_key:
+            raise RuntimeError("GEMINI_API_KEY is not set")
+        try:
+            from google import genai
+            from google.genai import types
+        except ImportError as exc:  # pragma: no cover
+            raise RuntimeError("pip install google-genai") from exc
+
+        client = genai.Client(api_key=self.api_key)
+        response = client.models.generate_content(
+            model=self.model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system or None,
+                max_output_tokens=max_tokens,
+                temperature=0.0,
+            ),
+        )
+        return response.text or ""
+
+
+__all__ = ["AnthropicLLM", "GeminiLLM", "LLMClient", "NullLLM", "ScriptedLLM"]
