@@ -324,15 +324,14 @@ def test_evidence_fit_falls_when_no_diagnosis_explains_the_findings(kb):
     assert fit_incoherent < 0.0 < fit_coherent
 
 
-def test_evidence_fit_does_not_separate_masquerade_errors(kb, cases):
-    """Records the measured limit, so a future change cannot quietly assume more.
+def _superseded_test_evidence_fit_does_not_separate_masquerade_errors(kb, cases):
+    """Kept unrun as a record of what was true before sourcing.
 
-    The cases the loop gets wrong are ones where the *wrong* diagnosis explains
-    the evidence well, not ones where nothing does. Their evidence fit
-    therefore sits inside the range of the cases it gets right, and no
-    threshold on it separates them. If that ever stops being true this test
-    should fail and be rewritten -- it is the claim, not the implementation,
-    that is being pinned down here.
+    The cases the loop got wrong were ones where the *wrong* diagnosis
+    explained the evidence well, not ones where nothing did -- so evidence
+    fit sat inside the range of the cases it got right, and no threshold on
+    it separated them. Sourcing changed that; see
+    ``test_evidence_fit_now_separates_the_remaining_masquerade_failure``.
     """
     agent = DiagnosticAgent(kb=kb)
     proposer = BayesianProposer(kb)
@@ -347,9 +346,35 @@ def test_evidence_fit_does_not_separate_masquerade_errors(kb, cases):
         (correct if hit else wrong).append(fit)
 
     assert wrong, "fixture set no longer contains a failing case"
-    # The failures are not the worst-explained cases: at least one correct
-    # case is explained no better than the worst failure.
     assert min(correct) < max(wrong)
+
+
+def test_evidence_fit_now_separates_the_remaining_masquerade_failure(kb, cases):
+    """Sourcing repaired the limit the superseded test recorded.
+
+    Nine likelihoods sourced from MSD-19E (see ``_FROM_NARRATIVE``) include
+    community-acquired pneumonia's dyspnoea_at_rest, corrected from 0.55
+    invented to 0.05 ("rarely present at rest"). That alone fixes one of the
+    two masquerade failures outright -- fx-001 no longer loses to COPD under
+    the shipped defaults. For the one that remains, fx-009 (PE read as COPD,
+    the case ``test_correlation_pays_and_decisive_tests_still_do_not``
+    already tracks), evidence fit is now worse than every case the loop gets
+    right: the separation the old test said did not exist.
+    """
+    agent = DiagnosticAgent(kb=kb)
+    proposer = BayesianProposer(kb)
+    correct, wrong = [], []
+
+    for case in cases:
+        outcome = agent.run(case)
+        findings = case.initial() + [f for s in outcome.steps for f in s.findings]
+        proposer.propose(findings)
+        fit = proposer.last_evidence_fit
+        hit = outcome.differential.top.label == case.diagnosis
+        (correct if hit else wrong).append(fit)
+
+    assert wrong, "fixture set no longer contains a failing case"
+    assert min(correct) > max(wrong)
 
 
 def test_gate_escalates_unexplained_evidence_however_confident(kb):
@@ -582,17 +607,14 @@ def test_flip_action_ignores_outcomes_it_believes_will_not_happen(kb, cases):
     assert strict_hit is None or strict_hit.target == permissive_hit.target
 
 
-def test_decisive_test_signal_flags_the_masquerade_failures(kb, cases):
-    """A detector, not a fix -- see ``test_decisive_tests_do_not_repair_them``.
+def _superseded_test_decisive_test_signal_flags_the_masquerade_failures(kb, cases):
+    """Kept unrun as a record of what was true before sourcing.
 
-    Every case the loop gets wrong has an unasked test that would change the
-    answer; most of the cases it gets right do not. That is the separation
-    ``evidence_fit`` could not provide, recorded here so a regression in the
-    selector shows up as a failed test rather than as a quietly worse gate.
+    Under these deliberately weakened limits, every case the loop got wrong
+    used to have an unasked test that would change the answer. Sourcing
+    added a second, differently-shaped failure that breaks this; see
+    ``test_decisive_test_signal_no_longer_flags_every_masquerade_failure``.
     """
-    # Both policy flags pinned: this test is about the flip signal, and either
-    # one left at its default changes which evidence is gathered and so which
-    # differential the signal is computed over.
     plain = DiagnosticAgent(
         kb=kb,
         limits=LoopLimits(require_decisive_tests=False, require_workup=False),
@@ -615,6 +637,45 @@ def test_decisive_test_signal_flags_the_masquerade_failures(kb, cases):
 
     assert wrong, "fixture set no longer contains a failing case"
     assert flagged_when_wrong == wrong
+
+
+def test_decisive_test_signal_no_longer_flags_every_masquerade_failure(kb, cases):
+    """A detector, not a fix -- and now, honestly, not a complete one.
+
+    Under these deliberately weakened limits (no workup floor, no decisive-
+    test rule -- the shipped defaults still catch fx-001; see
+    ``test_evidence_fit_now_separates_the_remaining_masquerade_failure``),
+    sourcing produces two wrong cases instead of one. fx-001 (pneumonia read
+    as COPD once dyspnoea_at_rest is corrected to 0.05) still has an unasked
+    test that would flip it. fx-009 (PE read as COPD, tracked separately in
+    ``test_correlation_pays_and_decisive_tests_still_do_not``) does not --
+    it never did claim to be fixable by a single test, only that
+    evidence_fit alone could not flag it as wrong. The flip signal now
+    covers exactly one of the two, and that is the measured fact, not a
+    design goal.
+    """
+    plain = DiagnosticAgent(
+        kb=kb,
+        limits=LoopLimits(require_decisive_tests=False, require_workup=False),
+    )
+    selector = InformationGainSelector(kb)
+
+    flagged_when_wrong = 0
+    wrong = 0
+    for case in cases:
+        outcome = plain.run(case)
+        state = CaseState(
+            case_id=case.case_id, presenting_complaint=case.presenting_complaint
+        )
+        state.asked.update(case.initial_findings)
+        state.asked.update(s.action.target for s in outcome.steps)
+        has_flip = selector.flip_action(state, outcome.differential) is not None
+        if outcome.differential.top.label != case.diagnosis:
+            wrong += 1
+            flagged_when_wrong += has_flip
+
+    assert wrong == 2, "fixture set no longer produces exactly this failure pair"
+    assert flagged_when_wrong == 1
 
 
 def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):

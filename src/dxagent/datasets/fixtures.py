@@ -218,25 +218,110 @@ _FROM_DDXPLUS: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
 }
 
 
-# The brief's Step 2 route: MSD Manual (Professional Edition) narrative text,
-# converted through the fixed rubric in provenance.py. Read four MSD pages
-# looking for it -- ACS, heart failure, community-acquired pneumonia, panic
-# disorder -- and this is what survived. The honest result is that reference-
-# text prose mostly *enumerates* findings ("symptoms include chest discomfort,
-# dyspnoea, nausea...") without a frequency word attached to each one; a
-# sentence has to actually carry a rubric term ("common", "usually", "rare")
-# to be converted rather than paraphrased, and most sentences do not. Two
-# specific targets came up empty: MSD's ACS page never mentions palpitations
-# at all, and its panic-disorder page discusses troponin/ECG only as ruling
-# out cardiac causes, never as a stated frequency. Both stay invented rather
-# than being force-mapped from a paraphrase.
+# The brief's Step 2 route: MSD Manual narrative text, converted through the
+# fixed rubric in provenance.py. The first pass read four web pages and found
+# one convertible sentence; this pass read the full 19th-edition text (the
+# actual chapters: Coronary Artery Disease/ACS, Heart Failure, Pneumonia,
+# Pulmonary Embolism, Pericarditis, Anxiety Disorders/Panic) and found nine.
+# The gap between "read the whole chapter" and "nine sentences" is the same
+# finding as before, just measured on more text: reference prose mostly
+# *enumerates* findings ("symptoms include chest discomfort, dyspnoea,
+# nausea...") without attaching a frequency word to each one. A sentence has
+# to actually carry a rubric term to convert; paraphrasing "the most
+# important physical finding" into "characteristic" would be picking the
+# number that looks right, which is exactly what the fixed-rubric rule
+# exists to prevent -- so pericarditis's friction rub (the textbook's own
+# words: "the most important physical finding") stays invented despite being
+# the single most textually well-supported finding in this whole KB.
+#
+# Two targets from the first pass were re-checked against the full chapter
+# rather than a search-engine excerpt, and confirmed empty: the ACS chapter
+# never mentions palpitations at all, and the panic-disorder chapter (read in
+# full, including its "Symptoms and Signs" section) discusses cardiac workup
+# only as "general medical evaluation to exclude" other causes -- never a
+# stated frequency for troponin or ECG. Both stay invented on purpose.
 _FROM_NARRATIVE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
     ("acute_pulmonary_oedema", "dyspnoea_at_rest"): from_narrative(
         "common",
         Citation(
-            "MSD",
-            "heart-failure-hf, Symptoms and Signs",
-            "the most common symptoms are dyspnea and fatigue",
+            "MSD-19E",
+            "Ch. 211 Heart Failure, Symptoms and Signs",
+            "the most common symptoms are dyspnea, reflecting pulmonary "
+            "congestion, and fatigue",
+        ),
+    ),
+    ("acute_pulmonary_oedema", "exam:tachycardia"): from_narrative(
+        "common",
+        Citation(
+            "MSD-19E",
+            "Ch. 211 Heart Failure",
+            "sinus tachycardia, a common compensatory change in HF",
+        ),
+    ),
+    ("community_acquired_pneumonia", "dyspnoea_at_rest"): from_narrative(
+        "rare",
+        Citation(
+            "MSD-19E",
+            "Ch. 196 Pneumonia, Symptoms and Signs",
+            "dyspnea usually is mild and exertional and is rarely present "
+            "at rest",
+        ),
+    ),
+    ("community_acquired_pneumonia", "imaging:cxr_consolidation"): from_narrative(
+        "always",
+        Citation(
+            "MSD-19E",
+            "Ch. 196 Pneumonia, Diagnosis",
+            "chest x-ray almost always shows some degree of infiltrate; "
+            "rarely, an infiltrate is absent in the first 24 to 48 h",
+        ),
+    ),
+    ("pulmonary_embolism", "exam:tachycardia"): from_narrative(
+        "common",
+        Citation(
+            "MSD-19E",
+            "Ch. 194 Pulmonary Embolism, Symptoms and Signs",
+            "the most common signs of PE are tachycardia and tachypnea",
+        ),
+    ),
+    ("pericarditis", "fever"): from_narrative(
+        "common",
+        Citation(
+            "MSD-19E",
+            "Ch. 216 Pericarditis, Symptoms and Signs",
+            "fever, chills, and weakness are common",
+        ),
+    ),
+    ("pericarditis", "dyspnoea_at_rest"): from_narrative(
+        "sometimes",
+        Citation(
+            "MSD-19E",
+            "Ch. 216 Pericarditis, Symptoms and Signs",
+            "acute pericarditis tends to cause chest pain and a pericardial "
+            "rub, sometimes with dyspnea",
+        ),
+    ),
+    ("pericarditis", "lab:raised_troponin"): from_narrative(
+        "always",
+        Citation(
+            "MSD-19E",
+            "Ch. 216 Pericarditis, Diagnosis",
+            "troponin is almost always elevated in acute pericarditis due "
+            "to epicardial involvement",
+        ),
+    ),
+    # The DSM definition itself, not a frequency claim about a population --
+    # "hallmark" fits a defining criterion better than "common" would, and
+    # the value happens to land exactly where the invented guess already
+    # was. Recorded anyway: an invented number that turns out right is still
+    # invented until something backs it.
+    ("panic_attack", "sudden_onset"): from_narrative(
+        "hallmark",
+        Citation(
+            "MSD-19E",
+            "Ch. 158 Anxiety Disorders, Panic Disorder",
+            "a panic attack is the sudden onset of a discrete, brief period "
+            "of intense discomfort, anxiety, or fear",
         ),
     ),
 }
