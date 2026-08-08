@@ -1,0 +1,210 @@
+{
+  "findings": {
+    "calf_tenderness": {
+      "search_term": "Pain in calf",
+      "cui": "C0236040",
+      "snomed_ct": "300954003",
+      "umls_preferred_name": "Pain in calf"
+    },
+    "dyspnoea_at_rest": {
+      "search_term": "Dyspnea at rest",
+      "cui": "C0743330",
+      "snomed_ct": "161941007",
+      "umls_preferred_name": "Rest Dyspnea"
+    },
+    "exam:crackles": {
+      "search_term": "Crackles",
+      "cui": "C0577961",
+      "snomed_ct": "75252003",
+      "umls_preferred_name": "Inspiratory crackles"
+    },
+    "exam:ecg_st_changes": {
+      "search_term": "ST segment changes",
+      "cui": "C0232326",
+      "snomed_ct": "55930002",
+      "umls_preferred_name": "EKG ST segment changes"
+    },
+    "exam:friction_rub": {
+      "search_term": "Pericardial friction rub",
+      "cui": "C0232267",
+      "snomed_ct": "7036007",
+      "umls_preferred_name": "Pericardial friction rub"
+    },
+    "exam:hypoxia": {
+      "search_term": "Hypoxemia",
+      "cui": "C0700292",
+      "snomed_ct": "389087006",
+      "umls_preferred_name": "Hypoxemia"
+    },
+    "exam:raised_jvp": {
+      "search_term": "Jugular venous distension",
+      "cui": "C0425687",
+      "snomed_ct": "271653008",
+      "umls_preferred_name": "Jugular venous engorgement"
+    },
+    "exam:reduced_breath_sounds": {
+      "search_term": "Decreased breath sounds",
+      "cui": "C0238844",
+      "snomed_ct": "58840004",
+      "umls_preferred_name": "Decreased breath sounds"
+    },
+    "exam:tachycardia": {
+      "search_term": "Tachycardia",
+      "cui": "C0039231",
+      "snomed_ct": "3424008",
+      "umls_preferred_name": "Tachycardia"
+    },
+    "exertional_chest_pain": {
+      "search_term": "Exertional chest pain",
+      "cui": "C0232288",
+      "snomed_ct": "81953000",
+      "umls_preferred_name": "Chest pain on exertion"
+    },
+    "fever": {
+      "search_term": "Fever",
+      "cui": "C0015967",
+      "snomed_ct": "386661006",
+      "umls_preferred_name": "Fever"
+    },
+    "imaging:cxr_consolidation": {
+      "search_term": "Consolidation of lung",
+      "cui": "C5395703",
+      "snomed_ct": "846749001",
+      "umls_preferred_name": "Consolidation of lung present"
+    },
+    "imaging:cxr_pulmonary_oedema": {
+      "search_term": "Pulmonary edema",
+      "cui": "C0034063",
+      "snomed_ct": "19242006",
+      "umls_preferred_name": "Pulmonary Edema"
+    },
+    "lab:raised_bnp": {
+      "search_term": "B-type natriuretic peptide above reference range",
+      "cui": "C5847543",
+      "snomed_ct": "681121000124101",
+      "umls_preferred_name": "B-type natriuretic peptide above reference range"
+    },
+    "lab:raised_d_dimer": {
+      "search_term": "D-dimer above reference range",
+      "cui": "C0742969",
+      "snomed_ct": "449830004",
+      "umls_preferred_name": "D-dimer above reference range"
+    },
+    "lab:raised_troponin": {
+      "search_term": "Troponin above reference range",
+      "cui": "C6009209",
+      "snomed_ct": "1363512008",
+      "umls_preferred_name": "Troponin above reference range"
+    },
+    "lab:raised_wcc": {
+      "search_term": "Leukocytosis",
+      "cui": "C0023518",
+      "snomed_ct": "111583006",
+      "umls_preferred_name": "Leukocytosis"
+    },
+    "leg_swelling": {
+      "search_term": "Swelling of leg",
+      "cui": "C0424811",
+      "snomed_ct": "248480008",
+      "umls_preferred_name": "Leg swelling symptom"
+    },
+    "orthopnoea": {
+      "search_term": "Orthopnea",
+      "cui": "C0085619",
+      "snomed_ct": "62744007",
+      "umls_preferred_name": "Orthopnea"
+    },
+    "palpitations": {
+      "search_term": "Palpitations",
+      "cui": "C0030252",
+      "snomed_ct": "80313002",
+      "umls_preferred_name": "Palpitations"
+    },
+    "pleuritic_pain": {
+      "search_term": "Pleuritic pain",
+      "cui": "C0008033",
+      "snomed_ct": "2237002",
+      "umls_preferred_name": "Pleuritic pain"
+    },
+    "productive_cough": {
+      "search_term": "Productive cough",
+      "cui": "C0239134",
+      "snomed_ct": "28743005",
+      "umls_preferred_name": "Productive Cough"
+    },
+    "recent_immobility": {
+      "search_term": "Immobile",
+      "cui": "C0231440",
+      "snomed_ct": "67759008",
+      "umls_preferred_name": "Musculoskeletal immobility"
+    },
+    "smoking_history": {
+      "search_term": "Cigarette smoker",
+      "cui": "C0337667",
+      "snomed_ct": "65568007",
+      "umls_preferred_name": "Cigarette smoker (finding)"
+    },
+    "sudden_onset": {
+      "search_term": "Sudden onset",
+      "cui": "C1272517",
+      "snomed_ct": "385315009",
+      "umls_preferred_name": "Sudden onset (contextual qualifier) (qualifier value)"
+    },
+    "wheeze_subjective": {
+      "search_term": "Wheezing",
+      "cui": "C0043144",
+      "snomed_ct": "56018004",
+      "umls_preferred_name": "Wheezing"
+    }
+  },
+  "conditions": {
+    "pulmonary_embolism": {
+      "search_term": "Pulmonary embolism",
+      "cui": "C0034065",
+      "snomed_ct": "59282003",
+      "umls_preferred_name": "Pulmonary Embolism"
+    },
+    "community_acquired_pneumonia": {
+      "search_term": "Community acquired pneumonia",
+      "cui": "C0694549",
+      "snomed_ct": "385093006",
+      "umls_preferred_name": "Community-Acquired Pneumonia"
+    },
+    "acute_coronary_syndrome": {
+      "search_term": "Acute coronary syndrome",
+      "cui": "C0948089",
+      "snomed_ct": "394659003",
+      "umls_preferred_name": "Acute Coronary Syndrome"
+    },
+    "acute_pulmonary_oedema": {
+      "search_term": "Acute pulmonary edema",
+      "cui": "C0155919",
+      "snomed_ct": "40541001",
+      "umls_preferred_name": "Acute pulmonary edema"
+    },
+    "copd_exacerbation": {
+      "search_term": "Acute exacerbation of COPD",
+      "cui": "C0340044",
+      "snomed_ct": "195951007",
+      "umls_preferred_name": "Acute exacerbation of chronic obstructive pulmonary disease"
+    },
+    "asthma_exacerbation": {
+      "search_term": "Exacerbation of asthma",
+      "cui": "C0349790",
+      "snomed_ct": "281239006",
+      "umls_preferred_name": "Exacerbation of asthma"
+    },
+    "pericarditis": {
+      "search_term": "Pericarditis",
+      "cui": "C0031046",
+      "snomed_ct": "3238004",
+      "umls_preferred_name": "Pericarditis"
+    },
+    "panic_attack": {
+      "search_term": "Panic attack",
+      "cui": "C0086769",
+      "snomed_ct": "225624000",
+      "umls_preferred_name": "Panic Attacks"
+    }
+  }
+}

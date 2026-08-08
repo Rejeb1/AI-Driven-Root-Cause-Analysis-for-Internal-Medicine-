@@ -208,9 +208,9 @@
       "hpo_name": "Abnormal circulating B-type natriuretic peptide concentration",
       "modality": "lab",
       "note": "'Abnormal circulating BNP concentration' -- parent term; verify whether a raised-specific child exists in this release",
-      "cui": null,
-      "snomed_ct": null,
-      "umls_name": null
+      "cui": "C5847543",
+      "snomed_ct": "681121000124101",
+      "umls_name": "B-type natriuretic peptide above reference range"
     },
     {
       "key": "lab:raised_d_dimer",
@@ -228,9 +228,9 @@
       "hpo_name": "Increased circulating troponin I concentration",
       "modality": "lab",
       "note": "troponin I; troponin T is a separate term HP:0410174. Assays differ and conflating them is a real-world error.",
-      "cui": null,
-      "snomed_ct": null,
-      "umls_name": null
+      "cui": "C6009209",
+      "snomed_ct": "1363512008",
+      "umls_name": "Troponin above reference range"
     },
     {
       "key": "lab:raised_wcc",
@@ -238,9 +238,9 @@
       "hpo_name": "Increased total leukocyte count",
       "modality": "lab",
       "note": "'Increased total leukocyte count'. Chosen over HP:6001425 'Hyperleukocytosis', which denotes a far more extreme elevation (leukostasis territory) than a routine raised white count.",
-      "cui": null,
-      "snomed_ct": null,
-      "umls_name": null
+      "cui": "C0023518",
+      "snomed_ct": "111583006",
+      "umls_name": "Leukocytosis"
     },
     {
       "key": "leg_swelling",
@@ -308,9 +308,9 @@
       "hpo_name": null,
       "modality": "history",
       "note": "risk factor / exposure, not a phenotype. HPO is the wrong ontology for this class; needs its own vocabulary.",
-      "cui": "C5817601",
-      "snomed_ct": "1279533009",
-      "umls_name": "Thromboembolism of vein due to prolonged immobilization"
+      "cui": "C0231440",
+      "snomed_ct": "67759008",
+      "umls_name": "Musculoskeletal immobility"
     },
     {
       "key": "smoking_history",
@@ -328,9 +328,9 @@
       "hpo_name": null,
       "modality": "history",
       "note": "temporal qualifier, not a phenotype; belongs in a separate onset field rather than the findings vocabulary",
-      "cui": "C3697073",
-      "snomed_ct": "698975002",
-      "umls_name": "Edema of extremity of sudden onset"
+      "cui": "C1272517",
+      "snomed_ct": "385315009",
+      "umls_name": "Sudden onset (contextual qualifier) (qualifier value)"
     },
     {
       "key": "syncope",

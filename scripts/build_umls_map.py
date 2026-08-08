@@ -33,18 +33,39 @@ resolution is a visible line in this file rather than a silent transformation,
 and every result is printed with its preferred name so the mapping can be
 checked against what UMLS thought you meant.
 
-That check is not optional, and a first pass through this script proves it. It
-resolved without error, printed a SNOMED CT code for every hit, and five of
-those hits were the wrong concept: ``smoking_history`` came back as the
-patient's *mother's* smoking history, ``lab:raised_wcc`` as a cerebrospinal-
-fluid-specific leukocytosis, ``imaging:cxr_pulmonary_oedema`` as a risk
-assessment rather than a finding, and ``imaging:ctpa_filling_defect`` as a
-diagnosis-suspicion code because the search term used the disease's name
-instead of the imaging sign. All four had a CUI, a SNOMED code and a plausible-
-looking preferred name. ``_WRONG_SENSE`` now filters known bad patterns
-(maternal/paternal history, "risk of", CSF-specific, etc.) as a backstop, and
-the search terms below were corrected -- but the filter is a backstop, not a
-substitute for reading the printed output.
+That check is not optional, and it took three live runs to get this right. Each
+run resolved without error, printed a SNOMED CT code for every hit, and got
+some of them wrong:
+
+    run 1  smoking_history -> the patient's *mother's* smoking history
+           lab:raised_wcc  -> a cerebrospinal-fluid-specific leukocytosis
+           cxr_pulmonary_oedema -> a risk assessment, not a finding
+           ctpa_filling_defect  -> a diagnosis-suspicion code, because the
+                                   search term was the disease's own name
+           sudden_onset    -> "Edema of extremity of sudden onset"
+    run 2  recent_immobility -> "Thromboembolism of vein due to prolonged
+                                immobilization", the disorder the exposure
+                                causes rather than the exposure
+    run 3  lab:raised_wcc  -> "Neutrophilia", raised neutrophils specifically
+           recent_immobility -> "Immobile foot"
+
+Every one had a CUI, a SNOMED code and a plausible-looking preferred name, and
+each round of rewriting the query produced a *different* wrong answer. Three
+mechanisms came out of that, and the order matters:
+
+  * ``_WRONG_SENSE`` filters names that mark a hit as the wrong sense
+    (maternal history, "risk of", CSF-specific, "suspected").
+  * Semantic types are chosen per *kind* of concept, not globally. Exposures
+    exclude T046 so a risk factor cannot resolve to the disorder it causes;
+    qualifiers accept T080 only.
+  * ``VERIFIED_CUI`` pins the handful where search still cannot be made to
+    land, each read off ``--suggest`` and checked by eye.
+
+Use ``--suggest TERM`` before rewriting a query. It prints every candidate
+unfiltered and falls back to searching all of UMLS, which distinguishes "the
+concept is absent" from "the query is worded wrong" -- two failures that look
+identical in the output above and need opposite fixes. Guessing between them is
+what cost the three runs.
 """
 
 from __future__ import annotations
@@ -115,6 +136,59 @@ def _wrong_sense(preferred_name: str) -> bool:
     lowered = preferred_name.lower()
     return any(marker in lowered for marker in _WRONG_SENSE)
 
+
+# Concepts where search cannot be made to land on the right CUI, pinned
+# directly. Each was read off `--suggest` output and checked by eye; the
+# comment records what search did instead, so a future reader can tell a
+# considered pin from a lazy one.
+#
+# Pinning is the right tool once a query has been rewritten twice and produced
+# a different wrong answer each time. Three rounds of term-guessing here
+# introduced a new wrong-sense error on every pass -- maternal smoking history,
+# then a thromboembolism disorder for an exposure, then "Immobile foot" -- and
+# each fix was itself a guess. A pinned CUI is a claim someone can check in one
+# step against the name recorded beside it.
+VERIFIED_CUI: dict[str, tuple[str, str]] = {
+    # Searching "Leukocytosis" under result semantic types skipped the plain
+    # concept and returned first a CSF-specific subtype, then Neutrophilia --
+    # raised neutrophils specifically, not raised total white cells.
+    "lab:raised_wcc": ("C0023518", "Leukocytosis"),
+    # "Immobilization" returned the thromboembolism it causes; "Immobile"
+    # returned "Immobile foot". This is the nearest concept SNOMED carries to
+    # the Wells criterion, and it is still not that criterion -- Wells means
+    # immobilisation for three days or more, which SNOMED does not model as a
+    # single concept.
+    "recent_immobility": ("C0231440", "Musculoskeletal immobility"),
+    # SNOMED models onset as a contextual qualifier. Searching T080 alone found
+    # nothing because the qualifier is rooted in MTH rather than SNOMEDCT_US.
+    "sudden_onset": ("C1272517", "Sudden onset (contextual qualifier)"),
+}
+
+# Concepts UMLS does not contain, verified with `--suggest`, which falls back to
+# searching all of UMLS before reporting nothing. Recorded so that an
+# unresolved entry is distinguishable from one nobody has looked at.
+NOT_IN_UMLS: dict[str, str] = {
+    # "Filling defect" exists (C0332555) and has ureter, kidney and bladder
+    # variants; there is no pulmonary-artery one, and no CTPA-specific finding
+    # anywhere in UMLS. Using the generic "Filling defect" would be wrong -- it
+    # says nothing about which vessel -- and using "Pulmonary embolism" would
+    # code the diagnosis as though it were the imaging sign that supports it.
+    "imaging:ctpa_filling_defect": (
+        "no pulmonary-artery filling-defect concept exists in UMLS; the "
+        "generic C0332555 does not name the vessel and the disease concept "
+        "would confuse a sign with its conclusion"
+    ),
+}
+
+
+def fetch_cui(cui: str, api_key: str) -> dict | None:
+    """Preferred name for a CUI pinned in ``VERIFIED_CUI``."""
+    payload = request(f"/content/current/CUI/{cui}", api_key)
+    result = payload.get("result") or {}
+    if not result.get("ui"):
+        return None
+    return {"cui": result["ui"], "preferred_name": result.get("name", "")}
+
 # Vocabulary key -> (term to search, semantic types to accept).
 # Checked by eye against the UMLS preferred name the script prints back.
 SEARCH_TERMS: dict[str, tuple[str, str]] = {
@@ -151,8 +225,10 @@ SEARCH_TERMS: dict[str, tuple[str, str]] = {
     # contorting the query was not.
     "lab:raised_wcc": ("Leukocytosis", _RESULT_TYPES),
     "lab:raised_d_dimer": ("D-dimer above reference range", _RESULT_TYPES),
-    "lab:raised_troponin": ("Troponin increased", _RESULT_TYPES),
-    "lab:raised_bnp": ("Brain natriuretic peptide increased", _RESULT_TYPES),
+    "lab:raised_troponin": ("Troponin above reference range", _RESULT_TYPES),
+    "lab:raised_bnp": (
+        "B-type natriuretic peptide above reference range", _RESULT_TYPES,
+    ),
     # imaging
     "imaging:cxr_consolidation": ("Consolidation of lung", _RESULT_TYPES),
     # Searching "Pulmonary edema" under result types (T034/T060/T033/T184)
@@ -337,7 +413,21 @@ def main() -> int:
     ):
         print(f"\n{kind}")
         for key, term, types in items:
-            found = resolve(term, types, args.api_key)
+            if key in NOT_IN_UMLS:
+                print(f"  NOT IN UMLS  {key:<30} {NOT_IN_UMLS[key][:40]}...")
+                continue
+            if key in VERIFIED_CUI:
+                pinned, expected = VERIFIED_CUI[key]
+                found = fetch_cui(pinned, args.api_key)
+                if found and found["preferred_name"] and expected.split()[0].lower()                         not in found["preferred_name"].lower():
+                    # The pin drifted: UMLS renamed or retired the concept.
+                    # Loud, because a pin nobody rechecks is worse than a search.
+                    print(
+                        f"  PIN DRIFT   {key:<30} {pinned} is now "
+                        f"{found['preferred_name']!r}, expected {expected!r}"
+                    )
+            else:
+                found = resolve(term, types, args.api_key)
             if found is None:
                 print(f"  UNRESOLVED  {key:<32} {term!r}")
                 unresolved.append(key)
