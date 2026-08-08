@@ -115,9 +115,11 @@ def correlation_pairs() -> dict[frozenset[str], float]:
 # overrides the invented value *and* records where the replacement came from,
 # so `scripts/sensitivity.py` can report coverage and sweep the uncertainty.
 #
-# Do not source all 135. `scripts/sensitivity.py` shows that 30 of them decide
-# anything at all on this case set, and 26 of those sit in the acute coronary
-# syndrome / acute pulmonary oedema pair -- start there.
+# Do not source all 135. `scripts/sensitivity.py --correlated` currently finds
+# only 2-4 that decide anything on this case set, and the count moves as the
+# rest of the model changes (it was 30 before correlation weighting and the
+# workup-preemption fix) -- rerun it before picking a target rather than
+# trusting a number written down here.
 #
 # Two ways to add one:
 #
@@ -216,6 +218,29 @@ _FROM_DDXPLUS: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
 }
 
 
+# The brief's Step 2 route: MSD Manual (Professional Edition) narrative text,
+# converted through the fixed rubric in provenance.py. Read four MSD pages
+# looking for it -- ACS, heart failure, community-acquired pneumonia, panic
+# disorder -- and this is what survived. The honest result is that reference-
+# text prose mostly *enumerates* findings ("symptoms include chest discomfort,
+# dyspnoea, nausea...") without a frequency word attached to each one; a
+# sentence has to actually carry a rubric term ("common", "usually", "rare")
+# to be converted rather than paraphrased, and most sentences do not. Two
+# specific targets came up empty: MSD's ACS page never mentions palpitations
+# at all, and its panic-disorder page discusses troponin/ECG only as ruling
+# out cardiac causes, never as a stated frequency. Both stay invented rather
+# than being force-mapped from a paraphrase.
+_FROM_NARRATIVE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
+    ("acute_pulmonary_oedema", "dyspnoea_at_rest"): from_narrative(
+        "common",
+        Citation(
+            "MSD",
+            "heart-failure-hf, Symptoms and Signs",
+            "the most common symptoms are dyspnea and fatigue",
+        ),
+    ),
+}
+
 # Frequencies from a published cohort of real patients. These take precedence
 # over the DDXPlus figures below, and where the two disagree the disagreement
 # is itself worth reporting: DDXPlus puts pleuritic pain in 71% of its
@@ -261,10 +286,12 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
     ),
 }
 
-# Literature wins. A frequency counted in real patients outranks one counted in
-# a simulator, and stating the order here means neither depends on which
-# happens to appear later in a dict literal.
+# Precedence, weakest first: a converted phrase from a reference text, then a
+# frequency counted in the simulator, then a frequency counted in real
+# patients. Each later dict overwrites the earlier ones on a shared key, so
+# the strongest available source always wins regardless of dict-literal order.
 _SOURCED: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
+    **_FROM_NARRATIVE,
     **_FROM_DDXPLUS,
     **_FROM_LITERATURE,
 }
