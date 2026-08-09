@@ -59,7 +59,14 @@ _SYSTEM = """You write structured clinical vignettes for testing a diagnostic \
 reasoning system. They are teaching fictions, not records of real patients.
 
 Rules:
-- Use ONLY findings from the provided vocabulary. Do not invent findings.
+- The "present" and "absent" lists must use ONLY the exact vocabulary terms \
+given. Do not invent findings.
+- The "narrative" is prose a clinician would write. Never put a vocabulary \
+term into it verbatim: write "a productive cough", not "productive_cough", \
+and "a raised white cell count", not "lab:raised_wcc". A narrative containing \
+an underscore or a colon is wrong.
+- The narrative describes what the patient presents with. Do not recite the \
+absent findings in it; absence belongs in the "absent" list.
 - Include no names, dates, places, or identifiers of any kind.
 - The gold diagnosis must be the single best explanation of the findings.
 - Respond with JSON only, no prose and no markdown fences:
@@ -217,13 +224,24 @@ class CaseGenerator:
                 continue
             out.append(
                 SyntheticCase(
-                    case_id=f"{diagnosis}-{self.seed}-{index:03d}",
+                    # The near-miss target is part of the identity, not
+                    # decoration. Without it every near-miss batch for a
+                    # diagnosis collides with that diagnosis's typical batch
+                    # and with every other near-miss batch for it, and since
+                    # screening drops by id, the collision silently deletes
+                    # the near-miss cases -- the ones the abstention gate
+                    # exists to be tested against.
+                    case_id=(
+                        f"{diagnosis}-as-{confusable_with}-{self.seed}-{index:03d}"
+                        if confusable_with
+                        else f"{diagnosis}-{self.seed}-{index:03d}"
+                    ),
                     narrative=str(item.get("narrative", "")).strip(),
                     present=present,
                     absent=absent,
                     diagnosis=diagnosis,
                     reasoning=str(item.get("reasoning", "")).strip(),
-                    generator=type(self.llm).__name__,
+                    generator=_describe(self.llm),
                 )
             )
         return out
@@ -300,6 +318,19 @@ def near_duplicates(
     return tuple(flagged)
 
 
+def leaks_vocabulary(narrative: str) -> tuple[str, ...]:
+    """Vocabulary identifiers written verbatim into prose.
+
+    The prompt forbids this and models comply unevenly, so it is measured
+    rather than assumed. Not grounds for rejection: the present/absent lists
+    are still valid and the case still exercises the reasoner. It is a
+    realism defect, and a corpus where every narrative reads like a variable
+    dump is not the corpus the brief asks for -- so it is counted and
+    reported instead of quietly tolerated.
+    """
+    return tuple(sorted(set(re.findall(r"\b[a-z]+(?:[_:][a-z_]+)+\b", narrative))))
+
+
 def screen(
     cases: list[SyntheticCase], duplicate_threshold: float = 0.5
 ) -> tuple[list[SyntheticCase], dict[str, Any]]:
@@ -312,26 +343,47 @@ def screen(
     duplicate_ids = {second for _, second, _ in near_duplicates(cases, duplicate_threshold)}
     kept: list[SyntheticCase] = []
     phi_flagged: list[tuple[str, tuple[tuple[str, str], ...]]] = []
+    dropped_phi = dropped_duplicate = dropped_critique = 0
 
     for case in cases:
         hits = phi_scan(f"{case.narrative} {case.reasoning}")
         if hits:
             phi_flagged.append((case.case_id, hits))
+            dropped_phi += 1
             continue
         if case.case_id in duplicate_ids:
+            dropped_duplicate += 1
             continue
         if not case.accepted:
+            dropped_critique += 1
             continue
         kept.append(case)
 
-    return kept, {
+    # Counted at the point of dropping, not inferred afterwards. Deriving
+    # ``rejected_as_duplicate`` from ``len(duplicate_ids)`` counted distinct
+    # *identifiers* while the loop dropped *cases*, so colliding ids made the
+    # report understate its own losses -- and the missing cases were the
+    # near-miss ones. A report that cannot be reconciled against the corpus is
+    # worse than no report, because it is trusted.
+    report = {
         "generated": len(cases),
         "kept": len(kept),
-        "rejected_by_critique": sum(1 for c in cases if not c.accepted),
-        "rejected_as_duplicate": len(duplicate_ids),
-        "rejected_for_phi": len(phi_flagged),
+        "rejected_by_critique": dropped_critique,
+        "rejected_as_duplicate": dropped_duplicate,
+        "rejected_for_phi": dropped_phi,
         "phi_detail": phi_flagged,
+        # Kept, but flagged: see ``leaks_vocabulary``.
+        "narratives_leaking_vocabulary": sum(
+            1 for c in kept if leaks_vocabulary(c.narrative)
+        ),
     }
+    accounted = dropped_phi + dropped_duplicate + dropped_critique + len(kept)
+    if accounted != len(cases):  # pragma: no cover - defensive
+        raise AssertionError(
+            f"screen() lost {len(cases) - accounted} case(s): every case must "
+            "be either kept or counted under exactly one rejection reason"
+        )
+    return kept, report
 
 
 def review_sample(
@@ -376,6 +428,20 @@ def _parse_json(raw: str) -> dict:
     if start == -1 or end <= start:
         raise ValueError(f"no JSON object found in model response: {text[:120]!r}")
     return json.loads(text[start : end + 1])
+
+
+def _describe(llm: Any) -> str:
+    """Identify the model behind a client, not just the client class.
+
+    ``AnthropicLLM`` and ``GeminiLLM`` are wrappers; which *model* wrote a
+    vignette is the part a reader needs, and it is the part that changes
+    without the class name changing. A batch recording only "GeminiLLM" cannot
+    answer whether it was generated by the mandated model or a free-tier
+    substitute, which is exactly the question the write-up has to answer.
+    """
+    name = type(llm).__name__
+    model = getattr(llm, "model", "")
+    return f"{name}({model})" if model else name
 
 
 def _replace(case: SyntheticCase, **changes) -> SyntheticCase:

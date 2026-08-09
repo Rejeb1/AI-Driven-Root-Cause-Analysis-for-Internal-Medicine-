@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import time
 from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
@@ -107,11 +109,24 @@ class GeminiLLM:
     than left implicit.
     """
 
-    model: str = "gemini-2.0-flash"
+    # Pinned rather than an alias like ``gemini-flash-lite-latest``: a corpus
+    # is worth only as much as the record of what generated it, and an alias
+    # silently changes model under a stored batch. ``gemini-2.0-flash`` was
+    # the first default and is no longer usable -- it now returns 429 with
+    # ``limit: 0`` on the free tier, which reads like exhausted usage and is
+    # actually no quota at all.
+    model: str = "gemini-3.5-flash-lite"
     api_key: str | None = None
 
     def __post_init__(self) -> None:
         self.api_key = self.api_key or os.environ.get("GEMINI_API_KEY")
+
+    # The free tier allows 15 requests per minute per model. A synthesis run
+    # is one call per vignette plus one per critique -- comfortably past that
+    # -- so without backoff most of a batch fails and the run reports a
+    # near-empty corpus for a reason that has nothing to do with the model's
+    # ability to write vignettes.
+    max_retries: int = 5
 
     def complete(self, prompt: str, system: str = "", max_tokens: int = 1024) -> str:
         if not self.api_key:
@@ -123,16 +138,29 @@ class GeminiLLM:
             raise RuntimeError("pip install google-genai") from exc
 
         client = genai.Client(api_key=self.api_key)
-        response = client.models.generate_content(
-            model=self.model,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=system or None,
-                max_output_tokens=max_tokens,
-                temperature=0.0,
-            ),
+        config = types.GenerateContentConfig(
+            system_instruction=system or None,
+            max_output_tokens=max_tokens,
+            temperature=0.0,
         )
-        return response.text or ""
+
+        for attempt in range(self.max_retries):
+            try:
+                response = client.models.generate_content(
+                    model=self.model, contents=prompt, config=config
+                )
+                return response.text or ""
+            except Exception as exc:
+                if "429" not in str(exc) or attempt == self.max_retries - 1:
+                    raise
+                # The API states how long to wait; prefer that to a guess,
+                # since a guessed backoff either wastes minutes or retries
+                # into the same limit.
+                match = re.search(r"'retryDelay':\s*'(\d+)s'", str(exc))
+                delay = int(match.group(1)) + 1 if match else 2 ** (attempt + 3)
+                time.sleep(delay)
+
+        raise RuntimeError("unreachable")  # pragma: no cover
 
 
 __all__ = ["AnthropicLLM", "GeminiLLM", "LLMClient", "NullLLM", "ScriptedLLM"]

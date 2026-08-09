@@ -137,6 +137,14 @@ def main() -> int:
     for case_id, hits in report["phi_detail"]:
         print(f"   PHI in {case_id}: {[kind for kind, _ in hits]}")
 
+    leaking = report["narratives_leaking_vocabulary"]
+    if leaking:
+        print(
+            f"\n{leaking} of {report['kept']} kept narratives write vocabulary "
+            "identifiers\ninto the prose verbatim. Kept, because the findings "
+            "lists are still\nvalid, but they do not read like clinical text."
+        )
+
     print(
         "\nThe PHI screen matches structured identifiers only. It does not "
         "find\na name in running prose, and a clean report is not a clean "

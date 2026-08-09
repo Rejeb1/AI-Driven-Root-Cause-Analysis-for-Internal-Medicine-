@@ -1711,6 +1711,90 @@ def test_generation_failures_are_recorded_not_swallowed(kb):
     assert ok.failures == []
 
 
+def test_near_miss_cases_do_not_collide_with_their_own_diagnosis(kb):
+    """Found by running the pipeline for real; invisible to every stub test.
+
+    ``case_id`` omitted ``confusable_with``, so every near-miss batch for a
+    diagnosis collided with that diagnosis's typical batch and with every
+    other near-miss batch for it. Screening drops by id, so the collision
+    silently deleted the near-miss cases -- and in the first live run, all
+    four survived as zero. Those are the cases the abstention gate exists to
+    be tested against, so this deleted precisely the most valuable part of
+    the corpus while reporting success.
+    """
+    from dxagent.synthesis import CaseGenerator
+
+    payload = json.dumps({"cases": [{
+        "narrative": "n", "present": ["fever"], "absent": [],
+        "diagnosis": "acute_coronary_syndrome", "reasoning": "r",
+    }]})
+    generator = CaseGenerator(ScriptedLLM([payload]), kb, seed=0)
+
+    ids = [
+        c.case_id
+        for batch in (
+            generator.generate("acute_coronary_syndrome", count=1),
+            generator.generate("acute_coronary_syndrome", 1, confusable_with="pericarditis"),
+            generator.generate("acute_coronary_syndrome", 1, confusable_with="panic_attack"),
+        )
+        for c in batch
+    ]
+    assert len(ids) == 3
+    assert len(set(ids)) == 3, f"colliding case ids: {ids}"
+    assert any("-as-pericarditis-" in i for i in ids)
+
+
+def test_screen_accounts_for_every_case_it_was_given(kb):
+    """The report must reconcile against the corpus, or it is worse than none.
+
+    ``rejected_as_duplicate`` was derived from the number of distinct
+    duplicate *identifiers* while the loop dropped *cases*. With colliding
+    ids the report understated its own losses -- a live run showed 20
+    generated, 3 rejections reported, 13 kept, and four cases unaccounted for.
+    """
+    from dxagent.synthesis import SyntheticCase, screen
+
+    def make(case_id, narrative, accepted=True):
+        return SyntheticCase(
+            case_id=case_id, narrative=narrative, present=("fever",), absent=(),
+            diagnosis="community_acquired_pneumonia", reasoning="",
+            accepted=accepted,
+        )
+
+    cases = [
+        make("a", "patient with fever and productive cough for three days"),
+        make("b", "patient with fever and productive cough for three days"),
+        make("c", "unrelated presentation of sudden severe chest wall pain"),
+        make("d", "another distinct presentation with wheeze and long history", accepted=False),
+        make("e", "call the clinic on 555-123-4567 about this patient"),
+    ]
+    kept, report = screen(cases)
+
+    accounted = (
+        len(kept)
+        + report["rejected_by_critique"]
+        + report["rejected_as_duplicate"]
+        + report["rejected_for_phi"]
+    )
+    assert accounted == report["generated"] == len(cases)
+
+
+def test_vocabulary_leakage_is_measured_not_assumed_away():
+    """The prompt forbids it and models comply unevenly.
+
+    The first live run wrote an identifier into all 13 kept narratives.
+    Tightening the prompt cut it to 1 of 18, which is a reason to measure it
+    rather than to declare it solved.
+    """
+    from dxagent.synthesis import leaks_vocabulary
+
+    assert leaks_vocabulary("presents with productive_cough and lab:raised_wcc") == (
+        "lab:raised_wcc",
+        "productive_cough",
+    )
+    assert leaks_vocabulary("presents with a productive cough and a raised white cell count") == ()
+
+
 def test_screen_reports_what_it_discarded_and_why(kb):
     from dxagent.synthesis import SyntheticCase, screen
 
