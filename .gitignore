@@ -24,3 +24,12 @@ data/ddxplus/
 # Machine-local tool settings: absolute paths from one developer's machine,
 # meaningless and mildly confusing anywhere else.
 .claude/settings.local.json
+
+# API keys, read at runtime and never committed. The scripts take their keys
+# from the environment precisely so no key needs to live in a file; these
+# patterns exist so that one written down for convenience cannot be committed
+# by accident.
+.env
+*.key
+.gemini_key
+.anthropic_key
