@@ -106,6 +106,21 @@ def main() -> int:
             generator.generate(first, args.per_disease, confusable_with=second)
         )
 
+    if generator.failures:
+        print(f"\n{len(generator.failures)} call(s) produced nothing usable:")
+        for note in generator.failures[:10]:
+            print(f"   {note}")
+        if len(generator.failures) > 10:
+            print(f"   ... and {len(generator.failures) - 10} more")
+
+    if not generated:
+        print(
+            "\nNothing was generated. The failures above say why; an empty "
+            "batch\nwith no failures listed means the model returned "
+            "well-formed JSON\ncontaining no cases."
+        )
+        return 1
+
     print(f"\ngenerated {len(generated)}; critiquing...")
     critiqued = [generator.critique(case) for case in generated]
 

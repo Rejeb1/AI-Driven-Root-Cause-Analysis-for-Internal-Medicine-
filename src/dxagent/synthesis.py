@@ -151,6 +151,11 @@ class CaseGenerator:
     llm: Any
     kb: InMemoryKnowledgeBase
     seed: int = 0
+    # Every call that produced no usable output and why. A run that generates
+    # nothing should be able to say whether the model refused, the response
+    # could not be parsed, or the network failed -- three very different
+    # problems that an empty list on its own cannot distinguish.
+    failures: list[str] = field(default_factory=list)
     _rng: random.Random = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -195,7 +200,12 @@ class CaseGenerator:
         try:
             raw = self.llm.complete(prompt, system=_SYSTEM)
             payload = _parse_json(raw)
-        except Exception:
+        except Exception as exc:
+            # Recorded, not swallowed. Returning [] alone makes a model that
+            # answered fine but formatted its answer unexpectedly look
+            # identical to one that refused, and the batch report then says
+            # "generated 0" with nothing to explain it.
+            self.failures.append(f"{diagnosis}: {type(exc).__name__}: {exc}")
             return []
 
         out: list[SyntheticCase] = []
@@ -234,10 +244,11 @@ class CaseGenerator:
         )
         try:
             payload = _parse_json(self.llm.complete(prompt, system=_CRITIQUE_SYSTEM))
-        except Exception:
+        except Exception as exc:
             # An unusable critique must not silently pass the case. Reject and
             # say why, so the batch statistics show the checker failing rather
             # than the corpus looking clean.
+            self.failures.append(f"critique {case.case_id}: {type(exc).__name__}: {exc}")
             return _replace(case, accepted=False, critique="critique unavailable")
         consistent = bool(payload.get("consistent", False))
         return _replace(
@@ -337,10 +348,34 @@ def review_sample(
 
 
 def _parse_json(raw: str) -> dict:
+    """Pull a JSON object out of a model response.
+
+    The system prompt asks for bare JSON and no fences. Models comply
+    unevenly, and the ways they do not are predictable: a fenced block, a
+    preamble sentence before the fence, a closing offer after the object.
+    Handling only the shapes that start at character zero looks like it
+    works, because the first model tried happened to produce one of them.
+
+    Deliberately tolerant of surrounding prose and not of malformed JSON: a
+    response this cannot read raises, and ``generate``/``critique`` treat
+    that as the model failing rather than as an empty batch.
+    """
     text = raw.strip()
-    if text.startswith("```"):
-        text = text.split("```")[1].removeprefix("json").strip()
-    return json.loads(text)
+
+    fenced = re.search(r"```(?:json)?\s*(.+?)\s*```", text, re.DOTALL)
+    if fenced:
+        text = fenced.group(1).strip()
+
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Prose on either side of a bare object: take the outermost braces.
+    start, end = text.find("{"), text.rfind("}")
+    if start == -1 or end <= start:
+        raise ValueError(f"no JSON object found in model response: {text[:120]!r}")
+    return json.loads(text[start : end + 1])
 
 
 def _replace(case: SyntheticCase, **changes) -> SyntheticCase:

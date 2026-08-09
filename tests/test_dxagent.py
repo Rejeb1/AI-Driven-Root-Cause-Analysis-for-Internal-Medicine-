@@ -9,6 +9,7 @@ synthetic fixtures and is not attempted here.
 
 from __future__ import annotations
 
+import json
 import math
 
 import pytest
@@ -1650,6 +1651,64 @@ def test_failed_critique_rejects_rather_than_passes(kb):
     checked = broken.critique(case)
     assert not checked.accepted
     assert "unavailable" in checked.critique
+
+
+def test_json_parsing_tolerates_the_wrappers_models_actually_emit():
+    """The system prompt asks for bare JSON; models comply unevenly.
+
+    Handling only responses that begin at character zero passes whenever the
+    first model tried happens to produce one, and drops every case the next
+    model generates. Each shape here is one a real model returns.
+    """
+    from dxagent.synthesis import _parse_json
+
+    payload = '{"cases": [{"present": ["fever"], "diagnosis": "d"}]}'
+    for wrapped in (
+        payload,
+        f"```json\n{payload}\n```",
+        f"```\n{payload}\n```",
+        f"Here are the vignettes:\n```json\n{payload}\n```",
+        f"{payload}\n\nLet me know if you need more.",
+        f"Sure! Here you go:\n{payload}\nHope that helps!",
+    ):
+        assert _parse_json(wrapped)["cases"][0]["diagnosis"] == "d"
+
+
+def test_unreadable_response_raises_rather_than_looking_empty():
+    """Tolerant of prose around JSON, not of JSON that is not there.
+
+    Returning ``{}`` for an unparseable response would make a refusal
+    indistinguishable from a well-formed empty batch.
+    """
+    from dxagent.synthesis import _parse_json
+
+    for unreadable in ("I can't help with that.", "", "```json\n{oops\n```"):
+        with pytest.raises((ValueError, json.JSONDecodeError)):
+            _parse_json(unreadable)
+
+
+def test_generation_failures_are_recorded_not_swallowed(kb):
+    """An empty batch must say which of three problems produced it.
+
+    A model that refused, a response that could not be parsed, and a network
+    failure all return no cases. Without the record, the run reports
+    "generated 0" and there is nothing to act on.
+    """
+    from dxagent.synthesis import CaseGenerator
+
+    refused = CaseGenerator(ScriptedLLM(["I can't help with that."]), kb)
+    assert refused.generate("community_acquired_pneumonia", count=1) == []
+    assert len(refused.failures) == 1
+    assert "community_acquired_pneumonia" in refused.failures[0]
+
+    # A wrapped-but-valid response is not a failure.
+    payload = (
+        '{"cases": [{"narrative": "n", "present": ["fever"], "absent": [], '
+        '"diagnosis": "community_acquired_pneumonia", "reasoning": "r"}]}'
+    )
+    ok = CaseGenerator(ScriptedLLM([f"Here you go:\n```json\n{payload}\n```"]), kb)
+    assert len(ok.generate("community_acquired_pneumonia", count=1)) == 1
+    assert ok.failures == []
 
 
 def test_screen_reports_what_it_discarded_and_why(kb):
