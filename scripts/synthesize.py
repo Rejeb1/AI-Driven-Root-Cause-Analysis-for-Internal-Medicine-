@@ -121,6 +121,15 @@ def main() -> int:
         )
         return 1
 
+    from dxagent.synthesis import leaks_vocabulary
+
+    leaky = [c for c in generated if leaks_vocabulary(c.narrative)]
+    if leaky:
+        print(f"\nrepairing {len(leaky)} narrative(s) that leaked identifiers...")
+        generated = [generator.repair_narrative(c) for c in generated]
+        still = sum(1 for c in generated if leaks_vocabulary(c.narrative))
+        print(f"   {len(leaky) - still} repaired, {still} still leaking")
+
     print(f"\ngenerated {len(generated)}; critiquing...")
     critiqued = [generator.critique(case) for case in generated]
 
@@ -169,6 +178,14 @@ def main() -> int:
                             "absent": list(c.absent),
                             "diagnosis": c.diagnosis,
                             "reasoning": c.reasoning,
+                            # Which model wrote this vignette. A stored corpus
+                            # whose provenance lives only in the terminal
+                            # scrollback of the run that produced it cannot
+                            # answer, months later, whether the brief's
+                            # mandated model or a free-tier substitute wrote
+                            # it -- which is the question the write-up has to.
+                            "generator": c.generator,
+                            "critique": c.critique,
                         }
                         for c in kept
                     ],

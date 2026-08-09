@@ -1795,6 +1795,58 @@ def test_vocabulary_leakage_is_measured_not_assumed_away():
     assert leaks_vocabulary("presents with a productive cough and a raised white cell count") == ()
 
 
+def test_narrative_repair_verifies_its_own_output(kb):
+    """A repair that reports success without checking is worse than none.
+
+    Three cases: a clean narrative is left alone without spending a call, a
+    genuine fix is accepted, and a rewrite that still leaks is rejected in
+    favour of the original rather than trusted.
+    """
+    from dxagent.synthesis import CaseGenerator, SyntheticCase, leaks_vocabulary
+
+    def make(narrative):
+        return SyntheticCase(
+            case_id="x", narrative=narrative, present=("fever",), absent=(),
+            diagnosis="community_acquired_pneumonia", reasoning="",
+        )
+
+    clean = make("presents with a productive cough and a raised D-dimer")
+    untouched = CaseGenerator(ScriptedLLM(["unused"]), kb)
+    assert untouched.repair_narrative(clean) is clean
+
+    good = json.dumps({"narrative": "presents with a raised D-dimer"})
+    repaired = CaseGenerator(ScriptedLLM([good]), kb).repair_narrative(
+        make("presents with a raised lab:raised_d_dimer")
+    )
+    assert leaks_vocabulary(repaired.narrative) == ()
+
+    # A rewrite that still leaks must not replace the original.
+    bad = json.dumps({"narrative": "still has productive_cough in it"})
+    generator = CaseGenerator(ScriptedLLM([bad]), kb)
+    original = make("presents with productive_cough")
+    result = generator.repair_narrative(original)
+    assert result.narrative == original.narrative
+    assert generator.failures and "still leaks" in generator.failures[0]
+
+
+def test_repair_preserves_the_findings_lists(kb):
+    """The repair rewrites prose only; the data must be untouched."""
+    from dxagent.synthesis import CaseGenerator, SyntheticCase
+
+    case = SyntheticCase(
+        case_id="x", narrative="shows productive_cough today",
+        present=("fever", "productive_cough"), absent=("orthopnoea",),
+        diagnosis="community_acquired_pneumonia", reasoning="r",
+    )
+    payload = json.dumps({"narrative": "shows a productive cough today"})
+    repaired = CaseGenerator(ScriptedLLM([payload]), kb).repair_narrative(case)
+
+    assert repaired.present == case.present
+    assert repaired.absent == case.absent
+    assert repaired.diagnosis == case.diagnosis
+    assert repaired.reasoning == case.reasoning
+
+
 def test_screen_reports_what_it_discarded_and_why(kb):
     from dxagent.synthesis import SyntheticCase, screen
 

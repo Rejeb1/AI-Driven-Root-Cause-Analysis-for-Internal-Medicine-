@@ -81,6 +81,20 @@ clearly at some other diagnosis than the one given.
 Respond with JSON only:
   {"consistent": true|false, "problem": "..."}"""
 
+_REPAIR_SYSTEM = """You rewrite one sentence of a clinical vignette so that it \
+reads as prose a clinician would write.
+
+The narrative contains internal identifiers that leaked from a data schema -- \
+words joined by underscores or colons, such as "productive_cough" or \
+"lab:raised_wcc". Replace each with its ordinary clinical wording ("a \
+productive cough", "a raised white cell count", "a raised D-dimer").
+
+Change nothing else. Do not add findings, remove findings, or alter what the \
+vignette says. Preserve the clinical meaning exactly.
+
+Respond with JSON only:
+  {"narrative": "..."}"""
+
 
 @dataclass(frozen=True)
 class SyntheticCase:
@@ -245,6 +259,41 @@ class CaseGenerator:
                 )
             )
         return out
+
+    def repair_narrative(self, case: SyntheticCase) -> SyntheticCase:
+        """Rewrite a narrative that leaked vocabulary identifiers into prose.
+
+        A leaked identifier is a defect in one word, not in the case: the
+        present/absent lists are still valid and the vignette still exercises
+        the reasoner, so rejecting it discards a usable case over a
+        formatting problem. One targeted rewrite is cheaper than regenerating
+        the batch and does not risk changing the clinical content.
+
+        The result is *verified*, not trusted. If the rewrite still leaks, or
+        the call fails, the original is returned unchanged and the failure is
+        recorded -- a repair step that reports success without checking is how
+        a corpus ends up worse than the one that was measured honestly.
+        """
+        leaks = leaks_vocabulary(case.narrative)
+        if not leaks:
+            return case
+
+        prompt = f"Identifiers to replace: {', '.join(leaks)}\n\n{case.narrative}"
+        try:
+            payload = _parse_json(self.llm.complete(prompt, system=_REPAIR_SYSTEM))
+            rewritten = str(payload.get("narrative", "")).strip()
+        except Exception as exc:
+            self.failures.append(
+                f"repair {case.case_id}: {type(exc).__name__}: {exc}"
+            )
+            return case
+
+        if not rewritten or leaks_vocabulary(rewritten):
+            self.failures.append(
+                f"repair {case.case_id}: rewrite still leaks or was empty"
+            )
+            return case
+        return _replace(case, narrative=rewritten)
 
     def critique(self, case: SyntheticCase) -> SyntheticCase:
         """Step 3: a second pass that can reject its own generation.

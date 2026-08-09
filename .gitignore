@@ -33,3 +33,10 @@ data/ddxplus/
 *.key
 .gemini_key
 .anthropic_key
+
+# Generated synthetic corpora. Regenerable from scripts/synthesize.py, and
+# model-dependent -- committing one would pin a corpus written by whichever
+# model happened to be reachable that day into a repository that otherwise
+# regenerates its data from documented commands.
+cases.json
+*.cases.json
