@@ -319,6 +319,63 @@ policy question rather than an engineering one. Ordering a D-dimer for a
 hypoxic patient with pleuritic pain is correct whatever it costs this case set,
 and ten fixture cases are not grounds for switching off a safety rule.
 
+## Running the synthesis pipeline found three bugs the tests could not
+
+Section 5.2's generator was written, unit-tested, and never run against a
+model. Every test passed. The first live run found three defects, and the
+pattern in all three is the same: a stub returns what the test author expected,
+so the code was only ever exercised on the shapes it already handled.
+
+**Silent deletion of the most valuable cases.** `case_id` was
+`f"{diagnosis}-{seed}-{index:03d}"` and ignored `confusable_with`, so every
+near-miss batch collided with its diagnosis's typical batch and with every
+other near-miss batch for it. Screening drops by id, so the collision deleted
+the colliding cases without comment. The first run reported 20 generated, 13
+kept, and looked healthy; in fact every near-miss case was gone — the cases
+that exist specifically to stress the abstention gate, destroyed while the run
+reported success. A stub test could not see this because it never generated two
+batches for the same diagnosis.
+
+**A report that could not be reconciled.** `screen()` derived
+`rejected_as_duplicate` from the count of distinct duplicate *identifiers*
+while its loop dropped *cases*. With colliding ids the report understated its
+own losses and four cases vanished unaccounted for. The module docstring calls
+the report "the deliverable as much as the corpus is", which is exactly why
+this mattered: an unreconcilable report is worse than none, because it is
+trusted. Counts are now taken where the drop happens and the function asserts
+that every case is either kept or counted under exactly one reason.
+
+**Parsing that would have emptied the corpus.** `_parse_json` unwrapped a
+fenced block only when the response began with the fence, and `generate()`
+caught every exception and returned `[]`. A model that answered correctly but
+wrapped its answer in one sentence of prose was therefore indistinguishable
+from one that refused, and the run would have printed "generated 0" with no
+reason. Gemini adds a preamble routinely.
+
+Two smaller findings are worth recording because they are the kind that get
+assumed away. The model read "use ONLY findings from the provided vocabulary"
+as an instruction about prose and wrote raw identifiers into all thirteen
+narratives of the first run; tightening the prompt cut that to one in eighteen,
+and a repair pass that verifies its own output takes it to zero — but it is
+*measured* in the report rather than declared fixed, because prompt compliance
+is not a guarantee. And `gemini-2.0-flash` now returns 429 with `limit: 0` on
+the free tier, which reads like exhausted usage and is actually no quota at
+all.
+
+### The 20/20 is not a result
+
+The agent scores 20 of 20 on the generated corpus. That number is a
+self-consistency artefact and must not appear as a headline metric: the cases
+were generated from the knowledge base the agent reasons over, so the score
+measures agreement between a model's reading of the KB and the KB's own
+arithmetic. It says nothing about diagnostic accuracy. The `synthetic-` prefix
+on every generated id exists so that one reaching a metrics table shows up in
+the per-case output instead of relying on someone remembering.
+
+What the corpus is legitimately for: coverage, class balance, and stress cases
+— particularly the near-miss vignettes, which are the reason the collision bug
+above was worth finding rather than working around.
+
 ## Open questions for the meeting
 
 1. Mandatory minimum workup per presenting complaint (see #4)?
@@ -342,3 +399,12 @@ and ten fixture cases are not grounds for switching off a safety rule.
 - The KB estimated from DDXPlus makes "grounded in the KB" collapse into
   "consistent with the training data", which is not the claim the project
   intends. The deployed KB must be independently sourced.
+- The eight disease priors are invented *and* untracked: `dxagent.provenance`
+  covers `P(finding | disease)` only, so unlike the likelihoods there is no
+  tier, no citation and no band for a prevalence. An invented number the audit
+  cannot report as invented is the worst kind in the project, and this is the
+  only remaining instance.
+- Supports/contradicts is computed, not stored. Section 2 asks for an ontology
+  whose nodes are findings and causes and whose edges are labelled; what exists
+  derives that relation per call from likelihood ratios. The reasoning is
+  auditable and every edge is cited, but there is no structure to traverse.

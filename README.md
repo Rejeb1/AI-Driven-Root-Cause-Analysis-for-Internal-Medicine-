@@ -41,6 +41,26 @@ python3 scripts/sensitivity.py --bands  # do the sourced ranges change anything
 python3 scripts/synthesize.py --dry-run # synthetic case plan (section 5.2)
 ```
 
+### Synthetic cases (section 5.2)
+
+`--dry-run` needs nothing. Generating for real needs a model:
+
+```bash
+python3 scripts/synthesize.py --provider gemini --per-disease 2 --out cases.json
+```
+
+`--provider anthropic` (the default) uses the brief's mandated model and needs
+`ANTHROPIC_API_KEY`; `--provider gemini` needs `GEMINI_API_KEY` and a free key
+from [aistudio.google.com](https://aistudio.google.com). Gemini is a documented
+deviation from the mandated stack, not an equivalent — a run says so, and each
+case records which model wrote it.
+
+**The corpus is never a headline metric.** The agent scores 20/20 on it, and
+that number means nothing: cases generated from the knowledge base the agent
+reasons over measure agreement with itself. Every generated id carries a
+`synthetic-` prefix so one reaching a metrics table is visible in the per-case
+output rather than resting on someone having remembered.
+
 `--ddxplus` reads the published `.zip` splits directly; nothing needs
 extracting. Keep `--limit` small at first -- the loop runs about a second per
 case and the baselines add two more passes over the same cases.
