@@ -73,7 +73,11 @@ The evidence that most moves each diagnosis, as currently encoded:
 | Pericarditis | pleuritic pain, friction rub | raised BNP, orthopnoea |
 | Panic attack | palpitations, absence of hypoxia | hypoxia, ECG changes, raised troponin |
 
-**These are invented.** See *Constraints*.
+**Most of these are invented, and which ones are not is recorded.** 21% of
+the 135 likelihoods now carry a citation — 15 from DDXPlus, 9 from the Merck
+Manual's narrative text, 4 from a published cohort. `scripts/sensitivity.py`
+reports the split and `dxagent.provenance` tracks it per number. See
+*Constraints*.
 
 ### Mandatory workup
 
@@ -104,14 +108,24 @@ physician-curated cases. Substitutes:
 **The mandated ontology layer, delivered in halves.** Section 6 specifies UMLS,
 SNOMED CT and RxNorm for "authoritative concepts and relations".
 
-*Concepts* — delivered. `scripts/build_umls_map.py` resolves all 27 findings
-and all 8 conditions to a UMLS CUI and a SNOMED CT code, restricted to
-SNOMEDCT_US and to the semantic types appropriate to each kind of concept.
-Every concept carries them alongside its HPO identifier, and
+*Concepts* — delivered, 34 of 35. `scripts/build_umls_map.py` resolves 26 of
+the 27 findings and all 8 conditions to a UMLS CUI and a SNOMED CT code,
+restricted to SNOMEDCT_US and to the semantic types appropriate to each kind of
+concept. Every concept carries them alongside its HPO identifier, and
 `Vocabulary.umls_coverage` reports how many are bound rather than assuming all
 are. HPO is kept as well rather than replaced: it supplies the hierarchy this
 vocabulary already uses, and SNOMED CT is what a clinical system would
 exchange.
+
+The one unresolved finding is `imaging:ctpa_filling_defect`, and it is absent
+rather than unexamined: UMLS has filling-defect concepts for the ureter, kidney
+and bladder but none naming the pulmonary artery, and the generic concept would
+not say which vessel while the disease concept would code the conclusion as
+though it were the sign supporting it. Two further resolutions are
+approximations recorded as such in the script — `Musculoskeletal immobility` is
+not the Wells criterion (immobilisation ≥3 days, which SNOMED has no single
+concept for), and `Leukocytosis` is a disorder concept standing in for a
+laboratory result.
 
 *Relations* — not delivered, and the reason is measured. `scripts/umls_probe.py`
 found that for these eight conditions UMLS relations are overwhelmingly
@@ -120,18 +134,55 @@ meaningful label mixes symptoms, risk factors and treatment complications
 without marking which is which. Supports/contradicts edges are therefore
 hand-encoded from Wells, PERC, CURB-65 and HEART with citations.
 
+Those edges are also not a graph. Section 4 asks for an ontology whose nodes
+are findings and causes and whose edges are labelled supports/contradicts;
+what exists computes that relation on demand — `InMemoryKnowledgeBase.
+evidence_split` scores each observed finding by likelihood ratio against the
+knowledge-base marginal and returns the two lists with citations — rather than
+storing it as a traversable structure. The reasoning is auditable and every
+edge is cited, which is what the requirement is for, but there is no object a
+reader can walk or draw, and the word *causal* would be wrong for it in any
+case: what is encoded is measured association, and commit `0624bdf` exists
+specifically to stop risk factors resolving to the disorders they cause.
+
 *RxNorm* — not applicable. It names drugs and their ingredients; the vocabulary
 here holds symptoms, signs, laboratory results and imaging findings, and
 nothing in scope reasons about medication. That is a scope fact rather than a
 substitution.
 
-**The likelihood tables are largely invented.** UMLS was probed and found
-unusable for this purpose — mostly translations and billing crosswalks, and its
-one clinical relation mixes symptoms, risk factors and treatment complications
-without distinguishing them. HPO supplies concepts but no disease-to-finding
-edges outside rare Mendelian disease. `scripts/sensitivity.py` identifies which
-30 of the 135 likelihoods actually change a diagnosis; those are the ones worth
-sourcing first.
+**The likelihood tables are still mostly invented — 107 of 135.** UMLS was
+probed and found unusable for this purpose — mostly translations and billing
+crosswalks, and its one clinical relation mixes symptoms, risk factors and
+treatment complications without distinguishing them. HPO supplies concepts but
+no disease-to-finding edges outside rare Mendelian disease. Sourcing has
+therefore proceeded one number at a time, from three sources of descending
+strength: 4 frequencies from a published cohort (Miniati 2012), 15 counted in
+the DDXPlus simulator, and 9 converted from Merck Manual narrative phrases
+through the fixed rubric in `dxagent.provenance`.
+
+`scripts/sensitivity.py` reports which likelihoods actually change a diagnosis,
+and that count is not stable — it was 30 before correlation weighting and the
+mandatory-workup fix, and a current run gives 4 with correlation on, 16 with it
+off. Rerun it before choosing what to source next rather than trusting a figure
+written down here.
+
+**The disease priors are invented and are not even tracked.** All eight
+prevalences are guesses, and unlike the likelihoods they have no provenance
+tier: `dxagent.provenance` covers `P(finding | disease)` only. An invented
+number that the audit cannot report as invented is worse than one it can, and
+this is the clearest remaining instance of it in the project.
+
+**The Merck Manual is cited, not indexed wholesale.** Nine sentences were read
+from the 19th edition, converted to likelihoods, and also embedded into the
+retrieval corpus so a hypothesis can be grounded in the sentence rather than
+only in the number derived from it (`dxagent.merck` is the single source both
+read from). Whole chapters were deliberately not chunked and indexed: that
+would mean embedding and serving pages of a purchased, copyrighted textbook
+rather than citing specific claims from it. Section 4 of the brief asks for a
+searchable knowledge base built from that text; what is delivered is a
+searchable corpus of 41 passages — 32 from the four encoded decision rules,
+9 from the manual — which is narrower than the brief's wording and is a scope
+decision rather than an unfinished task.
 
 **MIMIC-IV was not pursued.** Credentialing takes weeks and would clear after
 the point of use.
@@ -147,5 +198,7 @@ the point of use.
   retrieval-only ranker.
 
 All four are implemented. Their *quality* is bounded by the invented
-likelihoods, which is the project's principal limitation and is measured rather
-than asserted.
+likelihoods and the invented priors, which together are the project's principal
+limitation and are measured rather than asserted: `dxagent.provenance` reports
+the likelihood split per number, and the priors are flagged above as the part
+that measurement does not yet reach.
