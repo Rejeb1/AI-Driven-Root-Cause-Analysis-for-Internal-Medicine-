@@ -160,11 +160,33 @@ strength: 4 frequencies from a published cohort (Miniati 2012), 15 counted in
 the DDXPlus simulator, and 9 converted from Merck Manual narrative phrases
 through the fixed rubric in `dxagent.provenance`.
 
-`scripts/sensitivity.py` reports which likelihoods actually change a diagnosis,
-and that count is not stable — it was 30 before correlation weighting and the
-mandatory-workup fix, and a current run gives 4 with correlation on, 16 with it
-off. Rerun it before choosing what to source next rather than trusting a figure
-written down here.
+`scripts/sensitivity.py` reports which likelihoods actually change a diagnosis
+when perturbed, and that count is not stable — it was 30 before correlation
+weighting and the mandatory-workup fix, and a current run gives 4 with
+correlation on, 16 with it off. Rerun it before choosing what to source next
+rather than trusting a figure written down here.
+
+That list is a sourcing priority and nothing more. It is not a list of the
+numbers that matter, and the distinction is easy to get backwards:
+`--ablate` deletes the invented likelihoods outright and lets the knowledge
+base fall back to its own marginals, and the fixture set drops from 9/10 to
+4/10. The invented numbers are individually insensitive and collectively
+load-bearing. Whatever else is said about this knowledge base, it cannot be
+said that most of it is padding.
+
+**Most of the remaining 107 are not sourceable from a reference text at all.**
+A textbook chapter describes what a disease presents with — five to eight
+notable findings. The knowledge base is a full grid of 8 diseases against every
+finding in the vocabulary, so it contains cells like P(raised BNP | asthma
+exacerbation) and P(CTPA filling defect | pneumonia). No chapter on asthma
+states how often BNP is raised in asthma, because no one writes that sentence.
+A scan of all eight relevant Merck chapters for the 107 unsourced cells returns
+roughly thirty candidate sentences, and most of those are false matches — drug
+adverse effects, a different disease bleeding in from a neighbouring chapter.
+The realistic remaining yield from this source is single figures. The honest
+description of the rest is that they are structural priors chosen to make the
+model behave sensibly, not measurements, and calling them anything else would
+be the misconduct this project's provenance tiers exist to prevent.
 
 **The disease priors are invented and are not even tracked.** All eight
 prevalences are guesses, and unlike the likelihoods they have no provenance

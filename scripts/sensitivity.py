@@ -4,21 +4,33 @@
     python scripts/sensitivity.py
     python scripts/sensitivity.py --delta 0.2 --top 25
 
-The knowledge base holds a few hundred numbers and every one of them is
-invented. Sourcing all of them from the literature is weeks of work, and most
-of it would be wasted: a likelihood can be badly wrong and change no diagnosis
-at all, because it is never decisive for any case in the set.
+The knowledge base holds 135 numbers and most of them are invented. Sourcing
+all of them is weeks of work, and much of it would be wasted: a likelihood can
+be badly wrong and change no diagnosis at all, because it is never decisive
+for any case in the set.
 
 This script perturbs each likelihood on its own and counts how many cases
 change their top-1 diagnosis as a result. The output is a ranked shopping
 list -- the numbers worth finding a citation for, in order -- which turns
-"source the whole knowledge base" into "source these twelve".
+"source the whole knowledge base" into "source these four".
 
-Two things it is not. It is not a claim that the unlisted numbers are correct;
-they are unverified either way, and a number that is not decisive on ten
-fixture cases may be decisive on the eleventh. And it measures sensitivity of
-*this* case set, so a narrow set produces a short list for the wrong reason.
-Report the case count alongside the list.
+Three things it is not, the third learned the hard way.
+
+It is not a claim that the unlisted numbers are correct; they are unverified
+either way, and a number that is not decisive on ten fixture cases may be
+decisive on the eleventh. It measures sensitivity of *this* case set, so a
+narrow set produces a short list for the wrong reason -- report the case count
+alongside the list.
+
+And it is emphatically not a claim that the unlisted numbers could be removed.
+Perturbation moves one number a little while every other number stays where it
+is; it says nothing about whether the number is needed. Run ``--ablate`` for
+that question, and the answer is that deleting the invented likelihoods and
+falling back to the knowledge base's own marginals takes the fixture set from
+9/10 to 4/10. Individually insensitive, collectively load-bearing. An earlier
+version of this script ended by calling the unlisted numbers "not currently
+load-bearing", which was the wrong conclusion drawn from the right
+measurement.
 
 Uses single-pass proposal over the complete record rather than the full agent
 loop: the question is which likelihood the *inference* depends on, and letting
@@ -134,6 +146,61 @@ def band_sweep(kb, cases, baseline) -> int:
     return 0
 
 
+def ablate(kb, cases) -> int:
+    """Remove likelihoods entirely, rather than moving them a little.
+
+    Perturbation asks "is this number's *value* load-bearing"; ablation asks
+    "is the number needed at all". The knowledge base already backs off to its
+    own marginal for any feature a disease does not characterise, so deleting
+    an invented likelihood is a real option -- and a more honest one than
+    inventing a value, since it states that nothing is claimed rather than
+    claiming something unfounded.
+
+    The measurement says not to. The invented numbers turn out to be
+    individually insensitive and collectively essential, which is why the
+    perturbation list must not be read as a list of the only ones that matter.
+    """
+    from dxagent.agent import DiagnosticAgent
+
+    def accuracy(knowledge) -> int:
+        agent = DiagnosticAgent(kb=knowledge)
+        return sum(
+            agent.run(case).differential.top.label == case.diagnosis
+            for case in cases
+        )
+
+    def without(predicate) -> tuple:
+        trimmed = dataclasses.replace(kb, entries=dict(kb.entries))
+        removed = 0
+        for label, entry in list(trimmed.entries.items()):
+            kept = {c: v for c, v in entry.features.items() if not predicate(entry, c)}
+            removed += len(entry.features) - len(kept)
+            trimmed.entries[label] = dataclasses.replace(entry, features=kept)
+        trimmed._marginals.clear()
+        return trimmed, removed
+
+    print(f"\n{len(cases)} cases | ablation: delete, do not perturb\n")
+    print(f"{'knowledge base':<44} {'correct':>9}")
+    print("-" * 55)
+    print(f"{'complete':<44} {accuracy(kb):>6}/{len(cases)}")
+
+    trimmed, removed = without(lambda e, c: c not in e.sources)
+    print(f"{f'{removed} invented deleted -> marginal backoff':<44} "
+          f"{accuracy(trimmed):>6}/{len(cases)}")
+
+    trimmed, removed = without(lambda e, c: c in e.sources)
+    print(f"{f'{removed} sourced deleted, invented kept':<44} "
+          f"{accuracy(trimmed):>6}/{len(cases)}")
+
+    print(
+        "\nThe invented numbers cannot simply be dropped: they carry most of\n"
+        "the discriminating structure, even though perturbing any one of them\n"
+        "individually changes nothing. That is the honest description of this\n"
+        "knowledge base -- not 'four numbers matter and the rest are padding'."
+    )
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -153,6 +220,12 @@ def main() -> int:
         action="store_true",
         help="sweep sourced likelihoods across their recorded uncertainty bands",
     )
+    parser.add_argument(
+        "--ablate",
+        action="store_true",
+        help="remove likelihoods entirely and measure the cost, rather than "
+        "moving them a little",
+    )
     args = parser.parse_args()
 
     kb = build_knowledge_base(correlated=args.correlated)
@@ -162,6 +235,8 @@ def main() -> int:
     coverage = provenance_report(kb)
     print(coverage.summary())
 
+    if args.ablate:
+        return ablate(kb, cases)
     if args.bands:
         return band_sweep(kb, cases, baseline)
 
@@ -216,8 +291,17 @@ def main() -> int:
 
     print(
         f"\n{len(results)} of {len(parameters)} likelihoods change at least one "
-        f"diagnosis.\nSource those first; the rest are unverified but not "
-        f"currently load-bearing."
+        f"diagnosis when perturbed by {args.delta:+.2f}.\nSource those first."
+    )
+    print(
+        "\nThis measures LOCAL sensitivity -- moving one number a little, with\n"
+        "every other number held where it is. It does not say the rest are\n"
+        "dispensable, and reading it that way is a mistake this script used to\n"
+        "invite: deleting every likelihood outside this list and letting the\n"
+        "knowledge base fall back to its marginals drops the fixture set from\n"
+        "9/10 to 4/10. They are individually insensitive and collectively\n"
+        "load-bearing, which are different properties. Run --ablate to measure\n"
+        "the second one."
     )
     return 0
 
