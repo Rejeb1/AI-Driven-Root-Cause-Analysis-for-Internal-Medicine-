@@ -289,7 +289,7 @@ def test_llm_prompt_carries_retrieved_passages(kb, cases):
     pytest.importorskip("qdrant_client")
     from dxagent.belief import LLMProposer
     from dxagent.llm import ScriptedLLM
-    from dxagent.retrieval import GuidelineIndex
+    from dxagent.retrieval import GuidelineIndex, guideline_passages, merck_passages
 
     index = GuidelineIndex(model_name="stub", model=StubEncoder()).build()
     scripted = ScriptedLLM(['{"ranking": [{"label": "pulmonary_embolism", '
@@ -301,8 +301,17 @@ def test_llm_prompt_carries_retrieved_passages(kb, cases):
     )
 
     assert "Retrieved guideline passages" in prompt
-    assert "WELLS-2000" in prompt or "PERC-2008" in prompt
     assert "Reason from these rather than" in prompt
+
+    # Assert that *some* cited passage reached the prompt, not which one.
+    # Naming WELLS-2000 or PERC-2008 pinned whichever source the StubEncoder's
+    # hash happened to rank first -- and its own docstring says those
+    # neighbours are meaningless. Adding the Merck passages to the corpus
+    # reordered them and broke the test without changing the behaviour under
+    # test, which is the definition of a brittle assertion.
+    sources = {p.citation.source_id for p in guideline_passages() + merck_passages()}
+    assert any(f"[{source}]" in prompt for source in sources)
+    assert "similarity" in prompt
 
 
 def test_llm_prompt_is_unchanged_without_an_index(kb, cases):

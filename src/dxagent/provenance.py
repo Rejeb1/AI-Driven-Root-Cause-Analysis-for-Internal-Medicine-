@@ -54,8 +54,18 @@ NARRATIVE_RUBRIC: dict[str, tuple[float, float, float]] = {
     "common": (0.60, 0.40, 0.80),
     "frequent": (0.60, 0.40, 0.80),
     "often": (0.55, 0.35, 0.75),
+    # Synonym of "may occur", added because the Merck Manual uses both and a
+    # rubric that recognises one and not the other converts by accident of
+    # phrasing rather than by meaning.
+    "can occur": (0.30, 0.15, 0.50),
     "may occur": (0.30, 0.15, 0.50),
     "sometimes": (0.30, 0.15, 0.50),
+    # Comparative rather than absolute: "less common symptoms include cough"
+    # says cough is rarer than the cardinal ones without saying how rare. The
+    # band is therefore wider than "occasional" and spans it, which is the
+    # honest way to represent a phrase that carries less information than the
+    # absolute terms around it.
+    "less common": (0.20, 0.08, 0.40),
     "occasional": (0.20, 0.08, 0.35),
     "uncommon": (0.08, 0.02, 0.20),
     "rare": (0.05, 0.01, 0.15),

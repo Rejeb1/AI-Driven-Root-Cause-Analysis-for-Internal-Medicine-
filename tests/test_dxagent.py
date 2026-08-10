@@ -350,17 +350,21 @@ def _superseded_test_evidence_fit_does_not_separate_masquerade_errors(kb, cases)
     assert min(correct) < max(wrong)
 
 
-def test_evidence_fit_now_separates_the_remaining_masquerade_failure(kb, cases):
-    """Sourcing repaired the limit the superseded test recorded.
+def test_evidence_fit_does_not_separate_the_masquerade_failure(kb, cases):
+    """Twice reversed, and the second reversal restores the original claim.
 
-    Nine likelihoods sourced from MSD-19E (see ``_FROM_NARRATIVE``) include
-    community-acquired pneumonia's dyspnoea_at_rest, corrected from 0.55
-    invented to 0.05 ("rarely present at rest"). That alone fixes one of the
-    two masquerade failures outright -- fx-001 no longer loses to COPD under
-    the shipped defaults. For the one that remains, fx-009 (PE read as COPD,
-    the case ``test_correlation_pays_and_decisive_tests_still_do_not``
-    already tracks), evidence fit is now worse than every case the loop gets
-    right: the separation the old test said did not exist.
+    The first version of this test recorded that evidence fit could not tell
+    the loop's failures from its successes, because a masquerade failure is
+    one where the *wrong* diagnosis explains the evidence well. Nine sourced
+    likelihoods appeared to repair that. Five more, from the same source,
+    undid the repair: fx-009's fit now sits inside the range of the cases the
+    loop gets right, exactly as it originally did.
+
+    The lesson is about the measurement, not the mechanism. A separation
+    demonstrated on ten cases and one failure is a property of that failure,
+    not of evidence fit, and it survived only until the numbers moved again.
+    The original conclusion was the durable one: evidence fit reads whether
+    the findings are explained by *something*, and in a masquerade they are.
     """
     agent = DiagnosticAgent(kb=kb)
     proposer = BayesianProposer(kb)
@@ -375,7 +379,9 @@ def test_evidence_fit_now_separates_the_remaining_masquerade_failure(kb, cases):
         (correct if hit else wrong).append(fit)
 
     assert wrong, "fixture set no longer contains a failing case"
-    assert min(correct) > max(wrong)
+    # At least one correct case is explained no better than the worst
+    # failure, so no threshold on evidence fit separates them.
+    assert min(correct) < max(wrong)
 
 
 def test_gate_escalates_unexplained_evidence_however_confident(kb):
@@ -561,15 +567,25 @@ def test_due_diligence_prevents_turn_zero_commit(kb, cases):
     # require_decisive_tests is switched off in both arms so this isolates the
     # gain flag. Left on, it keeps the loop running in the eager arm too and
     # the comparison stops measuring the thing it names.
+    #
+    # require_workup is switched off for the same reason, which took a
+    # reversal to notice. ``still_outstanding`` keeps the loop alive while
+    # ``mandated is not None``, and the floor that clears the mandate only
+    # fires when the best action's gain falls *below* the threshold -- so at
+    # 0.0 the floor never fires, the mandate never clears, and the eager arm
+    # runs longer than the careful one. That is the workup's behaviour, not
+    # the flag's, and with the sourced likelihoods it was enough to invert
+    # the comparison.
+    limits = dict(require_decisive_tests=False, require_workup=False)
     eager = DiagnosticAgent(
         kb=kb,
         gate=AbstentionGate(kb, min_confidence=0.3, min_margin=0.0),
-        limits=LoopLimits(due_diligence_gain=0.0, require_decisive_tests=False),
+        limits=LoopLimits(due_diligence_gain=0.0, **limits),
     )
     careful = DiagnosticAgent(
         kb=kb,
         gate=AbstentionGate(kb, min_confidence=0.3, min_margin=0.0),
-        limits=LoopLimits(due_diligence_gain=0.10, require_decisive_tests=False),
+        limits=LoopLimits(due_diligence_gain=0.10, **limits),
     )
     case = cases[0]
     assert len(careful.run(case).steps) > len(eager.run(case).steps)
@@ -640,20 +656,20 @@ def _superseded_test_decisive_test_signal_flags_the_masquerade_failures(kb, case
     assert flagged_when_wrong == wrong
 
 
-def test_decisive_test_signal_no_longer_flags_every_masquerade_failure(kb, cases):
-    """A detector, not a fix -- and now, honestly, not a complete one.
+def test_the_weakened_loop_no_longer_has_a_masquerade_failure(kb, cases):
+    """The failure class this whole family of tests was built around is gone.
 
-    Under these deliberately weakened limits (no workup floor, no decisive-
-    test rule -- the shipped defaults still catch fx-001; see
-    ``test_evidence_fit_now_separates_the_remaining_masquerade_failure``),
-    sourcing produces two wrong cases instead of one. fx-001 (pneumonia read
-    as COPD once dyspnoea_at_rest is corrected to 0.05) still has an unasked
-    test that would flip it. fx-009 (PE read as COPD, tracked separately in
-    ``test_correlation_pays_and_decisive_tests_still_do_not``) does not --
-    it never did claim to be fixable by a single test, only that
-    evidence_fit alone could not flag it as wrong. The flip signal now
-    covers exactly one of the two, and that is the measured fact, not a
-    design goal.
+    With the workup floor and the decisive-test rule both switched off -- the
+    configuration that used to expose the masquerade failures most clearly --
+    the loop now gets every fixture case right. Three sourced pulmonary
+    embolism likelihoods did that; see
+    ``test_sourcing_repaired_the_buried_diagnosis`` for the mechanism.
+
+    Kept as a running assertion rather than deleted, because the useful thing
+    now is to notice if a failure comes back. Ten cases is a small enough set
+    that this is a floor, not a result: the shipped defaults still lose
+    fx-009, and that case is tracked by
+    ``test_evidence_fit_does_not_separate_the_masquerade_failure``.
     """
     plain = DiagnosticAgent(
         kb=kb,
@@ -661,22 +677,12 @@ def test_decisive_test_signal_no_longer_flags_every_masquerade_failure(kb, cases
     )
     selector = InformationGainSelector(kb)
 
-    flagged_when_wrong = 0
-    wrong = 0
-    for case in cases:
-        outcome = plain.run(case)
-        state = CaseState(
-            case_id=case.case_id, presenting_complaint=case.presenting_complaint
-        )
-        state.asked.update(case.initial_findings)
-        state.asked.update(s.action.target for s in outcome.steps)
-        has_flip = selector.flip_action(state, outcome.differential) is not None
-        if outcome.differential.top.label != case.diagnosis:
-            wrong += 1
-            flagged_when_wrong += has_flip
-
-    assert wrong == 2, "fixture set no longer produces exactly this failure pair"
-    assert flagged_when_wrong == 1
+    wrong = [
+        case.case_id
+        for case in cases
+        if plain.run(case).differential.top.label != case.diagnosis
+    ]
+    assert wrong == [], f"a masquerade failure has returned: {wrong}"
 
 
 def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
@@ -714,9 +720,22 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     correlated, correlated_cost = run(True, False)
     both, both_cost = run(True, True)
 
-    assert correlated > plain, "correlation should beat the plain loop"
-    assert both <= correlated, "decisive tests should not improve on it"
-    assert both_cost > correlated_cost, "and should cost more for that"
+    # Third reversal on this measurement, and the most informative one.
+    # Correlation weighting was introduced because four correlated negatives
+    # about pulmonary embolism were being counted as four independent
+    # penalties. It helped -- while the underlying likelihoods were invented
+    # and too extreme. Sourcing three of those from the Merck Manual removed
+    # the distortion at its origin, and the discount is now correcting an
+    # error that is no longer there: the plain loop reaches 10/10 and the
+    # correlated one gives a case back.
+    #
+    # The mechanism was never wrong. It was compensating for bad numbers, and
+    # a compensation outlives its usefulness the moment the numbers improve.
+    # That is an argument for fixing knowledge bases rather than adding
+    # machinery to survive them.
+    assert plain == len(cases), "the plain loop now gets every fixture case"
+    assert correlated < plain, "and correlation now costs one"
+    assert both <= plain, "decisive tests still do not improve on the best arm"
 
 
 def _superseded_test_decisive_tests_do_not_repair(kb, cases):
@@ -925,46 +944,101 @@ def test_mandatory_workup_triggers_on_presentation_not_posterior(kb):
     assert not PE_WORKUP.is_triggered([Finding("fever", Polarity.PRESENT)])
 
 
-def test_workup_orders_the_test_the_posterior_would_not(kb, cases):
-    """fx-009: PE sits at 0.5%, so no posterior-driven rule requests a D-dimer.
+def _superseded_test_workup_orders_the_test_the_posterior_would_not(kb, cases):
+    """Kept unrun. True while pulmonary embolism was buried on fx-009.
 
-    The guideline rule does, because it never asks what the model believes.
-    Whether the model can then *use* the result is a separate defect -- see
-    ``test_confirmatory_evidence_cannot_rescue_a_buried_diagnosis``.
+    PE sat at 0.5%, so no posterior-driven rule requested a D-dimer and only
+    the guideline rule did -- the argument for having a rule that never asks
+    what the model believes. Sourcing raised PE's fever, cough and crackles
+    likelihoods, the diagnosis is no longer buried, and the selector now asks
+    for the D-dimer on its own. The rule has not become pointless; it has
+    stopped being the only thing that would order the test on this case.
     """
     case = {c.case_id: c for c in cases}["fx-009"]
-
     without = DiagnosticAgent(kb=kb, limits=LoopLimits(require_workup=False))
-    with_workup = DiagnosticAgent(kb=kb, limits=LoopLimits(require_workup=True))
-
     asked_without = {s.action.target for s in without.run(case).steps}
-    asked_with = {s.action.target for s in with_workup.run(case).steps}
-
     assert "lab:raised_d_dimer" not in asked_without
-    assert "lab:raised_d_dimer" in asked_with
 
 
-def test_confirmatory_evidence_cannot_rescue_a_buried_diagnosis(kb):
-    """The finding that locates the defect in inference, not in evidence gathering.
+def test_workup_guarantees_the_test_the_posterior_now_also_wants(kb, cases):
+    """The rule's guarantee, stated without leaning on the old failure.
 
-    Two findings typical of pneumonia and atypical of PE are enough, under the
-    independence assumption, that a *positive confirmatory test* for PE still
-    leaves it far from the top. No test-selection policy can fix this, which is
-    why the remaining work is the likelihood model rather than the loop.
+    A presentation-triggered workup earns its place by guaranteeing the item
+    is gathered whatever the model believes. Demonstrating that by finding a
+    case where the model would otherwise skip the test was always the weaker
+    argument, because it depends on the model being wrong in a particular way
+    -- and on fx-009 it no longer is.
+    """
+    case = {c.case_id: c for c in cases}["fx-009"]
+    with_workup = DiagnosticAgent(kb=kb, limits=LoopLimits(require_workup=True))
+    asked = {s.action.target for s in with_workup.run(case).steps}
+    assert "lab:raised_d_dimer" in asked
+
+
+def _superseded_test_confirmatory_evidence_cannot_rescue_a_buried_diagnosis(kb):
+    """Kept unrun. This was the project's headline negative result.
+
+    Two findings typical of pneumonia and atypical of PE were enough, under
+    the independence assumption, that a *positive confirmatory test* for PE
+    still left it far from the top. The conclusion drawn was that no
+    test-selection policy could fix it and the remaining work was the
+    likelihood model.
+
+    That conclusion was right, and sourcing the likelihood model repaired it.
+    See ``test_sourcing_repaired_the_buried_diagnosis``.
     """
     proposer = BayesianProposer(kb)
-    misleading = [
+    confirmatory = [
         Finding("fever", Polarity.PRESENT),
         Finding("productive_cough", Polarity.PRESENT),
+        Finding("imaging:ctpa_filling_defect", Polarity.PRESENT),
     ]
-    confirmatory = misleading + [
-        Finding("imaging:ctpa_filling_defect", Polarity.PRESENT)
+    after = proposer.propose(confirmatory)
+    assert after.probability_of("pulmonary_embolism") < 0.5
+    assert after.top.label != "pulmonary_embolism"
+
+
+def test_sourcing_repaired_the_buried_diagnosis(kb):
+    """The headline negative result, reversed by five sentences of textbook.
+
+    The superseded version above recorded that a positive CTPA could not
+    rescue pulmonary embolism from two pneumonia-typical findings, and
+    concluded the fault lay in the likelihood values rather than in evidence
+    gathering. Three of those values then acquired citations:
+
+        P(fever            | PE)  0.15 invented -> 0.30  "fever can occur"
+        P(productive_cough | PE)  0.10 invented -> 0.20  "less common symptoms
+                                                          include cough"
+        P(exam:crackles    | PE)  0.15 invented -> 0.20  "less commonly ...
+                                                          crackles or wheezing"
+
+    The invented numbers said pulmonary embolism essentially never presents
+    with fever or a cough. The textbook says both occur, uncommonly. Under a
+    product of independent likelihoods that difference compounds, and the
+    diagnosis is no longer buried deep enough that confirmatory imaging
+    cannot retrieve it.
+
+    Worth being precise about what this does and does not show. It is not
+    evidence that the model is now correct -- 102 of 135 likelihoods remain
+    invented, and the same compounding will be distorting them too. It is
+    evidence that the diagnosis of *why* the old result happened was right,
+    and that the cost of an invented number is not spread evenly: three of
+    them, on one disease, were holding the whole failure in place.
+    """
+    proposer = BayesianProposer(kb)
+    confirmatory = [
+        Finding("fever", Polarity.PRESENT),
+        Finding("productive_cough", Polarity.PRESENT),
+        Finding("imaging:ctpa_filling_defect", Polarity.PRESENT),
     ]
 
     assert kb.get("pulmonary_embolism").features["imaging:ctpa_filling_defect"] >= 0.9
     after = proposer.propose(confirmatory)
+    assert after.top.label == "pulmonary_embolism"
+
+    # Still short of a majority: the independence assumption has not been
+    # repaired, only made less punishing on this disease.
     assert after.probability_of("pulmonary_embolism") < 0.5
-    assert after.top.label != "pulmonary_embolism"
 
 
 def test_state_records_realised_information_gain(kb, cases):
@@ -1451,12 +1525,18 @@ def test_correlation_rescues_a_diagnosis_buried_by_repeated_evidence():
     assert p_aware > 5 * p_naive
 
 
-def test_correlation_alone_does_not_repair_the_case(kb):
-    """Pins the honest limit: an order of magnitude is not enough.
+def test_correlation_and_sourcing_together_repair_the_case(kb):
+    """Two causes, fixed one at a time, and the order is the point.
 
-    The remaining error is in the likelihood values themselves, which are
-    invented and too extreme. Recorded so the correlation work is not read as
-    having fixed fx-009 -- it fixed one of the two causes.
+    The superseded version of this test recorded that correlation weighting
+    alone was not enough: it stopped four correlated negatives from being
+    counted as four independent penalties, and pulmonary embolism still lost.
+    Its docstring named the remaining cause -- "the likelihood values
+    themselves, which are invented and too extreme" -- as a hypothesis.
+
+    That hypothesis was tested by sourcing three of those values from the
+    Merck Manual, and it held. Neither fix alone repairs this evidence set;
+    together they do.
     """
     from dxagent.datasets.fixtures import build_knowledge_base
 
@@ -1470,8 +1550,15 @@ def test_correlation_alone_does_not_repair_the_case(kb):
         Finding("imaging:ctpa_filling_defect", Polarity.PRESENT),
     ]
     aware = BayesianProposer(build_knowledge_base(correlated=True)).propose(evidence)
-    assert aware.top.label != "pulmonary_embolism"
-    assert aware.probability_of("pulmonary_embolism") < 0.5
+    assert aware.top.label == "pulmonary_embolism"
+
+    # Correlation weighting is still doing work: without it the same evidence
+    # is read less favourably, which is why this is a two-cause story rather
+    # than a sourcing story.
+    plain = BayesianProposer(build_knowledge_base(correlated=False)).propose(evidence)
+    assert aware.probability_of("pulmonary_embolism") > plain.probability_of(
+        "pulmonary_embolism"
+    )
 
 
 # --------------------------------------------------------------------------
@@ -1953,8 +2040,45 @@ def test_workup_is_a_floor_on_investigation_not_a_substitute(kb, cases):
 
     required = set(PE_WORKUP.required)
     assert required & set(asked), "the workup item must still be gathered"
-    assert asked[0] not in required, "but it must not preempt the first turn"
     assert outcome.differential.top.label == case.diagnosis
+
+    # The property, asserted directly rather than by position. An earlier
+    # version required the workup item not to be asked first, which held only
+    # while some other action cleared the due-diligence bar on turn zero.
+    # Sourcing lowered the first-turn information gains, nothing clears the
+    # bar, and the floor correctly fills in -- so the positional assertion was
+    # pinning an accident of the numbers, not the behaviour it named. What
+    # must stay true is that the workup never displaces a *better* action.
+    if asked[0] in required:
+        # The floor fired on turn zero. Legitimate only if the action it
+        # displaced was not worth the turn -- and the action it displaced is
+        # whatever ``choose_action`` had settled on, which is not necessarily
+        # the highest-information-gain one: rule-out and decision-flip
+        # overrides run first. Comparing against the raw selector pick reads
+        # a legitimate floor as a preemption.
+        from dxagent.agent import choose_action
+
+        correlated = build_knowledge_base(correlated=True)
+        state = CaseState(
+            case_id=case.case_id,
+            presenting_complaint=case.presenting_complaint,
+            findings=case.initial(),
+        )
+        state.asked.update(case.initial_findings)
+        differential = BayesianProposer(correlated).propose(
+            state.findings, case.presenting_complaint
+        )
+        displaced, _, _, _ = choose_action(
+            InformationGainSelector(correlated),
+            correlated,
+            state,
+            differential,
+            LoopLimits(require_workup=False),
+        )
+        assert (
+            displaced is None
+            or displaced.expected_information_gain < LoopLimits().due_diligence_gain
+        ), "the workup preempted an action that was worth taking"
 
 
 def test_workup_still_fills_in_when_nothing_else_is_worth_a_turn(kb):

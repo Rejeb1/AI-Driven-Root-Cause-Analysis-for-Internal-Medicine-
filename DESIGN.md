@@ -376,6 +376,71 @@ What the corpus is legitimately for: coverage, class balance, and stress cases
 — particularly the near-miss vignettes, which are the reason the collision bug
 above was worth finding rather than working around.
 
+## Five sentences of textbook overturned the headline negative result
+
+The second Merck pass added five citations. Three of them are on pulmonary
+embolism and they moved the project's central finding.
+
+| | invented | cited | source |
+|---|---|---|---|
+| P(fever \| PE) | 0.15 | 0.30 | "fever can occur" |
+| P(productive cough \| PE) | 0.10 | 0.20 | "less common symptoms include cough" |
+| P(crackles \| PE) | 0.15 | 0.20 | "less commonly ... crackles or wheezing" |
+
+The invented values said pulmonary embolism essentially never presents with a
+fever or a cough. The textbook says both occur, uncommonly. Under a product of
+independent likelihoods that gap compounds, and it was holding four separate
+conclusions in place.
+
+**The buried diagnosis is no longer buried.** The headline negative result was
+that two pneumonia-typical findings sank pulmonary embolism far enough that a
+*positive CTPA* could not retrieve it — recorded as evidence that the remaining
+work was the likelihood model rather than the loop. That was the right
+diagnosis, and repairing three likelihoods repaired the failure. PE is now the
+top hypothesis on that evidence, though still below 50%: the independence
+assumption has not been fixed, only made less punishing on one disease.
+
+**Correlation weighting now costs a case.** It was introduced because four
+correlated negatives were being counted as four independent penalties, and it
+helped — while the underlying numbers were too extreme. With the extremity
+removed at its origin, the discount corrects an error that is no longer there:
+the plain loop reaches 10/10 on the weakened configuration and the correlated
+one gives a case back. The mechanism was never wrong; it was compensating, and
+a compensation outlives its usefulness the moment the thing it compensated for
+improves. This is the strongest argument in the project for fixing knowledge
+bases rather than adding machinery to survive them.
+
+**The masquerade failures are gone from the weakened configuration**, which is
+where they were most visible. The shipped defaults still lose fx-009, now to
+pneumonia rather than COPD.
+
+**And one repair was itself reversed.** An earlier round of sourcing appeared
+to make evidence fit separate the loop's failures from its successes; this
+round put it back inside the range. That separation was a property of one
+particular failure on ten cases, not of evidence fit, and it lasted exactly as
+long as the numbers that produced it. The original conclusion — that evidence
+fit reads whether the findings are explained by *something*, and in a
+masquerade they are — was the durable one.
+
+### What this says about the invented numbers
+
+Not that they are harmless, and not that they are uniformly harmful. Three
+numbers on one disease were holding a documented failure in place, while
+`--ablate` shows the invented set as a whole is carrying most of the
+discriminating structure. The cost of an invented likelihood is concentrated,
+not spread — which is an argument for sourcing selectively and for expecting
+each round of sourcing to overturn something, rather than for treating the
+knowledge base as uniformly unreliable.
+
+Nine tests changed in this round. Four were pinning conclusions the new numbers
+falsified, and are superseded with the measurement that replaced them. Three
+were pinning accidents of the old values rather than the behaviour they named —
+a workup assertion that held only while some action cleared the due-diligence
+bar on turn zero, a due-diligence comparison confounded by the workup's own
+effect on `still_outstanding`, and a retrieval assertion naming whichever
+source a meaningless hash embedding happened to rank first. Those three were
+brittle when written and the sourcing merely exposed them.
+
 ## Open questions for the meeting
 
 1. Mandatory minimum workup per presenting complaint (see #4)?
