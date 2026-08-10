@@ -8,6 +8,9 @@ Project 1, DeepShift AI summer internship 2026. Week 3 implementation scaffold.
 
 **Not for clinical use.** The bundled knowledge base is synthetic and invented
 (see `datasets/fixtures.py`); no output from it means anything clinically.
+`RESPONSIBLE_AI.md` states what that rules out, what privacy and safety
+properties the system does have, and what would have to be true before any of
+this went near a patient.
 
 ## Running it
 
@@ -98,6 +101,15 @@ instead of it, so their disagreement stays visible to the gate.
 | `environment.py` | Case oracle, noisy oracle |
 | `datasets/` | Synthetic fixtures; DDXPlus adapter |
 | `evaluation/` | Ranking, calibration, selective prediction, DDx recall |
+
+## The documents
+
+| File | What it is for |
+|---|---|
+| `SCOPE.md` | Step 1 deliverable: presentation, causes, reasoning schema, and every constraint the project ran into |
+| `DESIGN.md` | The running record of what was measured, including the conclusions later measurements took back |
+| `RESPONSIBLE_AI.md` | Privacy, safety and risk, with the limitations stated as limitations |
+| `VOCABULARY.md` | The concept layer: HPO, UMLS CUIs, SNOMED CT codes |
 
 ## Design traceability
 
