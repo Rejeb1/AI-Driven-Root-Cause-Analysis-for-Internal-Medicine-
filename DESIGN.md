@@ -249,15 +249,26 @@ assumption.
 
 ## What sourcing changed, and one conclusion it took back
 
-Likelihoods were sourced in two passes: 17 from DDXPlus co-occurrence, then 4
-from a published cohort of 360 real pulmonary embolism patients (Miniati et
-al., PLoS ONE 2012;7(2):e30891). Coverage is 14%, and the remaining 116 are
+Likelihoods were sourced in four passes: 17 from DDXPlus co-occurrence, 4 from
+a published cohort of 360 real pulmonary embolism patients (Miniati et al.,
+PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
+text through the fixed rubric. Coverage is 24%, and the remaining 102 are
 still invented.
 
     knowledge base            plain   +corr   +decisive   +both
     invented                   8/10    8/10        8/10    8/10
     17 from DDXPlus            9/10      --          --   10/10
     + 4 from the literature    9/10   10/10        9/10    9/10
+    + 14 from Merck           10/10    9/10       10/10    9/10
+
+**Read the last row against the one above it before drawing anything from
+this table.** The column that wins changes on every pass. Correlation was the
+best arm on literature-sourced numbers and is the worst on Merck-sourced ones;
+the plain loop was never best until it suddenly was. The full account of why
+is in *Five sentences of textbook overturned the headline negative result*
+below, and the short version is that correlation weighting was compensating
+for over-extreme invented likelihoods and the compensation outlived the
+problem.
 
 Two things follow.
 
@@ -275,6 +286,13 @@ pain in 71% of its pulmonary embolism patients, Miniati's real cohort shows
 33%. The simulator overstates it twofold, and a mechanism that looked
 vindicated on the inflated number was not.
 
+After the Merck passes the rule is neutral rather than harmful — 10/10 with or
+without it on the plain knowledge base, and it still costs turns for nothing.
+Three passes, three verdicts on the same rule. None of them was a measurement
+error; each was correct about a different knowledge base, which is the whole
+difficulty with concluding anything about mechanism while the numbers underneath
+are moving.
+
 That is the caution for every number sourced from DDXPlus in this project.
 They are measured, and measured from a generating model; a conclusion about
 mechanism that rests on them has not yet met a real frequency.
@@ -284,12 +302,16 @@ mechanism that rests on them has not yet met a real frequency.
 With the correlation structure on and likelihoods part-sourced:
 
     correlated  workup  decisive   top-1   cost
-          yes      no        no    10/10   16.9
-          yes      no       yes     9/10   26.0
-          yes     yes        no     9/10   17.0
-          yes     yes       yes     9/10   22.1
+          yes      no        no     9/10   13.4
+          yes      no       yes     9/10   16.8
+          yes     yes        no     8/10   15.5
+          yes     yes       yes     9/10   17.3
 
-The workup is on by default and it is what loses fx-009.
+The workup is on by default and it is what loses fx-009. (These figures are
+from the Merck-sourced knowledge base; the numbers moved but the conclusion
+did not. Note that the whole grid is now below the plain, uncorrelated loop's
+10/10 — on current numbers the correlation structure is the larger cost, and
+this table holds it fixed to isolate the workup.)
 
 The mechanism is not that the D-dimer is unhelpful. Left to itself the loop
 orders a chest X-ray early, it comes back negative, and that negative is what

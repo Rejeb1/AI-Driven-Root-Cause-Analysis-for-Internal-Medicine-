@@ -73,8 +73,8 @@ The evidence that most moves each diagnosis, as currently encoded:
 | Pericarditis | pleuritic pain, friction rub | raised BNP, orthopnoea |
 | Panic attack | palpitations, absence of hypoxia | hypoxia, ECG changes, raised troponin |
 
-**Most of these are invented, and which ones are not is recorded.** 21% of
-the 135 likelihoods now carry a citation — 15 from DDXPlus, 9 from the Merck
+**Most of these are invented, and which ones are not is recorded.** 24% of
+the 135 likelihoods now carry a citation — 15 from DDXPlus, 14 from the Merck
 Manual's narrative text, 4 from a published cohort. `scripts/sensitivity.py`
 reports the split and `dxagent.provenance` tracks it per number. See
 *Constraints*.
@@ -150,7 +150,7 @@ here holds symptoms, signs, laboratory results and imaging findings, and
 nothing in scope reasons about medication. That is a scope fact rather than a
 substitution.
 
-**The likelihood tables are still mostly invented — 107 of 135.** UMLS was
+**The likelihood tables are still mostly invented — 102 of 135.** UMLS was
 probed and found unusable for this purpose — mostly translations and billing
 crosswalks, and its one clinical relation mixes symptoms, risk factors and
 treatment complications without distinguishing them. HPO supplies concepts but
@@ -170,17 +170,17 @@ That list is a sourcing priority and nothing more. It is not a list of the
 numbers that matter, and the distinction is easy to get backwards:
 `--ablate` deletes the invented likelihoods outright and lets the knowledge
 base fall back to its own marginals, and the fixture set drops from 9/10 to
-4/10. The invented numbers are individually insensitive and collectively
+3/10. The invented numbers are individually insensitive and collectively
 load-bearing. Whatever else is said about this knowledge base, it cannot be
 said that most of it is padding.
 
-**Most of the remaining 107 are not sourceable from a reference text at all.**
+**Most of the remaining 102 are not sourceable from a reference text at all.**
 A textbook chapter describes what a disease presents with — five to eight
 notable findings. The knowledge base is a full grid of 8 diseases against every
 finding in the vocabulary, so it contains cells like P(raised BNP | asthma
 exacerbation) and P(CTPA filling defect | pneumonia). No chapter on asthma
 states how often BNP is raised in asthma, because no one writes that sentence.
-A scan of all eight relevant Merck chapters for the 107 unsourced cells returns
+A scan of all eight relevant Merck chapters for the unsourced cells returns
 roughly thirty candidate sentences, and most of those are false matches — drug
 adverse effects, a different disease bleeding in from a neighbouring chapter.
 The realistic remaining yield from this source is single figures. The honest
