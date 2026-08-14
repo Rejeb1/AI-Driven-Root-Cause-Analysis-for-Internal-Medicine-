@@ -64,20 +64,48 @@ The evidence that most moves each diagnosis, as currently encoded:
 
 | Cause | Raises it | Lowers it |
 |---|---|---|
-| Pulmonary embolism | sudden onset, pleuritic pain, hypoxia, raised D-dimer, CTPA filling defect | productive cough, fever |
-| Pneumonia | fever, productive cough, crackles, raised WCC, consolidation on CXR | sudden onset, orthopnoea |
-| Acute coronary syndrome | exertional chest pain, ECG ST changes, raised troponin | fever, pleuritic pain |
-| Acute pulmonary oedema | orthopnoea, raised JVP, raised BNP, pulmonary oedema on CXR | fever |
-| COPD exacerbation | smoking history, wheeze, reduced breath sounds | sudden onset |
-| Asthma exacerbation | wheeze, reversible symptoms | smoking history, fever |
-| Pericarditis | pleuritic pain, friction rub | raised BNP, orthopnoea |
-| Panic attack | palpitations, absence of hypoxia | hypoxia, ECG changes, raised troponin |
+| Pulmonary embolism | CTPA filling defect, raised D-dimer, sudden onset, rest dyspnoea, hypoxia | orthopnoea, pulmonary oedema on CXR, consolidation on CXR |
+| Pneumonia | consolidation on CXR, fever, raised WCC, productive cough, crackles | rest dyspnoea, CTPA filling defect, leg swelling |
+| Acute coronary syndrome | raised troponin, sudden onset | productive cough, consolidation on CXR, fever |
+| Acute pulmonary oedema | pulmonary oedema on CXR, raised BNP, orthopnoea, leg swelling, raised JVP | fever, raised WCC, consolidation on CXR |
+| COPD exacerbation | productive cough, rest dyspnoea, smoking history, hypoxia | pulmonary oedema on CXR, sudden onset, raised JVP |
+| Asthma exacerbation | rest dyspnoea, sudden onset | pulmonary oedema on CXR, raised BNP, crackles |
+| Pericarditis | raised troponin, fever, pleuritic pain | consolidation on CXR, crackles, productive cough |
+| Panic attack | sudden onset, palpitations, tachycardia | CTPA filling defect, hypoxia, productive cough |
 
-**Most of these are invented, and which ones are not is recorded.** 24% of
-the 135 likelihoods now carry a citation — 15 from DDXPlus, 14 from the Merck
-Manual's narrative text, 4 from a published cohort. `scripts/sensitivity.py`
-reports the split and `dxagent.provenance` tracks it per number. See
-*Constraints*.
+**This table means something narrower than it looks, and the difference
+matters.** "Raises it" here is *relative to the other seven candidates*, not
+relative to the general population — the likelihood ratio is computed against
+this knowledge base's own marginal. A finding can be strongly associated with a
+disease and still fail to raise it here, because a rival claims it harder.
+
+The table is generated from the knowledge base rather than written from
+intuition, and `scripts/plausibility_check.py` fails if the two drift apart.
+An earlier hand-written version made four claims the sourced numbers
+contradicted, all four for that reason:
+
+- **Pleuritic pain no longer raises pulmonary embolism.** A real cohort puts it
+  at 33% in PE (Miniati 2012), while pericarditis reaches 69% and pneumonia 53%.
+  It is a *pleuritic-pain* finding, not a PE finding, once the competitors are
+  sourced too.
+- **Exertional chest pain no longer raises acute coronary syndrome**, because
+  DDXPlus scores it higher in acute pulmonary oedema (77%) than in ACS (36%).
+  That is a fact about DDXPlus's generating model as much as about medicine —
+  see the caution on simulator-derived numbers below.
+- **Wheeze barely separates asthma from COPD** (87% against 91%), which is
+  precisely what this document's own COPD row predicts when it calls
+  distinguishing them "a real clinical task".
+- **Fever is now neutral for pulmonary embolism**, not lowering. The Merck
+  Manual says fever "can occur" in PE; the fixed rubric maps that to 0.30,
+  which lands on the knowledge base's marginal almost exactly. The rubric is
+  deliberately coarse and is not re-tuned to produce a preferred answer, so
+  this is recorded rather than adjusted.
+
+**Most of these numbers are still invented, and which ones are not is
+recorded.** 25% of the 135 likelihoods carry a citation — 15 from DDXPlus, 14
+from the Merck Manual's narrative text, 5 from published cohorts.
+`scripts/sensitivity.py` reports the split and `dxagent.provenance` tracks it
+per number. See *Constraints*.
 
 ### Mandatory workup
 

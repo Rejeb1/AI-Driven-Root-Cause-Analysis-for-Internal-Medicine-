@@ -40,7 +40,9 @@ python3 scripts/build_vocabulary.py     # downloads hp.obo (11 MB)
 python3 scripts/demo.py --case fx-009   # a case it gets wrong, and why
 python3 scripts/demo.py --list          # available cases
 python3 scripts/sensitivity.py          # which invented numbers actually matter
+python3 scripts/sensitivity.py --ablate # what deleting them costs, vs moving them
 python3 scripts/sensitivity.py --bands  # do the sourced ranges change anything
+python3 scripts/plausibility_check.py   # does SCOPE.md still match the numbers
 python3 scripts/synthesize.py --dry-run # synthetic case plan (section 5.2)
 ```
 

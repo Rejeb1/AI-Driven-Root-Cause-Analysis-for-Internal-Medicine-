@@ -1565,6 +1565,46 @@ def test_correlation_and_sourcing_together_repair_the_case(kb):
 # provenance
 
 
+def test_scope_document_still_matches_the_knowledge_base(kb):
+    """SCOPE.md's discriminating-evidence table, as an executable assertion.
+
+    The table states which findings raise and which lower each diagnosis.
+    It was hand-written before sourcing, four of its claims turned out to
+    contradict the sourced numbers, and it was regenerated from the knowledge
+    base -- so this is a regression test on document/code drift, not a
+    validation of the numbers. ``scripts/plausibility_check.py`` explains why
+    that distinction matters and what would be needed to restore the stronger
+    claim.
+    """
+    import importlib.util
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "plausibility_check",
+        Path(__file__).resolve().parent.parent / "scripts" / "plausibility_check.py",
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    contradictions = []
+    for label, concept, direction in module.CLAIMS:
+        entry = kb.get(label)
+        if entry is None or concept not in entry.features:
+            continue
+        if sum(1 for d in kb.diseases() if concept in d.features) <= 1:
+            continue
+        finding = Finding(concept, Polarity.PRESENT)
+        ratio = entry.likelihood(finding, kb.background(concept)) / (
+            kb.background_likelihood(finding)
+        )
+        if (ratio > 1.0) != (direction == "raises"):
+            contradictions.append(f"{label}/{concept} says {direction}, LR {ratio:.2f}")
+
+    assert not contradictions, (
+        "SCOPE.md and the knowledge base disagree:\n  " + "\n  ".join(contradictions)
+    )
+
+
 def test_unsourced_likelihoods_report_as_invented():
     """Absence is the honest default: a likelihood with no source is invented.
 

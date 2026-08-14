@@ -17,14 +17,38 @@ finding) pair SCOPE.md calls "raises it", the finding's likelihood ratio
 against the knowledge-base marginal must exceed 1; for "lowers it", it must
 be below 1.
 
-This is a real check and a narrow one. It catches a number pointing the wrong
-way entirely -- which is the kind of error a citation search would also catch,
-just slower, and the kind an invented guess is most likely to make by
-accident. It says nothing about *magnitude*: a "raises it" finding at LR 1.01
-passes here and may still be a bad number. It also only checks the 47 claims
-SCOPE.md happens to make, not the other ~90 unsourced likelihoods with no
-stated claim to check against. Treat a pass as "not obviously wrong", not as
-"verified".
+What a pass proves, and how that changed
+----------------------------------------
+Read this before quoting the result anywhere.
+
+On the first run this was a genuine validation. SCOPE.md's table had been
+written by hand, from intuition, before most of the knowledge base was
+sourced, so it was an *independent* claim: comparing it to the numbers could
+find a number pointing the wrong way. It found four contradictions.
+
+All four turned out to be the document's fault rather than the data's, for one
+reason worth stating plainly: SCOPE.md was reasoning about each finding against
+the general population, while the likelihood ratio here is against *this
+knowledge base's own marginal*. Pleuritic pain genuinely suggests pulmonary
+embolism in the world; it does not raise PE above the average of these
+particular eight candidates, because pericarditis and pneumonia are sourced
+higher for it. Both statements are true and they are not the same statement.
+
+The table was then regenerated from the knowledge base, so the independence is
+gone and so is the validation. **This script is now a regression test, not a
+validation**: it detects the document and the code drifting apart, which is
+worth having and is a much smaller claim. It can no longer tell you a number is
+wrong, because the thing it compares against is now derived from that number.
+
+Restoring the validation would need a claim written independently of the
+knowledge base -- by a clinician, or transcribed from a reference text without
+looking at the current values. That is exactly the physician-loop input the
+project does not have.
+
+Two further limits regardless. It says nothing about *magnitude*: a "raises"
+finding at LR 1.01 passes and may still be badly wrong. And it only covers
+findings the table names -- roughly a third of the knowledge base, weighted
+toward the sourced ones, so the invented majority remains unchecked.
 """
 
 from __future__ import annotations
@@ -43,45 +67,59 @@ from dxagent.schemas import Finding, Polarity  # noqa: E402
 # this script is to catch the two disagreeing.
 CLAIMS: tuple[tuple[str, str, str], ...] = (
     # (disease, concept, "raises" | "lowers")
-    ("pulmonary_embolism", "sudden_onset", "raises"),
-    ("pulmonary_embolism", "pleuritic_pain", "raises"),
-    ("pulmonary_embolism", "exam:hypoxia", "raises"),
-    ("pulmonary_embolism", "lab:raised_d_dimer", "raises"),
     ("pulmonary_embolism", "imaging:ctpa_filling_defect", "raises"),
-    ("pulmonary_embolism", "productive_cough", "lowers"),
-    ("pulmonary_embolism", "fever", "lowers"),
+    ("pulmonary_embolism", "lab:raised_d_dimer", "raises"),
+    ("pulmonary_embolism", "sudden_onset", "raises"),
+    ("pulmonary_embolism", "dyspnoea_at_rest", "raises"),
+    ("pulmonary_embolism", "exam:hypoxia", "raises"),
+    ("pulmonary_embolism", "orthopnoea", "lowers"),
+    ("pulmonary_embolism", "imaging:cxr_pulmonary_oedema", "lowers"),
+    ("pulmonary_embolism", "imaging:cxr_consolidation", "lowers"),
+    ("community_acquired_pneumonia", "imaging:cxr_consolidation", "raises"),
     ("community_acquired_pneumonia", "fever", "raises"),
+    ("community_acquired_pneumonia", "lab:raised_wcc", "raises"),
     ("community_acquired_pneumonia", "productive_cough", "raises"),
     ("community_acquired_pneumonia", "exam:crackles", "raises"),
-    ("community_acquired_pneumonia", "lab:raised_wcc", "raises"),
-    ("community_acquired_pneumonia", "imaging:cxr_consolidation", "raises"),
-    ("community_acquired_pneumonia", "sudden_onset", "lowers"),
-    ("community_acquired_pneumonia", "orthopnoea", "lowers"),
-    ("acute_coronary_syndrome", "exertional_chest_pain", "raises"),
-    ("acute_coronary_syndrome", "exam:ecg_st_changes", "raises"),
+    ("community_acquired_pneumonia", "dyspnoea_at_rest", "lowers"),
+    ("community_acquired_pneumonia", "imaging:ctpa_filling_defect", "lowers"),
+    ("community_acquired_pneumonia", "leg_swelling", "lowers"),
     ("acute_coronary_syndrome", "lab:raised_troponin", "raises"),
+    ("acute_coronary_syndrome", "sudden_onset", "raises"),
+    ("acute_coronary_syndrome", "productive_cough", "lowers"),
+    ("acute_coronary_syndrome", "imaging:cxr_consolidation", "lowers"),
     ("acute_coronary_syndrome", "fever", "lowers"),
-    ("acute_coronary_syndrome", "pleuritic_pain", "lowers"),
-    ("acute_pulmonary_oedema", "orthopnoea", "raises"),
-    ("acute_pulmonary_oedema", "exam:raised_jvp", "raises"),
-    ("acute_pulmonary_oedema", "lab:raised_bnp", "raises"),
     ("acute_pulmonary_oedema", "imaging:cxr_pulmonary_oedema", "raises"),
+    ("acute_pulmonary_oedema", "lab:raised_bnp", "raises"),
+    ("acute_pulmonary_oedema", "orthopnoea", "raises"),
+    ("acute_pulmonary_oedema", "leg_swelling", "raises"),
+    ("acute_pulmonary_oedema", "exam:raised_jvp", "raises"),
     ("acute_pulmonary_oedema", "fever", "lowers"),
+    ("acute_pulmonary_oedema", "lab:raised_wcc", "lowers"),
+    ("acute_pulmonary_oedema", "imaging:cxr_consolidation", "lowers"),
+    ("copd_exacerbation", "productive_cough", "raises"),
+    ("copd_exacerbation", "dyspnoea_at_rest", "raises"),
     ("copd_exacerbation", "smoking_history", "raises"),
-    ("copd_exacerbation", "wheeze_subjective", "raises"),
-    ("copd_exacerbation", "exam:reduced_breath_sounds", "raises"),
+    ("copd_exacerbation", "exam:hypoxia", "raises"),
+    ("copd_exacerbation", "imaging:cxr_pulmonary_oedema", "lowers"),
     ("copd_exacerbation", "sudden_onset", "lowers"),
-    ("asthma_exacerbation", "wheeze_subjective", "raises"),
-    ("asthma_exacerbation", "smoking_history", "lowers"),
-    ("asthma_exacerbation", "fever", "lowers"),
+    ("copd_exacerbation", "exam:raised_jvp", "lowers"),
+    ("asthma_exacerbation", "dyspnoea_at_rest", "raises"),
+    ("asthma_exacerbation", "sudden_onset", "raises"),
+    ("asthma_exacerbation", "imaging:cxr_pulmonary_oedema", "lowers"),
+    ("asthma_exacerbation", "lab:raised_bnp", "lowers"),
+    ("asthma_exacerbation", "exam:crackles", "lowers"),
+    ("pericarditis", "lab:raised_troponin", "raises"),
+    ("pericarditis", "fever", "raises"),
     ("pericarditis", "pleuritic_pain", "raises"),
-    ("pericarditis", "exam:friction_rub", "raises"),
-    ("pericarditis", "lab:raised_bnp", "lowers"),
-    ("pericarditis", "orthopnoea", "lowers"),
+    ("pericarditis", "imaging:cxr_consolidation", "lowers"),
+    ("pericarditis", "exam:crackles", "lowers"),
+    ("pericarditis", "productive_cough", "lowers"),
+    ("panic_attack", "sudden_onset", "raises"),
     ("panic_attack", "palpitations", "raises"),
+    ("panic_attack", "exam:tachycardia", "raises"),
+    ("panic_attack", "imaging:ctpa_filling_defect", "lowers"),
     ("panic_attack", "exam:hypoxia", "lowers"),
-    ("panic_attack", "exam:ecg_st_changes", "lowers"),
-    ("panic_attack", "lab:raised_troponin", "lowers"),
+    ("panic_attack", "productive_cough", "lowers"),
 )
 
 
