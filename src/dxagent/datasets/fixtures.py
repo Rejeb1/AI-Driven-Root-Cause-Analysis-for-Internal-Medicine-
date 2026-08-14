@@ -294,7 +294,58 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
             "sudden onset dyspnoea in 281 of 360 confirmed acute PE patients",
         ),
     ),
+    # Found by targeted search after both bulk routes were exhausted: DDXPlus
+    # records zero ACS patients with palpitations (a rule-base artefact, not a
+    # frequency) and the Merck ACS chapter never mentions the symptom at all.
+    # Aggregated across the three ACS subtypes the paper reports separately --
+    # STEMI 15/117, NSTEMI 52/251, unstable angina 31/105 -- because this
+    # knowledge base carries one `acute_coronary_syndrome` entry spanning all
+    # three. The subtype denominators sum to 473 against the paper's stated
+    # 474 confirmed-ACS patients, which is the arithmetic check that the
+    # aggregation is reading the table correctly.
+    #
+    # The rate differs threefold across subtypes (12.8% STEMI to 29.5%
+    # unstable angina), so a single number for "ACS" is a real simplification
+    # of this source, not a faithful transcription of it. It is still a
+    # measured frequency in real patients where the previous value was a
+    # guess.
+    ("acute_coronary_syndrome", "palpitations"): measured(
+        0.207,
+        Citation(
+            "ZEGRE-HEMSEY-2018",
+            "Research in Nursing & Health 41(5):459-468",
+            "palpitations at presentation in 98 of 474 confirmed ACS patients "
+            "across five emergency departments",
+        ),
+        low=0.128,
+        high=0.295,
+    ),
 }
+
+# Load-bearing numbers that no source can supply, and the reason is structural
+# ---------------------------------------------------------------------------
+# `scripts/sensitivity.py` names four likelihoods that currently change a
+# diagnosis. Two of them are on panic attack and both were searched for
+# directly, after DDXPlus was exhausted and the Merck panic-disorder chapter
+# came up empty:
+#
+#   panic_attack / lab:raised_troponin    (0.03, invented)
+#   panic_attack / exertional_chest_pain  (0.20, invented)
+#
+# Neither is measurable, and not because nobody has looked. Panic attack is a
+# diagnosis of exclusion: a normal troponin is part of how the diagnosis is
+# reached, and exertional chest pain is one of the features that argues the
+# patient *out* of it and toward a cardiac cause. A study reporting "troponin
+# was raised in X% of panic attack patients" would be reporting on a cohort
+# assembled by a rule that partly excludes raised troponin. The frequency is
+# not unpublished; it is close to undefined.
+#
+# This is a different failure from the Merck ceiling. There the text simply
+# does not state a frequency for a finding it does describe. Here the finding
+# is entangled with the diagnostic criterion, so the quantity a citation would
+# have to measure barely exists. Both numbers stay invented, deliberately, and
+# the honest description of them is that they encode a definitional relation
+# rather than an observed rate.
 
 # Precedence, weakest first: a converted phrase from a reference text, then a
 # frequency counted in the simulator, then a frequency counted in real
