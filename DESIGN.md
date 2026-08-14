@@ -252,8 +252,8 @@ assumption.
 Likelihoods were sourced in four passes: 17 from DDXPlus co-occurrence, 4 from
 a published cohort of 360 real pulmonary embolism patients (Miniati et al.,
 PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
-text through the fixed rubric. Coverage is 24%, and the remaining 102 are
-still invented.
+text through the fixed rubric, and 1 by targeted search. Coverage is 25%,
+and the remaining 101 are still invented.
 
     knowledge base            plain   +corr   +decisive   +both
     invented                   8/10    8/10        8/10    8/10
@@ -486,11 +486,16 @@ brittle when written and the sourcing merely exposed them.
 - The KB estimated from DDXPlus makes "grounded in the KB" collapse into
   "consistent with the training data", which is not the claim the project
   intends. The deployed KB must be independently sourced.
-- The eight disease priors are invented *and* untracked: `dxagent.provenance`
-  covers `P(finding | disease)` only, so unlike the likelihoods there is no
-  tier, no citation and no band for a prevalence. An invented number the audit
-  cannot report as invented is the worst kind in the project, and this is the
-  only remaining instance.
+- The eight disease priors are invented. They are no longer *untracked*:
+  `DiseaseEntry.prior_source` carries the same provenance tier as a
+  likelihood, and `provenance.report` prints them on their own line rather
+  than folding them into the likelihood percentage. Tracking is not sourcing —
+  all eight remain guesses — but the audit can now name them, which it
+  previously could not. DDXPlus cannot supply the real figures: its paper
+  states the generation rates were capped into a 10–100% band to avoid a
+  dataset dominated by a few pathologies, so its per-pathology counts are a
+  rebalancing artefact and using them as prevalence would be worse than the
+  invented values.
 - Supports/contradicts is computed, not stored. Section 2 asks for an ontology
   whose nodes are findings and causes and whose edges are labelled; what exists
   derives that relation per call from likelihood ratios. The reasoning is

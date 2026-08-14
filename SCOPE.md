@@ -178,7 +178,7 @@ here holds symptoms, signs, laboratory results and imaging findings, and
 nothing in scope reasons about medication. That is a scope fact rather than a
 substitution.
 
-**The likelihood tables are still mostly invented — 102 of 135.** UMLS was
+**The likelihood tables are still mostly invented — 101 of 135.** UMLS was
 probed and found unusable for this purpose — mostly translations and billing
 crosswalks, and its one clinical relation mixes symptoms, risk factors and
 treatment complications without distinguishing them. HPO supplies concepts but
@@ -216,11 +216,25 @@ description of the rest is that they are structural priors chosen to make the
 model behave sensibly, not measurements, and calling them anything else would
 be the misconduct this project's provenance tiers exist to prevent.
 
-**The disease priors are invented and are not even tracked.** All eight
-prevalences are guesses, and unlike the likelihoods they have no provenance
-tier: `dxagent.provenance` covers `P(finding | disease)` only. An invented
-number that the audit cannot report as invented is worse than one it can, and
-this is the clearest remaining instance of it in the project.
+**The disease priors are invented, and now say so.** All eight prevalences are
+guesses. Until recently they were also invisible to the audit —
+`dxagent.provenance` covered `P(finding | disease)` only, so a reader saw
+"25% sourced" with no hint that the priors were not part of that fraction at
+all. They now carry the same provenance tier as the likelihoods and are
+reported on their own line (`8 disease priors: 0 sourced, 8 invented`),
+counted separately rather than folded in, because merging them would let a
+sourced likelihood table hide eight unsourced priors inside one flattering
+percentage.
+
+Tracking them is not sourcing them, and the second is harder than it looks.
+DDXPlus cannot supply them: its own paper states that generation rates were
+capped into a 10–100% band to avoid a dataset "dominated by only a few
+pathologies", so its patient counts per pathology are a deliberate
+rebalancing artefact rather than epidemiology. Using them as prevalence would
+be worse than leaving the numbers invented. Real priors need
+population-incidence figures for ED presentations of each of the eight
+conditions — eight separate literature searches, and the one input the
+physician loop was meant to supply.
 
 **The Merck Manual is cited, not indexed wholesale.** Nine sentences were read
 from the 19th edition, converted to likelihoods, and also embedded into the

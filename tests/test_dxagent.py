@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 
 import pytest
 
@@ -1624,6 +1625,96 @@ def test_unsourced_likelihoods_report_as_invented():
     assert coverage.total == 2
     assert coverage.invented == 2
     assert coverage.coverage == 0.0
+
+
+def test_documented_coverage_figures_match_the_knowledge_base(kb):
+    """The documents quote counts; this fails when they go stale.
+
+    Three separate audits this session found the same class of error: a
+    number sourced, and SCOPE.md / DESIGN.md / RESPONSIBLE_AI.md still
+    quoting the previous count. Prose drifts silently because nothing
+    executes it, and a stale figure reads exactly as confidently as a live
+    one. Rather than re-checking by hand a fourth time, the figures are
+    pinned here -- if sourcing moves a count, this fails and names the file.
+
+    Deliberately only pins the *coverage* figures, not every number in the
+    documents. Those are the ones that move whenever anyone does sourcing
+    work, which is what makes them the ones that go stale.
+    """
+    from pathlib import Path
+
+    from dxagent.provenance import report
+
+    coverage = report(kb)
+    root = Path(__file__).resolve().parent.parent
+    documents = {
+        name: (root / name).read_text(encoding="utf-8")
+        for name in ("SCOPE.md", "DESIGN.md", "RESPONSIBLE_AI.md")
+    }
+
+    stale: list[str] = []
+    invented = str(coverage.invented)
+    percent = f"{coverage.coverage:.0%}"
+
+    for name, text in documents.items():
+        # Any "<n> of 135" claim must use the live invented count.
+        for quoted in re.findall(r"(\d+) of 135", text):
+            if quoted != invented:
+                stale.append(f"{name}: says '{quoted} of 135', live count is {invented}")
+        # Any "<n>% sourced" or "Coverage is <n>%" claim must match.
+        for quoted in re.findall(r"(\d+)% (?:sourced|of the 135)", text):
+            if f"{quoted}%" != percent:
+                stale.append(f"{name}: says '{quoted}% sourced', live figure is {percent}")
+        # "Coverage is N%" must be *sourcing* coverage, not the abstention
+        # gate's coverage, which is a different quantity that also lives in
+        # DESIGN.md and reached 100% on the fixture set. Require the sourcing
+        # context on the same clause -- the first draft of this test matched
+        # both and reported the gate's number as a stale sourcing figure.
+        for quoted in re.findall(r"[Cc]overage is (\d+)%[^.]*invented", text):
+            if f"{quoted}%" != percent:
+                stale.append(f"{name}: says 'coverage is {quoted}%', live figure is {percent}")
+
+    assert not stale, "documented coverage figures are stale:\n  " + "\n  ".join(stale)
+
+
+def test_priors_are_counted_separately_and_default_to_invented(kb):
+    """The priors must be visible in the audit, and not folded into it.
+
+    Two failure modes, both of which the report had at different times.
+    Counting priors nowhere leaves eight invented numbers the audit cannot
+    name -- silence a reader takes for absence of a problem. Counting them in
+    the likelihood totals is the opposite error: it lets a well-sourced
+    likelihood table carry eight unsourced priors inside one flattering
+    percentage. They are a different quantity from a different literature and
+    are reported on their own line.
+    """
+    from dxagent.knowledge import DiseaseEntry, InMemoryKnowledgeBase
+    from dxagent.provenance import Provenance, LikelihoodSource, report
+
+    coverage = report(kb)
+    assert coverage.priors_total == len(kb.diseases())
+    assert coverage.priors_sourced == 0, "no prior has been sourced yet"
+    assert coverage.priors_invented == coverage.priors_total
+    assert "disease priors" in coverage.summary()
+
+    # A prior is not counted in the likelihood totals.
+    bare = InMemoryKnowledgeBase()
+    bare.add(DiseaseEntry(label="x", prevalence=1.0, features={"a": 0.5}))
+    assert report(bare).total == 1
+    assert report(bare).priors_total == 1
+
+    # And the mechanism works when one is supplied, so this tests the tier
+    # rather than the fact that nobody has done the sourcing yet.
+    sourced = InMemoryKnowledgeBase()
+    sourced.add(
+        DiseaseEntry(
+            label="x",
+            prevalence=1.0,
+            features={"a": 0.5},
+            prior_source=LikelihoodSource(provenance=Provenance.MEASURED),
+        )
+    )
+    assert report(sourced).priors_sourced == 1
     assert "invented" in coverage.summary()
 
 

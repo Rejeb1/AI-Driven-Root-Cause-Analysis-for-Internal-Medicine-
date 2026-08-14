@@ -149,6 +149,13 @@ class ProvenanceReport:
     measured: int
     narrative: int
     invented: int
+    # Disease priors, counted separately rather than folded into the totals
+    # above. They are a different quantity -- P(disease) against
+    # P(finding | disease) -- sourced from different literature, and merging
+    # them would let a well-sourced likelihood table hide eight unsourced
+    # priors inside a single flattering percentage.
+    priors_total: int = 0
+    priors_sourced: int = 0
 
     @property
     def sourced(self) -> int:
@@ -158,18 +165,33 @@ class ProvenanceReport:
     def coverage(self) -> float:
         return self.sourced / self.total if self.total else 0.0
 
+    @property
+    def priors_invented(self) -> int:
+        return self.priors_total - self.priors_sourced
+
     def summary(self) -> str:
-        return (
+        lines = [
             f"{self.total} likelihoods: {self.measured} measured, "
             f"{self.narrative} narrative-derived, {self.invented} invented "
             f"({self.coverage:.0%} sourced)"
-        )
+        ]
+        if self.priors_total:
+            lines.append(
+                f"{self.priors_total} disease priors: {self.priors_sourced} "
+                f"sourced, {self.priors_invented} invented"
+            )
+        return "\n".join(lines)
 
 
 def report(kb) -> ProvenanceReport:
-    """Count likelihoods by provenance across a knowledge base."""
+    """Count likelihoods and priors by provenance across a knowledge base."""
     total = measured_count = narrative_count = 0
+    priors_total = priors_sourced = 0
     for entry in kb.diseases():
+        priors_total += 1
+        prior = getattr(entry, "prior_source", None)
+        if prior is not None and prior.is_sourced:
+            priors_sourced += 1
         for concept in entry.features:
             total += 1
             source = entry.sources.get(concept)
@@ -184,6 +206,8 @@ def report(kb) -> ProvenanceReport:
         measured=measured_count,
         narrative=narrative_count,
         invented=total - measured_count - narrative_count,
+        priors_total=priors_total,
+        priors_sourced=priors_sourced,
     )
 
 

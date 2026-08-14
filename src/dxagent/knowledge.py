@@ -62,6 +62,17 @@ class DiseaseEntry:
     # this map is invented -- absence is the honest default, since every number
     # started that way and only becomes sourced when someone does the work.
     sources: dict[str, "LikelihoodSource"] = field(default_factory=dict)
+    # Where ``prevalence`` came from. ``None`` means invented, on the same
+    # absence-is-the-default rule as ``sources``.
+    #
+    # This existed only for the feature likelihoods for most of the project's
+    # life, which made the priors the one class of number the audit could not
+    # report on: eight invented values that ``provenance.report`` was
+    # structurally blind to, so a reader checking coverage saw "25% sourced"
+    # and no hint that the priors were not part of that fraction at all. An
+    # invented number the audit cannot name is worse than one it can, because
+    # the silence reads as absence of a problem.
+    prior_source: "LikelihoodSource | None" = None
 
     def likelihood(self, finding: Finding, background: float = 0.5) -> float:
         """P(this finding | this disease).

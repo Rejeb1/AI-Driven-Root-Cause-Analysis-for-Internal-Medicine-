@@ -147,9 +147,10 @@ marketing:
 
 ### The dominant risk is the knowledge base, and it is measured
 
-102 of 135 likelihoods are invented, as are all eight disease priors.
-`dxagent.provenance` tracks every likelihood as measured, narrative-derived or
-invented and reports the split on every run of `scripts/sensitivity.py`.
+101 of 135 likelihoods are invented, as are all eight disease priors.
+`dxagent.provenance` tracks every likelihood *and every prior* as measured,
+narrative-derived or invented, and reports both splits on every run of
+`scripts/sensitivity.py`.
 
 Two measurements bound what that means:
 
@@ -161,10 +162,19 @@ Two measurements bound what that means:
   ones drops the fixture set from 9/10 to 3/10. They are individually
   insensitive and collectively load-bearing.
 
-**The disease priors are the worst case in the project**: invented *and*
-untracked, because the provenance mechanism covers `P(finding | disease)` only.
-An invented number the audit cannot report as invented is the most dangerous
-kind, and this is the only remaining instance.
+**All eight disease priors are invented**, and every one is reported as such:
+`8 disease priors: 0 sourced, 8 invented`, on its own line rather than diluted
+into the likelihood percentage. They were untracked for most of this project's
+life, which was the more dangerous state — an invented number the audit cannot
+name reads to a reader as an absence of a problem.
+
+They cannot be sourced from anything already in the project. DDXPlus's own
+paper states that per-pathology generation rates were capped into a 10–100%
+band to avoid a dataset "dominated by only a few pathologies", so its patient
+counts are a deliberate rebalancing artefact; presenting them as prevalence
+would launder a dataset-construction decision as epidemiology, which is worse
+than an acknowledged guess. Real priors need population-incidence figures for
+emergency presentations of each condition.
 
 ### Risk of the evaluation flattering itself
 
