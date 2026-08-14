@@ -17,7 +17,7 @@ this went near a patient.
 Python 3.10+. The core runs with no install, no API key and no credentials.
 
 ```bash
-python3 -m pytest tests/ -q     # 103 pass
+python3 -m pytest tests/ -q     # 145 pass
 python3 scripts/run_eval.py     # evaluation report, with the required baselines
 python3 scripts/demo.py         # one consultation, as a readable transcript
 ```
@@ -43,6 +43,7 @@ python3 scripts/sensitivity.py          # which invented numbers actually matter
 python3 scripts/sensitivity.py --ablate # what deleting them costs, vs moving them
 python3 scripts/sensitivity.py --bands  # do the sourced ranges change anything
 python3 scripts/plausibility_check.py   # does SCOPE.md still match the numbers
+python3 scripts/build_ontology.py       # the finding/cause graph, as text or DOT
 python3 scripts/synthesize.py --dry-run # synthetic case plan (section 5.2)
 ```
 
@@ -99,6 +100,7 @@ instead of it, so their disagreement stays visible to the gate.
 | `merck.py` | The Merck Manual quotes: one source, cited both as likelihoods and as retrievable passages |
 | `baselines.py` | The two comparisons the brief requires |
 | `provenance.py` | Where each likelihood came from: measured, narrative, invented |
+| `ontology.py` | Findings and causes as a traversable graph, edges labelled supports/contradicts |
 | `synthesis.py` | Synthetic case generation, critique and screening |
 | `environment.py` | Case oracle, noisy oracle |
 | `datasets/` | Synthetic fixtures; DDXPlus adapter |

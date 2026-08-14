@@ -162,16 +162,34 @@ meaningful label mixes symptoms, risk factors and treatment complications
 without marking which is which. Supports/contradicts edges are therefore
 hand-encoded from Wells, PERC, CURB-65 and HEART with citations.
 
-Those edges are also not a graph. Section 4 asks for an ontology whose nodes
-are findings and causes and whose edges are labelled supports/contradicts;
-what exists computes that relation on demand — `InMemoryKnowledgeBase.
-evidence_split` scores each observed finding by likelihood ratio against the
-knowledge-base marginal and returns the two lists with citations — rather than
-storing it as a traversable structure. The reasoning is auditable and every
-edge is cited, which is what the requirement is for, but there is no object a
-reader can walk or draw, and the word *causal* would be wrong for it in any
-case: what is encoded is measured association, and commit `0624bdf` exists
-specifically to stop risk factors resolving to the disorders they cause.
+Those edges are now also a graph. `dxagent.ontology` builds one whose nodes are
+findings and causes and whose edges are labelled supports/contradicts, with
+`scripts/build_ontology.py` to query it, export JSON, or emit Graphviz DOT. It
+adds no clinical knowledge: every edge is the same likelihood ratio
+`InMemoryKnowledgeBase.evidence_split` already computes on demand, so the graph
+and the reasoner cannot disagree — there is a test asserting exactly that. What
+it adds is a form that can be walked and drawn rather than only executed.
+
+Two qualifications travel with it. **It is association, not causation**, and
+the brief's word "causal" would be wrong: an edge says a finding is more
+expected under a cause than in the population this knowledge base describes.
+Commit `0624bdf` exists specifically to stop risk factors resolving to the
+disorders they cause, and calling this graph causal would license inferences
+it cannot support. **And most edges rest on invented numbers** — 63 of 83 at
+the default threshold — so every edge carries its provenance tier, the summary
+reports the split, and the DOT export draws invented edges dashed. A dense,
+confident diagram built from guesses misleads more efficiently than the guesses
+did on their own.
+
+The graph immediately showed something the likelihood table did not: at the
+default threshold **asthma exacerbation has no supporting edges at all**. Every
+finding it carries is claimed at least as strongly by something else, almost
+always COPD. The system still reaches the diagnosis — absent findings and the
+shape of the whole posterior carry information a per-edge threshold cannot see
+— but no single finding argues *for* asthma above this population's base rate.
+That is the content of this document's own justification for including asthma,
+which calls separating it from COPD "a real clinical task", now visible as an
+empty row.
 
 *RxNorm* — not applicable. It names drugs and their ingredients; the vocabulary
 here holds symptoms, signs, laboratory results and imaging findings, and

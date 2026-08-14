@@ -1627,6 +1627,92 @@ def test_unsourced_likelihoods_report_as_invented():
     assert coverage.coverage == 0.0
 
 
+def test_ontology_edges_agree_with_the_reasoner(kb):
+    """The graph must not be able to disagree with the arithmetic.
+
+    An ontology built by hand alongside a knowledge base is two sources of
+    truth that drift. This one is derived from the same likelihood ratio
+    ``evidence_split`` uses, so the test is that they still say the same
+    thing about the same finding.
+    """
+    from dxagent.ontology import Ontology
+
+    graph = Ontology.build(kb)
+    assert graph.edges, "the fixture knowledge base should produce edges"
+
+    for entry in kb.diseases():
+        findings = [Finding(c, Polarity.PRESENT) for c in entry.features]
+        supporting, against = kb.evidence_split(entry.label, findings)
+        graph_supports = {
+            e.finding for e in graph.edges_into(entry.label) if e.relation == "supports"
+        }
+        graph_contradicts = {
+            e.finding
+            for e in graph.edges_into(entry.label)
+            if e.relation == "contradicts"
+        }
+        # evidence_split's citations carry "<label>/<concept>" as the locator.
+        split_supports = {c.locator.split("/", 1)[1] for c in supporting}
+        split_against = {c.locator.split("/", 1)[1] for c in against}
+
+        assert graph_supports == split_supports, entry.label
+        assert graph_contradicts == split_against, entry.label
+
+
+def test_ontology_edges_carry_provenance_and_are_mostly_invented(kb):
+    """A graph that looks uniform would misrepresent the knowledge base.
+
+    Most edges are drawn from invented numbers. That has to be visible on
+    the edge and in the summary, or a dense diagram becomes a more effective
+    way to mislead than the numbers were on their own.
+    """
+    from dxagent.ontology import Ontology
+
+    graph = Ontology.build(kb)
+    tiers = {e.provenance for e in graph.edges}
+    assert tiers <= {"measured", "narrative", "invented"}
+    assert "invented" in tiers
+
+    invented = sum(1 for e in graph.edges if e.provenance == "invented")
+    assert invented > len(graph.edges) / 2, "most edges should be invented today"
+    assert "edge provenance" in graph.summary()
+
+    # A sourced edge keeps its citation; an invented one has none to keep.
+    for edge in graph.edges:
+        if edge.provenance == "invented":
+            assert edge.citation is None
+        else:
+            assert edge.citation is not None and edge.citation.source_id
+
+
+def test_ontology_is_traversable_in_both_directions(kb):
+    """The property that makes it a graph rather than a report."""
+    from dxagent.ontology import Ontology
+
+    graph = Ontology.build(kb)
+    cause = "community_acquired_pneumonia"
+
+    findings = graph.neighbours(cause)
+    assert findings, "a cause should reach findings"
+    for finding in findings:
+        assert cause in graph.neighbours(finding), "edges must traverse both ways"
+
+    # Strongest-first ordering, with contradicting edges ranked by distance
+    # from parity rather than by raw ratio.
+    strengths = [e.strength for e in graph.edges_into(cause)]
+    assert strengths == sorted(strengths, reverse=True)
+
+
+def test_ontology_dot_marks_invented_edges_dashed(kb):
+    """The one visual encoding that carries meaning rather than decoration."""
+    from dxagent.ontology import Ontology
+
+    dot = Ontology.build(kb).to_dot(causes=["pericarditis"])
+    assert dot.startswith("digraph ontology {") and dot.rstrip().endswith("}")
+    assert "style=dashed" in dot, "invented edges must be visually distinct"
+    assert "pericarditis" in dot
+
+
 def test_documented_coverage_figures_match_the_knowledge_base(kb):
     """The documents quote counts; this fails when they go stale.
 
