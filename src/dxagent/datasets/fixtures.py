@@ -29,7 +29,12 @@ import dataclasses
 
 from ..knowledge import Citation, DiseaseEntry, InMemoryKnowledgeBase, register_costs
 from ..merck import QUOTES as _MERCK_QUOTES
-from ..provenance import LikelihoodSource, from_narrative, measured
+from ..provenance import (
+    LikelihoodSource,
+    Provenance,
+    from_narrative,
+    measured,
+)
 
 # Acquisition costs in arbitrary consistent units, ordered by tier: history is
 # near-free, bedside exam cheap, bloods moderate, cross-sectional imaging dear.
@@ -390,6 +395,73 @@ _SOURCED: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
 }
 
 
+# Disease priors, derived from presentation-conditional aetiology
+# ---------------------------------------------------------------------------
+# For most of this project the priors were invented and no source for them
+# was known. DDXPlus cannot supply them -- its paper says generation rates
+# were capped into a 10-100% band, so its per-pathology counts are a
+# rebalancing artefact -- and the Merck chapters give disease epidemiology in
+# the population, which is a different quantity from "of patients presenting
+# this way, how many have each cause".
+#
+# StatPearls has that quantity, in two symptom-side articles rather than the
+# disease-side ones searched first:
+#
+#   Dyspnea (NBK499965): pneumonia/LRTI 20-26%, heart failure 15-28%,
+#     COPD 13-18%, asthma 13-15%, and PE, ACS and psychogenic dyspnoea each
+#     "fewer than 5%".
+#   Chest Pain (NBK470557, citing Fruergaard et al.): ACS 31%, GERD 30%,
+#     musculoskeletal 28%, pericarditis 4%, PE 2%, pneumonia/pleuritis 2%.
+#
+# **These are derived numbers, not measured ones, and the derivation rests on
+# three assumptions that a reader is entitled to reject.** They are stated
+# here rather than buried, and each value's band is wide enough to survive
+# them being wrong:
+#
+#   1. *Renormalisation.* Both sources list causes outside this differential
+#      -- GERD and musculoskeletal pain are 58% of chest pain between them --
+#      and the shares below are rescaled so the eight sum to one. That is
+#      consistent with the knowledge base's own closed-world assumption, and
+#      it does inflate every one of these eight.
+#   2. *Below-threshold values.* "Fewer than 5%" and "not named at all" are
+#      both read as 2.5%. The first is an upper bound; the second is not a
+#      statement about frequency at all.
+#   3. *The presentation mix.* This project's presentation is dyspnoea *and*
+#      chest pain, and nothing says how the two are mixed. The point estimate
+#      assumes 50/50.
+#
+# The band is the honest part, and for acute coronary syndrome it is
+# enormous: 3% if the presentation is dyspnoea-dominated, 63% if chest-pain
+# dominated. That twenty-fold spread is a real property of the differential,
+# not a defect in the sourcing -- which of the two complaints a patient leads
+# with genuinely does change the prior that much. A single confident number
+# there would be the dishonest option.
+_PRIOR_CITATION = Citation(
+    "STATPEARLS-PRESENTATION",
+    "NBK499965 Dyspnea, Epidemiology; NBK470557 Chest Pain, Etiology "
+    "(Fruergaard et al.)",
+    "aetiology of dyspnoea and of chest pain presentations to the emergency "
+    "department, renormalised over this differential's eight causes",
+)
+
+_PRIOR_NOTE = (
+    "derived: 50/50 blend of the dyspnoea and chest-pain aetiologies, "
+    "renormalised over eight causes; band spans the two source presentations"
+)
+
+# value, low (dyspnoea-only), high (chest-pain-only)
+_PRIORS: dict[str, tuple[float, float, float]] = {
+    "acute_coronary_syndrome": (0.252, 0.030, 0.633),
+    "community_acquired_pneumonia": (0.188, 0.041, 0.274),
+    "acute_pulmonary_oedema": (0.180, 0.051, 0.256),
+    "copd_exacerbation": (0.135, 0.051, 0.185),
+    "asthma_exacerbation": (0.124, 0.051, 0.167),
+    "pericarditis": (0.049, 0.030, 0.082),
+    "panic_attack": (0.038, 0.030, 0.051),
+    "pulmonary_embolism": (0.034, 0.030, 0.041),
+}
+
+
 def _apply_sources(kb: InMemoryKnowledgeBase) -> None:
     """Overwrite invented likelihoods with sourced ones, recording provenance."""
     by_disease: dict[str, dict[str, tuple[float, LikelihoodSource]]] = {}
@@ -416,6 +488,25 @@ def _apply_sources(kb: InMemoryKnowledgeBase) -> None:
         kb.entries[label] = dataclasses.replace(
             entry, features=features, sources=sources
         )
+
+    for label, (value, low, high) in _PRIORS.items():
+        entry = kb.entries.get(label)
+        if entry is None:
+            raise KeyError(
+                f"_PRIORS names {label!r}, which is not in the knowledge base."
+            )
+        kb.entries[label] = dataclasses.replace(
+            entry,
+            prevalence=value,
+            prior_source=LikelihoodSource(
+                provenance=Provenance.MEASURED,
+                citation=_PRIOR_CITATION,
+                low=low,
+                high=high,
+                note=_PRIOR_NOTE,
+            ),
+        )
+
     kb._marginals.clear()
 
 

@@ -366,8 +366,17 @@ def test_evidence_fit_does_not_separate_the_masquerade_failure(kb, cases):
     not of evidence fit, and it survived only until the numbers moved again.
     The original conclusion was the durable one: evidence fit reads whether
     the findings are explained by *something*, and in a masquerade they are.
+
+    Measured on the weakened arm, because sourcing the priors took the
+    shipped configuration to 10/10 and a claim about how failures score
+    needs a failure to score. That the claim is now untestable under the
+    defaults is a good problem, and worth not hiding by quietly deleting the
+    test.
     """
-    agent = DiagnosticAgent(kb=kb)
+    agent = DiagnosticAgent(
+        kb=kb,
+        limits=LoopLimits(require_decisive_tests=False, require_workup=False),
+    )
     proposer = BayesianProposer(kb)
     correct, wrong = [], []
 
@@ -657,20 +666,19 @@ def _superseded_test_decisive_test_signal_flags_the_masquerade_failures(kb, case
     assert flagged_when_wrong == wrong
 
 
-def test_the_weakened_loop_no_longer_has_a_masquerade_failure(kb, cases):
-    """The failure class this whole family of tests was built around is gone.
+def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
+    """Where the remaining failure lives, once every safety rule is removed.
 
-    With the workup floor and the decisive-test rule both switched off -- the
-    configuration that used to expose the masquerade failures most clearly --
-    the loop now gets every fixture case right. Three sourced pulmonary
-    embolism likelihoods did that; see
-    ``test_sourcing_repaired_the_buried_diagnosis`` for the mechanism.
+    This arm switches off the workup floor, the decisive-test rule and
+    correlation weighting -- everything that exists to catch a masquerade --
+    and one case fails: fx-001, a pneumonia read as COPD. **The shipped
+    configuration gets all ten**, which is the number that describes the
+    system; this one describes what the safety machinery is carrying.
 
-    Kept as a running assertion rather than deleted, because the useful thing
-    now is to notice if a failure comes back. Ten cases is a small enough set
-    that this is a floor, not a result: the shipped defaults still lose
-    fx-009, and that case is tracked by
-    ``test_evidence_fit_does_not_separate_the_masquerade_failure``.
+    The count here has moved every time the knowledge base has: two failures
+    on invented numbers, none after the Merck likelihoods, one again now that
+    the priors are sourced. Pinned rather than deleted so the next move is
+    noticed rather than discovered.
     """
     plain = DiagnosticAgent(
         kb=kb,
@@ -683,7 +691,10 @@ def test_the_weakened_loop_no_longer_has_a_masquerade_failure(kb, cases):
         for case in cases
         if plain.run(case).differential.top.label != case.diagnosis
     ]
-    assert wrong == [], f"a masquerade failure has returned: {wrong}"
+    # Sourcing the priors brought one back on this deliberately weakened arm
+    # -- no workup floor, no decisive-test rule, no correlation weighting.
+    # The shipped configuration gets all ten; see the docstring.
+    assert wrong == ["fx-001"], f"unexpected failures: {wrong}"
 
 
 def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
@@ -721,22 +732,21 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     correlated, correlated_cost = run(True, False)
     both, both_cost = run(True, True)
 
-    # Third reversal on this measurement, and the most informative one.
-    # Correlation weighting was introduced because four correlated negatives
-    # about pulmonary embolism were being counted as four independent
-    # penalties. It helped -- while the underlying likelihoods were invented
-    # and too extreme. Sourcing three of those from the Merck Manual removed
-    # the distortion at its origin, and the discount is now correcting an
-    # error that is no longer there: the plain loop reaches 10/10 and the
-    # correlated one gives a case back.
+    # Fourth reversal on this measurement. Correlation helped on invented
+    # numbers, stopped helping when Merck sourcing removed the extremity it
+    # was compensating for, and helps again now that the priors are sourced:
+    # pulmonary embolism turns out to be genuinely rare in this presentation
+    # (StatPearls puts it under 5% of dyspnoea, 2% of chest pain), so its
+    # prior fell threefold and the diagnosis needs the correlated reading of
+    # its four absent findings to survive at all.
     #
-    # The mechanism was never wrong. It was compensating for bad numbers, and
-    # a compensation outlives its usefulness the moment the numbers improve.
-    # That is an argument for fixing knowledge bases rather than adding
-    # machinery to survive them.
-    assert plain == len(cases), "the plain loop now gets every fixture case"
-    assert correlated < plain, "and correlation now costs one"
-    assert both <= plain, "decisive tests still do not improve on the best arm"
+    # Four measurements, four answers, none of them a mistake -- each was
+    # correct about a different knowledge base. The durable lesson is that a
+    # mechanism's value is a property of the numbers underneath it, so
+    # "does correlation weighting help" has no answer independent of them.
+    assert correlated == len(cases), "correlation now gets every fixture case"
+    assert plain < correlated, "and the plain loop gives one back"
+    assert both <= correlated, "decisive tests still do not improve on the best arm"
 
 
 def _superseded_test_decisive_tests_do_not_repair(kb, cases):
@@ -1026,20 +1036,31 @@ def test_sourcing_repaired_the_buried_diagnosis(kb):
     and that the cost of an invented number is not spread evenly: three of
     them, on one disease, were holding the whole failure in place.
     """
-    proposer = BayesianProposer(kb)
+    from dxagent.datasets.fixtures import build_knowledge_base as build
+
     confirmatory = [
         Finding("fever", Polarity.PRESENT),
         Finding("productive_cough", Polarity.PRESENT),
         Finding("imaging:ctpa_filling_defect", Polarity.PRESENT),
     ]
-
     assert kb.get("pulmonary_embolism").features["imaging:ctpa_filling_defect"] >= 0.9
-    after = proposer.propose(confirmatory)
-    assert after.top.label == "pulmonary_embolism"
 
-    # Still short of a majority: the independence assumption has not been
-    # repaired, only made less punishing on this disease.
-    assert after.probability_of("pulmonary_embolism") < 0.5
+    # Sourcing the priors moved this again. Pulmonary embolism turns out to be
+    # rare among these presentations -- StatPearls puts it under 5% of dyspnoea
+    # and at 2% of chest pain -- so its prior fell from an invented 0.10 to a
+    # derived 0.034, and the diagnosis now starts three times further back.
+    # The likelihood repair alone no longer carries it: on the plain knowledge
+    # base pneumonia wins again.
+    plain = BayesianProposer(build(correlated=False)).propose(confirmatory)
+    assert plain.top.label == "community_acquired_pneumonia"
+
+    # With correlation weighting it still is retrieved, which is the point.
+    # Four correlated negatives about PE are not four independent penalties,
+    # and once they stop being counted as such a positive CTPA is enough even
+    # against the lower prior.
+    aware = BayesianProposer(build(correlated=True)).propose(confirmatory)
+    assert aware.top.label == "pulmonary_embolism"
+    assert aware.probability_of("pulmonary_embolism") < 0.5
 
 
 def test_state_records_realised_information_gain(kb, cases):
@@ -1779,9 +1800,18 @@ def test_priors_are_counted_separately_and_default_to_invented(kb):
 
     coverage = report(kb)
     assert coverage.priors_total == len(kb.diseases())
-    assert coverage.priors_sourced == 0, "no prior has been sourced yet"
-    assert coverage.priors_invented == coverage.priors_total
+    assert coverage.priors_sourced == coverage.priors_total, (
+        "every prior now carries a source; see _PRIORS in fixtures.py"
+    )
+    assert coverage.priors_invented == 0
     assert "disease priors" in coverage.summary()
+
+    # Each carries the band spanning the two source presentations, because
+    # the point estimate assumes a 50/50 mix the sources do not supply.
+    for entry in kb.diseases():
+        assert entry.prior_source.band is not None
+        low, high = entry.prior_source.band
+        assert low <= entry.prevalence <= high
 
     # A prior is not counted in the likelihood totals.
     bare = InMemoryKnowledgeBase()

@@ -463,6 +463,54 @@ effect on `still_outstanding`, and a retrieval assertion naming whichever
 source a meaningless hash embedding happened to rank first. Those three were
 brittle when written and the sourcing merely exposed them.
 
+## Sourcing the priors, and the fourth answer on correlation
+
+The priors were the last wholly invented quantity, and the reason they stayed
+that way was a search failure rather than an absence of data. DDXPlus cannot
+supply them and the Merck chapters give population epidemiology, which is the
+wrong quantity — what a prior needs is *presentation-conditional*: of patients
+arriving with this complaint, how many have each cause. Both disease-side
+searches missed it because the answer is in symptom-side articles. StatPearls
+has two:
+
+    Dyspnoea (NBK499965)      pneumonia 20-26%, heart failure 15-28%,
+                              COPD 13-18%, asthma 13-15%,
+                              PE / ACS / psychogenic each "fewer than 5%"
+    Chest pain (NBK470557)    ACS 31%, GERD 30%, musculoskeletal 28%,
+                              pericarditis 4%, PE 2%, pneumonia 2%
+
+**The two disagree by twentyfold on acute coronary syndrome**, and that is the
+finding rather than a nuisance. Renormalised over this differential, ACS is 3%
+of a dyspnoea presentation and 63% of a chest-pain one. This project's
+presentation is both, and nothing in either source says how they mix, so every
+prior carries a band spanning the two and the point estimate assumes 50/50.
+Three assumptions stack here — renormalisation, reading "fewer than 5%" and
+"not named" both as 2.5%, and the mixing ratio — and they are listed in
+`fixtures.py` beside the numbers rather than left implicit. These are derived
+values, not measured ones.
+
+What it changed:
+
+- **The shipped configuration reaches 10/10**, from 9/10. fx-009 was the case
+  the guideline workup had been costing since that rule was introduced.
+- **Pulmonary embolism is rare in this presentation.** Its prior fell from an
+  invented 0.10 to a derived 0.034, and acute coronary syndrome doubled to
+  0.25. The invented priors were closest on pneumonia and pulmonary oedema and
+  furthest on exactly the two conditions the chest-pain and dyspnoea
+  literatures disagree about.
+- **Correlation weighting matters again**, for the fourth different reason.
+  With PE starting threefold further back, the plain knowledge base can no
+  longer retrieve it even from a positive CTPA; the correlated one still can.
+
+That fourth reversal is worth stating plainly, because the earlier three could
+each be read as a correction and this one cannot. Correlation helped on
+invented numbers, stopped helping once Merck sourcing removed the extremity it
+was compensating for, and helps again now that the priors are real. None of the
+four measurements was wrong. Each was correct about a different knowledge base.
+**"Does correlation weighting help" has no answer independent of the numbers
+underneath it**, and neither does any other question of that shape — which is
+the strongest argument this project has for sourcing before tuning.
+
 ## Open questions for the meeting
 
 1. Mandatory minimum workup per presenting complaint (see #4)?
@@ -486,7 +534,9 @@ brittle when written and the sourcing merely exposed them.
 - The KB estimated from DDXPlus makes "grounded in the KB" collapse into
   "consistent with the training data", which is not the claim the project
   intends. The deployed KB must be independently sourced.
-- The eight disease priors are invented. They are no longer *untracked*:
+- The eight disease priors are **sourced** as of the StatPearls pass, and the
+  entry below describes what that did. Superseded text follows for the record:
+  the priors were invented. They are no longer *untracked*:
   `DiseaseEntry.prior_source` carries the same provenance tier as a
   likelihood, and `provenance.report` prints them on their own line rather
   than folding them into the likelihood percentage. Tracking is not sourcing —

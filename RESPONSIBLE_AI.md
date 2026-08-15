@@ -147,7 +147,10 @@ marketing:
 
 ### The dominant risk is the knowledge base, and it is measured
 
-100 of 135 likelihoods are invented, as are all eight disease priors.
+100 of 135 likelihoods are invented. The eight disease priors are no longer
+among them — they are derived from published presentation-conditional
+aetiology, with bands wide enough to span the disagreement between the two
+sources.
 `dxagent.provenance` tracks every likelihood *and every prior* as measured,
 narrative-derived or invented, and reports both splits on every run of
 `scripts/sensitivity.py`.
@@ -162,11 +165,17 @@ Two measurements bound what that means:
   ones drops the fixture set from 9/10 to 3/10. They are individually
   insensitive and collectively load-bearing.
 
-**All eight disease priors are invented**, and every one is reported as such:
-`8 disease priors: 0 sourced, 8 invented`, on its own line rather than diluted
-into the likelihood percentage. They were untracked for most of this project's
-life, which was the more dangerous state — an invented number the audit cannot
-name reads to a reader as an absence of a problem.
+**The eight disease priors are derived rather than measured**, and reported
+separately: `8 disease priors: 8 sourced, 0 invented`. They were invented and
+untracked for most of this project's life, which was the more dangerous state
+— an invented number the audit cannot name reads as an absence of a problem.
+
+"Sourced" is doing careful work here. The values come from published
+aetiology of dyspnoea and chest-pain presentations, but reaching a per-disease
+prior from them needs three stated assumptions, and the two sources disagree
+twentyfold on acute coronary syndrome. Every prior therefore carries a band
+spanning that disagreement, and the point estimate is a stated 50/50 blend
+rather than a measurement.
 
 They cannot be sourced from anything already in the project. DDXPlus's own
 paper states that per-pathology generation rates were capped into a 10–100%

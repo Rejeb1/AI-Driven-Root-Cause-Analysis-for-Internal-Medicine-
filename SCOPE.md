@@ -234,8 +234,8 @@ description of the rest is that they are structural priors chosen to make the
 model behave sensibly, not measurements, and calling them anything else would
 be the misconduct this project's provenance tiers exist to prevent.
 
-**The disease priors are invented, and now say so.** All eight prevalences are
-guesses. Until recently they were also invisible to the audit —
+**The disease priors are now derived from published aetiology, with wide
+bands.** They were invented for most of this project. Until recently they were also invisible to the audit —
 `dxagent.provenance` covered `P(finding | disease)` only, so a reader saw
 "26% sourced" with no hint that the priors were not part of that fraction at
 all. They now carry the same provenance tier as the likelihoods and are
@@ -244,15 +244,19 @@ counted separately rather than folded in, because merging them would let a
 sourced likelihood table hide eight unsourced priors inside one flattering
 percentage.
 
-Tracking them is not sourcing them, and the second is harder than it looks.
 DDXPlus cannot supply them: its own paper states that generation rates were
 capped into a 10–100% band to avoid a dataset "dominated by only a few
-pathologies", so its patient counts per pathology are a deliberate
-rebalancing artefact rather than epidemiology. Using them as prevalence would
-be worse than leaving the numbers invented. Real priors need
-population-incidence figures for ED presentations of each of the eight
-conditions — eight separate literature searches, and the one input the
-physician loop was meant to supply.
+pathologies", so its patient counts are a rebalancing artefact rather than
+epidemiology. What does supply them is StatPearls' symptom-side articles,
+which give presentation-conditional aetiology — of patients arriving with
+dyspnoea, or with chest pain, what fraction have each cause. See `_PRIORS` in
+`datasets/fixtures.py` for the derivation and the three assumptions it rests
+on, and DESIGN.md for what it changed.
+
+The bands are wide on purpose. The two source presentations disagree twentyfold
+on acute coronary syndrome — 3% of dyspnoea, 63% of chest pain, renormalised —
+and this project's presentation is both. A single confident prior there would
+be the dishonest option.
 
 **The Merck Manual is cited, not indexed wholesale.** Nine sentences were read
 from the 19th edition, converted to likelihoods, and also embedded into the
