@@ -320,6 +320,38 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         low=0.128,
         high=0.295,
     ),
+    # StatPearls, suggested as a source after DDXPlus and Merck were
+    # exhausted. It reports frequencies where Merck reports adjectives, and
+    # this is the number Merck could not supply: its pericarditis chapter
+    # calls the friction rub "the most important physical finding", which is
+    # emphasis rather than a frequency, so it stayed invented through two
+    # passes.
+    #
+    # The band is the honest part. StatPearls reports 35-85% and says so
+    # explicitly -- "a wide variation in the range of prevalence reported in
+    # the literature" -- so the point estimate carries a factor-of-two
+    # uncertainty that `sensitivity.py --bands` can sweep. Recorded as
+    # measured rather than narrative because it is a reported frequency
+    # range, not a qualitative phrase run through the rubric, though it is
+    # secondhand: StatPearls is summarising primary literature it cites.
+    #
+    # One mismatch, flagged rather than equated. The source counts a rub
+    # heard "at some point during the illness"; this knowledge base asks
+    # whether one is heard at examination. The rub is famously evanescent --
+    # the Merck chapter calls it "often intermittent and evanescent" -- so
+    # the presentation-time figure is probably lower than the illness-course
+    # one, and the band's lower bound is the safer read.
+    ("pericarditis", "exam:friction_rub"): measured(
+        0.60,
+        Citation(
+            "STATPEARLS-PERICARDITIS",
+            "NCBI Bookshelf NBK431080, History and Physical",
+            "friction rub present in 35% to 85% of cases at some point during "
+            "the illness, with wide variation across the literature",
+        ),
+        low=0.35,
+        high=0.85,
+    ),
 }
 
 # Load-bearing numbers that no source can supply, and the reason is structural

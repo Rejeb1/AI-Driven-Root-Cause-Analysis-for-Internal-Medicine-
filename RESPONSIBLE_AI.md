@@ -147,7 +147,7 @@ marketing:
 
 ### The dominant risk is the knowledge base, and it is measured
 
-101 of 135 likelihoods are invented, as are all eight disease priors.
+100 of 135 likelihoods are invented, as are all eight disease priors.
 `dxagent.provenance` tracks every likelihood *and every prior* as measured,
 narrative-derived or invented, and reports both splits on every run of
 `scripts/sensitivity.py`.
