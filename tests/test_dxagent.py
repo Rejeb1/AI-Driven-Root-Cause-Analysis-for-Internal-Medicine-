@@ -1950,8 +1950,49 @@ def test_phi_scan_catches_structured_identifiers():
     assert "email" in found
     assert "record number" in found
     # And is honest about what it cannot do: a bare name is not an identifier
-    # any regular expression can find.
+    # any regular expression can find. This is still true of phi_scan itself
+    # -- phi_scan_ner exists specifically to close this exact gap.
     assert phi_scan("the patient, John Smith, reports chest pain") == ()
+
+
+def test_phi_scan_ner_catches_the_name_the_regex_screen_misses():
+    from dxagent.synthesis import ner_available, phi_scan_ner
+
+    if not ner_available():
+        pytest.skip("spaCy/en_core_web_sm not installed")
+    hits = phi_scan_ner("the patient, John Smith, reports chest pain")
+    assert any(text == "John Smith" for _, text in hits)
+    # A clean clinical narrative with no name should not false-positive on
+    # ordinary clinical vocabulary.
+    assert phi_scan_ner("a 54-year-old presents with pleuritic chest pain") == ()
+
+
+def test_screen_reports_whether_ner_actually_ran():
+    from dxagent.synthesis import ner_available, screen
+
+    kept, report = screen([])
+    assert report["ner_screening_active"] == ner_available()
+
+
+def test_screen_drops_a_case_whose_narrative_names_a_person():
+    from dxagent.synthesis import SyntheticCase, ner_available, screen
+
+    if not ner_available():
+        pytest.skip("spaCy/en_core_web_sm not installed")
+    case = SyntheticCase(
+        case_id="synthetic-phi-001",
+        diagnosis="community_acquired_pneumonia",
+        present=("fever",),
+        absent=(),
+        narrative="the patient, John Smith, reports fever and cough",
+        reasoning="fever and cough support pneumonia",
+        generator="test",
+        critique="",
+        accepted=True,
+    )
+    kept, report = screen([case])
+    assert kept == []
+    assert report["rejected_for_phi"] == 1
 
 
 def test_near_duplicates_are_flagged():

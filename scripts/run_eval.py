@@ -91,7 +91,7 @@ def build_proposer(kb, args):
     return proposer
 
 
-def baseline_comparison(kb, test_cases, result) -> str:
+def baseline_comparison(kb, test_cases, result, args=None) -> str:
     """The two comparisons the brief demands, run over the same cases.
 
     Printed with the agent rather than separately, because a headline number
@@ -122,8 +122,32 @@ def baseline_comparison(kb, test_cases, result) -> str:
 
     rows = [
         ("retrieval-only (no inference)", RetrievalOnlyBaseline(kb)),
-        ("single-pass (no loop)", SinglePassBaseline(kb)),
     ]
+
+    # The brief specifies this baseline as "a non-agentic single-prompt LLM" --
+    # a bare model given the whole case at once, with no loop and no KB
+    # reasoning. Without --llm and a key, SinglePassBaseline falls back to the
+    # same Bayesian KB reasoner minus the loop, which is a different and
+    # weaker comparison than the brief asks for. Report which one actually ran
+    # rather than let "single-pass" quietly mean two different things.
+    if args is not None and args.llm:
+        import os
+
+        if not os.environ.get("ANTHROPIC_API_KEY"):
+            print("  --llm given but ANTHROPIC_API_KEY is unset; "
+                  "single-pass baseline falls back to the KB reasoner")
+            rows.append(("single-pass (KB, no loop)", SinglePassBaseline(kb)))
+        else:
+            from dxagent.belief import LLMProposer
+            from dxagent.llm import AnthropicLLM
+
+            llm_proposer = LLMProposer(kb=kb, llm=AnthropicLLM())
+            rows.append((
+                "single-pass (LLM, no loop)",
+                SinglePassBaseline(kb, proposer=llm_proposer),
+            ))
+    else:
+        rows.append(("single-pass (KB, no loop)", SinglePassBaseline(kb)))
 
     lines = [
         "",
@@ -272,7 +296,7 @@ def main() -> int:
     print("\n" + result.report())
 
     if not args.no_baselines:
-        print(baseline_comparison(kb, test_cases, result))
+        print(baseline_comparison(kb, test_cases, result, args))
 
     print("\nper-case detail")
     for outcome in result.outcomes:

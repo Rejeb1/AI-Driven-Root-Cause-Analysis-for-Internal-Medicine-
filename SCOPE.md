@@ -103,7 +103,7 @@ contradicted, all four for that reason:
 
 **Most of these numbers are still invented, and which ones are not is
 recorded.** 26% of the 135 likelihoods carry a citation — 15 from DDXPlus, 14
-from the Merck Manual's narrative text, 5 from published cohorts.
+from the Merck Manual's narrative text, 6 from published cohorts.
 `scripts/sensitivity.py` reports the split and `dxagent.provenance` tracks it
 per number. See *Constraints*.
 
@@ -175,7 +175,7 @@ the brief's word "causal" would be wrong: an edge says a finding is more
 expected under a cause than in the population this knowledge base describes.
 Commit `0624bdf` exists specifically to stop risk factors resolving to the
 disorders they cause, and calling this graph causal would license inferences
-it cannot support. **And most edges rest on invented numbers** — 63 of 83 at
+it cannot support. **And most edges rest on invented numbers** — 64 of 84 at
 the default threshold — so every edge carries its provenance tier, the summary
 reports the split, and the DOT export draws invented edges dashed. A dense,
 confident diagram built from guesses misleads more efficiently than the guesses
@@ -202,25 +202,26 @@ crosswalks, and its one clinical relation mixes symptoms, risk factors and
 treatment complications without distinguishing them. HPO supplies concepts but
 no disease-to-finding edges outside rare Mendelian disease. Sourcing has
 therefore proceeded one number at a time, from three sources of descending
-strength: 4 frequencies from a published cohort (Miniati 2012), 15 counted in
-the DDXPlus simulator, and 9 converted from Merck Manual narrative phrases
-through the fixed rubric in `dxagent.provenance`.
+strength: 6 frequencies from published cohorts (Miniati 2012, Zègre-Hemsey
+2018, StatPearls), 15 counted in the DDXPlus simulator, and 14 converted from
+Merck Manual narrative phrases through the fixed rubric in
+`dxagent.provenance`.
 
 `scripts/sensitivity.py` reports which likelihoods actually change a diagnosis
 when perturbed, and that count is not stable — it was 30 before correlation
-weighting and the mandatory-workup fix, and a current run gives 4 with
-correlation on, 16 with it off. Rerun it before choosing what to source next
+weighting and the mandatory-workup fix, and a current run gives 3 with
+correlation on, 1 with it off. Rerun it before choosing what to source next
 rather than trusting a figure written down here.
 
 That list is a sourcing priority and nothing more. It is not a list of the
 numbers that matter, and the distinction is easy to get backwards:
 `--ablate` deletes the invented likelihoods outright and lets the knowledge
-base fall back to its own marginals, and the fixture set drops from 9/10 to
-3/10. The invented numbers are individually insensitive and collectively
+base fall back to its own marginals, and the fixture set drops from 10/10 to
+1/10. The invented numbers are individually insensitive and collectively
 load-bearing. Whatever else is said about this knowledge base, it cannot be
 said that most of it is padding.
 
-**Most of the remaining 102 are not sourceable from a reference text at all.**
+**Most of the remaining 100 are not sourceable from a reference text at all.**
 A textbook chapter describes what a disease presents with — five to eight
 notable findings. The knowledge base is a full grid of 8 diseases against every
 finding in the vocabulary, so it contains cells like P(raised BNP | asthma
@@ -266,9 +267,9 @@ read from). Whole chapters were deliberately not chunked and indexed: that
 would mean embedding and serving pages of a purchased, copyrighted textbook
 rather than citing specific claims from it. Section 4 of the brief asks for a
 searchable knowledge base built from that text; what is delivered is a
-searchable corpus of 41 passages — 32 from the four encoded decision rules,
-9 from the manual — which is narrower than the brief's wording and is a scope
-decision rather than an unfinished task.
+searchable corpus of 46 passages — 32 from the four encoded decision rules,
+14 from the manual — which is narrower than the brief's wording and is a
+scope decision rather than an unfinished task.
 
 **MIMIC-IV was not pursued.** Credentialing takes weeks and would clear after
 the point of use.

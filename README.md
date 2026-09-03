@@ -71,6 +71,19 @@ output rather than resting on someone having remembered.
 extracting. Keep `--limit` small at first -- the loop runs about a second per
 case and the baselines add two more passes over the same cases.
 
+**PHI screening.** `synthesis.phi_scan` (regex, structured identifiers) runs
+with nothing installed. The NER layer that also catches a name in prose
+(`synthesis.phi_scan_ner`) needs:
+
+```bash
+pip install -e ".[phi_ner]"
+python3 -m spacy download en_core_web_sm
+```
+
+Without it, `screen()` still runs and still works -- it reports
+`ner_screening_active: false` in its output so the weaker screen is visible
+rather than assumed away.
+
 ### The mandated stack
 
 ```bash

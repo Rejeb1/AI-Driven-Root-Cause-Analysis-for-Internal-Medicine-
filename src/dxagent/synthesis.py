@@ -26,11 +26,19 @@ a real constraint and also a limit: cases seeded this way cannot surprise the
 system with a finding it has never heard of, which is one of the things real
 patients do.
 
-Step 5's PHI screen is regular expressions. It catches structured identifiers
--- dates, phone numbers, record numbers, postcodes -- and it does not catch a
-name in running prose. A real de-identification pass needs a clinical NER
-model (scispacy, Presidio); this is a tripwire, not that pass, and it is
-labelled as one so nobody mistakes a clean report for a clean corpus.
+Step 5's PHI screen has two layers. ``phi_scan`` is regular expressions: it
+catches structured identifiers -- dates, phone numbers, record numbers,
+postcodes -- and by construction cannot catch a name in running prose.
+``phi_scan_ner`` closes that specific gap with a small spaCy NER model
+(``en_core_web_sm``), which does read prose. It is still not a full clinical
+de-identification pass (scispaCy or Presidio would be the real thing, tuned
+for clinical text and its more varied entity shapes) and it is not perfect --
+a NER model can miss an unusual name, a misspelling, or a name embedded in an
+odd construction, and it can also over-flag a plausible-looking word as a
+name. ``screen()`` reports whether the NER layer actually ran
+(``ner_screening_active``) rather than assuming it did, because a missing
+dependency degrading silently back to regex-only is exactly the failure this
+two-layer design exists to make visible instead of quiet.
 """
 
 from __future__ import annotations
@@ -338,6 +346,57 @@ def phi_scan(text: str) -> tuple[tuple[str, str], ...]:
     return tuple(hits)
 
 
+# Loaded once, lazily, and cached -- module-level state rather than a fresh
+# model load per case, which would make screening 1000 generated cases take
+# 1000x longer than screening one for no benefit. ``_NER_ATTEMPTED`` is
+# tracked separately from ``_NER_MODEL is None`` so a genuine load failure is
+# remembered rather than retried on every call.
+_NER_MODEL = None
+_NER_ATTEMPTED = False
+
+
+def _load_ner():
+    global _NER_MODEL, _NER_ATTEMPTED
+    if not _NER_ATTEMPTED:
+        _NER_ATTEMPTED = True
+        try:
+            import spacy
+
+            _NER_MODEL = spacy.load("en_core_web_sm")
+        except Exception:
+            _NER_MODEL = None
+    return _NER_MODEL
+
+
+def ner_available() -> bool:
+    """Whether the NER layer actually loaded, so callers can report rather
+    than assume. False on a clean checkout with nothing installed -- that is
+    the intended default, matching every other optional dependency here."""
+    return _load_ner() is not None
+
+
+def phi_scan_ner(text: str) -> tuple[tuple[str, str], ...]:
+    """Person names found in running prose -- the gap ``phi_scan`` cannot
+    close by construction. Requires ``pip install spacy`` and
+    ``python -m spacy download en_core_web_sm``; returns no hits, not an
+    error, when either is missing. Callers that need to know whether the
+    absence of hits means "clean" or "not screened" should check
+    ``ner_available()`` rather than infer it from an empty result here.
+
+    Only the PERSON label is treated as PHI-relevant. spaCy's small model
+    also tags plenty of clinical vocabulary as ORG, GPE or FAC (a disease
+    name, a hospital, a drug), and surfacing those as "identifiers" would
+    bury the one label that actually matters under noise a reviewer would
+    quickly learn to ignore -- which defeats the point of a tripwire.
+    """
+    nlp = _load_ner()
+    if nlp is None:
+        return ()
+    return tuple(
+        ("name (NER)", ent.text) for ent in nlp(text).ents if ent.label_ == "PERSON"
+    )
+
+
 def _shingles(text: str, size: int = 5) -> set[str]:
     words = re.findall(r"\w+", text.lower())
     if len(words) < size:
@@ -393,9 +452,11 @@ def screen(
     kept: list[SyntheticCase] = []
     phi_flagged: list[tuple[str, tuple[tuple[str, str], ...]]] = []
     dropped_phi = dropped_duplicate = dropped_critique = 0
+    ner_ready = ner_available()
 
     for case in cases:
-        hits = phi_scan(f"{case.narrative} {case.reasoning}")
+        text = f"{case.narrative} {case.reasoning}"
+        hits = phi_scan(text) + (phi_scan_ner(text) if ner_ready else ())
         if hits:
             phi_flagged.append((case.case_id, hits))
             dropped_phi += 1
@@ -421,6 +482,11 @@ def screen(
         "rejected_as_duplicate": dropped_duplicate,
         "rejected_for_phi": dropped_phi,
         "phi_detail": phi_flagged,
+        # False on a checkout with spaCy/en_core_web_sm not installed -- a
+        # clean phi_detail then means "no structured pattern matched", not
+        # "no name in prose either". Reported so that distinction survives
+        # past this function rather than being assumed away by the caller.
+        "ner_screening_active": ner_ready,
         # Kept, but flagged: see ``leaks_vocabulary``.
         "narratives_leaking_vocabulary": sum(
             1 for c in kept if leaks_vocabulary(c.narrative)
@@ -504,7 +570,9 @@ __all__ = [
     "SyntheticCase",
     "confusable_pairs",
     "near_duplicates",
+    "ner_available",
     "phi_scan",
+    "phi_scan_ner",
     "review_sample",
     "screen",
 ]

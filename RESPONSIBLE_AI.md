@@ -7,7 +7,7 @@ rather than as future work.
 
 The single most important sentence in it is this one. **This system must not be
 used to make or influence a clinical decision about any real patient.** Not
-because of an unfinished feature, but because 76% of the numbers it reasons
+because of an unfinished feature, but because 74% of the numbers it reasons
 with are invented (`dxagent.provenance`), no clinician has reviewed any part of
 it, and its accuracy has never been measured on a real patient. Nothing further
 in this document softens that.
@@ -64,18 +64,27 @@ be committed by accident.
 
 ### PHI screening on generated text, and what it is not
 
-`synthesis.phi_scan` screens generated vignettes for six classes of structured
-identifier: dates, long digit runs, phone numbers, emails, record numbers
-(MRN/NHS/SSN) and UK postcodes.
+The screen has two layers now, run together by `synthesis.screen`.
+`synthesis.phi_scan` matches six classes of structured identifier by regular
+expression: dates, long digit runs, phone numbers, emails, record numbers
+(MRN/NHS/SSN) and UK postcodes. `synthesis.phi_scan_ner` adds a small spaCy
+NER model (`en_core_web_sm`) that reads the prose itself and flags a person's
+name — the specific gap a regex cannot close by construction.
+`phi_scan("the patient, John Smith, reports chest pain")` still returns
+nothing, and a test still asserts that, because it is still true of that one
+function; `phi_scan_ner` on the same sentence returns `John Smith`, and a
+second test asserts that.
 
-**It is a tripwire, not de-identification.** It matches structured patterns and
-cannot find a name in running prose — `phi_scan("the patient, John Smith,
-reports chest pain")` returns nothing, and there is a test asserting exactly
-that so the limitation cannot be forgotten. A real de-identification pass needs
-a clinical NER model (scispaCy, Presidio). The screen exists because generated
-text can leak identifiers from a model's training data, and a clean report from
-it means *no pattern matched*, not *no identifying information present*. The
-report says so on every run.
+**Still a tripwire, not full de-identification, and honest about the new
+limits too.** A real clinical de-identification pass (scispaCy, Presidio,
+tuned for clinical text specifically) would catch more than a small
+general-purpose NER model does — an unusual name, a misspelling, a name
+folded into an odd construction can all still slip past it, and it can also
+over-flag an ordinary word as a name. `screen()`'s report carries
+`ner_screening_active` on every run precisely so a checkout without spaCy
+installed shows a degraded screen rather than a silently clean one — a clean
+`phi_detail` on a run where that flag is `False` means *no structured pattern
+matched*, nothing about names, exactly as before this layer existed.
 
 ---
 
@@ -162,7 +171,7 @@ Two measurements bound what that means:
   not matter"** — an earlier version of the script invited exactly that
   misreading.
 - `sensitivity.py --ablate` deletes likelihoods outright. Removing the invented
-  ones drops the fixture set from 9/10 to 3/10. They are individually
+  ones drops the fixture set from 10/10 to 1/10. They are individually
   insensitive and collectively load-bearing.
 
 **The eight disease priors are derived rather than measured**, and reported

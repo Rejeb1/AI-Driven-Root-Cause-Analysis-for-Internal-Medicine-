@@ -70,7 +70,13 @@ class AnthropicLLM:
     call volume is known rather than guessed at now.
     """
 
-    model: str = "claude-sonnet-4-6"
+    # The brief mandates "Claude Opus 4.x class". That generation is no longer
+    # current; claude-opus-5 is the present-day Opus-tier model and the
+    # closest honest match to what was specified. Not verified against a live
+    # call in this repo -- no ANTHROPIC_API_KEY was available when this was
+    # set. Confirm the id resolves before relying on --llm or
+    # scripts/synthesize.py --provider anthropic.
+    model: str = "claude-opus-5"
     api_key: str | None = None
     temperature: float = 0.0  # determinism matters more than variety here
 
