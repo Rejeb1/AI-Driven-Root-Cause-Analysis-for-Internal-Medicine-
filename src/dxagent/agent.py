@@ -70,6 +70,18 @@ class LoopLimits:
     # separated.
     require_workup: bool = True
 
+    # Whether a turn whose answer was UNKNOWN still counts against max_turns.
+    # Default True matches every existing result exactly -- this flag did not
+    # exist before, and the ten fixtures answer everything, so it changes
+    # nothing for them. It matters for real, incompletely-documented case
+    # reports, where several turns can come back UNKNOWN because the source
+    # text simply never addressed that finding -- not a question a smarter
+    # selector could have skipped, since it could not have known the answer
+    # was unrecorded until it asked. Set False to stop the turn budget being
+    # spent on questions the record cannot answer, so a scarce turn limit is
+    # reserved for questions that can actually move the differential.
+    uninformative_turns_still_count: bool = True
+
 
 def mandatory_action(kb, state: CaseState) -> Action | None:
     """The next unsatisfied item of a triggered guideline workup, if any.
@@ -215,7 +227,12 @@ class DiagnosticAgent:
                 action is not None
                 and state.budget_spent + action.cost <= self.limits.max_cost
             )
-            out_of_turns = state.turn >= self.limits.max_turns
+            turns_used = (
+                state.turn
+                if self.limits.uninformative_turns_still_count
+                else state.informative_turns
+            )
+            out_of_turns = turns_used >= self.limits.max_turns
             outstanding = still_outstanding(
                 action, mandated, ruleout, flip, affordable, out_of_turns, self.limits
             )

@@ -17,10 +17,11 @@ this went near a patient.
 Python 3.10+. The core runs with no install, no API key and no credentials.
 
 ```bash
-python3 -m pytest tests/ -q     # 148 pass
-python3 scripts/run_eval.py     # evaluation report, with the required baselines
-python3 scripts/demo.py         # one consultation, as a readable transcript
-python3 scripts/consult.py      # a live consultation -- you play the patient
+python3 -m pytest tests/ -q          # 151 pass
+python3 scripts/run_eval.py          # evaluation report, with the required baselines
+python3 scripts/demo.py              # one consultation, as a readable transcript
+python3 scripts/consult.py           # a live consultation -- you play the patient
+python3 scripts/eval_real_cases.py   # 2 real patients from published PMC case reports
 ```
 
 Everything above is offline and deterministic. Tests that need the optional
@@ -71,6 +72,14 @@ output rather than resting on someone having remembered.
 `--ddxplus` reads the published `.zip` splits directly; nothing needs
 extracting. Keep `--limit` small at first -- the loop runs about a second per
 case and the baselines add two more passes over the same cases.
+
+**Real-case evaluation.** `dxagent.datasets.real_cases` holds 2 patients
+hand-extracted from open-access PMC case reports -- not invented, not
+generated, never seen by the knowledge base. This is a different, much
+smaller thing than the 10 fixture cases: it exists to put at least one real
+data point in front of the system, not to support any accuracy claim at n=2.
+No clinician reviewed the extraction. See the module docstring for exactly
+which two reports and how each finding was read from the source text.
 
 **PHI screening.** `synthesis.phi_scan` (regex, structured identifiers) runs
 with nothing installed. The NER layer that also catches a name in prose

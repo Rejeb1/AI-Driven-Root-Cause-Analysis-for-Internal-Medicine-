@@ -268,6 +268,26 @@ class CaseState:
     def turn(self) -> int:
         return len(self.history)
 
+    @property
+    def informative_turns(self) -> int:
+        """Turns that actually learned something, as opposed to spending the
+        budget on a question the record simply never answers.
+
+        A step whose findings are all UNKNOWN could not have been avoided by
+        a smarter selector -- the selector picks the best *expected*
+        information gain before asking, and UNKNOWN is precisely the answer
+        it could not have predicted. Counting such a turn the same as an
+        informative one is fair for a fixture, which never returns UNKNOWN,
+        and punitive for a real case report, which frequently does simply
+        because the source text never addressed that finding one way or the
+        other. See ``LoopLimits.uninformative_turns_are_free``.
+        """
+        return sum(
+            1
+            for step in self.history
+            if any(f.polarity is not Polarity.UNKNOWN for f in step.findings)
+        )
+
     def observed(self, concept: str) -> Finding | None:
         for f in self.findings:
             if f.concept == concept:

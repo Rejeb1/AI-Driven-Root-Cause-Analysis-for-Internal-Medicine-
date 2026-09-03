@@ -2445,3 +2445,96 @@ def test_every_vocabulary_concept_has_a_umls_search_term():
     concepts = {c for e in build_knowledge_base().diseases() for c in e.features}
     assert not concepts - set(module.SEARCH_TERMS)
     assert set(module.DISEASE_TERMS) == {e.label for e in build_knowledge_base().diseases()}
+
+
+def test_real_cases_reference_diagnoses_the_kb_actually_has():
+    from dxagent.datasets import REAL_CASES, build_knowledge_base
+
+    labels = {e.label for e in build_knowledge_base().diseases()}
+    for case in REAL_CASES:
+        assert case.diagnosis in labels
+
+
+def test_real_cases_leave_vocabulary_empty_so_silence_means_unknown():
+    # The whole point of extracting real case reports this way: a concept
+    # the source never mentions must read as unasked, not as a manufactured
+    # negative. That guarantee lives in leaving `vocabulary` empty -- see
+    # the Case docstring in environment.py for why.
+    from dxagent.datasets import REAL_CASES
+
+    for case in REAL_CASES:
+        assert case.vocabulary == frozenset()
+
+
+def test_real_cases_run_through_the_actual_agent_without_crashing():
+    from dxagent import AbstentionGate, DiagnosticAgent, LoopLimits
+    from dxagent.belief import BayesianProposer
+    from dxagent.datasets import REAL_CASES, build_knowledge_base
+
+    kb = build_knowledge_base(correlated=True)
+    agent = DiagnosticAgent(
+        kb=kb,
+        proposer=BayesianProposer(kb),
+        gate=AbstentionGate(kb=kb),
+        limits=LoopLimits(),
+    )
+    for case in REAL_CASES:
+        outcome = agent.run(case)
+        assert outcome.verdict is not None
+
+
+def test_informative_turns_excludes_all_unknown_steps():
+    from dxagent.schemas import Action, ActionKind, CaseState, Differential, Finding, Polarity
+
+    state = CaseState(case_id="t", presenting_complaint="")
+    diff = Differential.from_scores({"a": 0.6, "b": 0.4})
+    action = Action(kind=ActionKind.ASK, target="x", cost=0.2, expected_information_gain=0.1)
+
+    state.record(action, [Finding(concept="x", polarity=Polarity.UNKNOWN, provenance="ask")], diff)
+    assert state.turn == 1
+    assert state.informative_turns == 0
+
+    state.record(action, [Finding(concept="y", polarity=Polarity.PRESENT, provenance="ask")], diff)
+    assert state.turn == 2
+    assert state.informative_turns == 1
+
+
+def test_uninformative_turns_still_count_flag_changes_when_the_loop_stops():
+    from dxagent import AbstentionGate, DiagnosticAgent, LoopLimits
+    from dxagent.belief import BayesianProposer
+    from dxagent.datasets import build_knowledge_base
+    from dxagent.environment import Case
+
+    kb = build_knowledge_base(correlated=True)
+    # A case that answers nothing -- every question comes back UNKNOWN. With
+    # the default (True), max_turns is reached in max_turns raw turns
+    # regardless of how uninformative they were. With False, an
+    # all-UNKNOWN case can never accumulate an informative turn, so the loop
+    # is bounded by cost instead, not by the turn count -- a real behaviour
+    # difference, not just a different number.
+    blank_case = Case(
+        case_id="blank",
+        presenting_complaint="nothing volunteered",
+        features={},
+        diagnosis="pulmonary_embolism",
+        vocabulary=frozenset(),
+    )
+
+    counting = DiagnosticAgent(
+        kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb),
+        limits=LoopLimits(uninformative_turns_still_count=True, max_turns=3, max_cost=1000.0),
+    )
+    free = DiagnosticAgent(
+        kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb),
+        limits=LoopLimits(uninformative_turns_still_count=False, max_turns=3, max_cost=1000.0),
+    )
+
+    counting_outcome = counting.run(blank_case)
+    free_outcome = free.run(blank_case)
+
+    # Counting every turn stops at 3 raw turns. Not counting uninformative
+    # ones keeps going well past 3, bounded only by the (very large) cost
+    # budget or by exhausting the vocabulary -- a materially different turn
+    # count, not a coincidence.
+    assert counting_outcome.steps[-1].index + 1 <= 3
+    assert free_outcome.steps[-1].index + 1 > 3

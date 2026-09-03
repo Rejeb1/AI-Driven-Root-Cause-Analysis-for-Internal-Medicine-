@@ -126,7 +126,12 @@ class GraphAgent:
             action is not None
             and case_state.budget_spent + action.cost <= self.limits.max_cost
         )
-        out_of_turns = case_state.turn >= self.limits.max_turns
+        turns_used = (
+            case_state.turn
+            if self.limits.uninformative_turns_still_count
+            else case_state.informative_turns
+        )
+        out_of_turns = turns_used >= self.limits.max_turns
         outstanding = still_outstanding(
             action, mandated, ruleout, flip, affordable, out_of_turns, self.limits
         )
