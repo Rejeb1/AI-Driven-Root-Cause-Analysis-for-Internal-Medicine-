@@ -17,9 +17,10 @@ this went near a patient.
 Python 3.10+. The core runs with no install, no API key and no credentials.
 
 ```bash
-python3 -m pytest tests/ -q     # 145 pass
+python3 -m pytest tests/ -q     # 148 pass
 python3 scripts/run_eval.py     # evaluation report, with the required baselines
 python3 scripts/demo.py         # one consultation, as a readable transcript
+python3 scripts/consult.py      # a live consultation -- you play the patient
 ```
 
 Everything above is offline and deterministic. Tests that need the optional
