@@ -175,6 +175,43 @@ class MandatoryWorkup:
         return tuple(c for c in self.required if c not in answered)
 
 
+@dataclass(frozen=True)
+class ConfirmatoryWorkup:
+    """A workup owed once an earlier mandatory result itself comes back positive.
+
+    ``MandatoryWorkup`` fixes the blind spot where a dismissed posterior never
+    orders its own screening test. It does not fix the next blind spot: a
+    screening test that comes back positive and then, because it was answered
+    late enough that cheaper questions had already spent the turn or cost
+    budget, never gets followed by the confirmatory test the positive result
+    actually indicates. On the PE real-case set that gap was the entire
+    difference between escalating and reaching a CTPA that was, by then,
+    affordable in principle but never reached in practice.
+
+    The trigger is a *result*, not the presentation -- ``antecedent`` must
+    itself have been observed present, not merely asked about. That is what
+    keeps this from mandating imaging on every patient who happens to have a
+    nonspecific D-dimer elevation with no PE-consistent presentation: the
+    antecedent concept only reads PRESENT here because ``MandatoryWorkup``
+    already required the presentation to be armed before ordering it.
+    """
+
+    name: str
+    antecedent: str
+    required: tuple[str, ...]
+    rationale: str
+    citation: Citation
+
+    def outstanding(self, findings: list[Finding]) -> tuple[str, ...]:
+        present = {f.concept for f in findings if f.polarity is Polarity.PRESENT}
+        if self.antecedent not in present:
+            return ()
+        answered = {
+            f.concept for f in findings if f.polarity is not Polarity.UNKNOWN
+        }
+        return tuple(c for c in self.required if c not in answered)
+
+
 def _cite(source: str, locator: str, snippet: str) -> Citation:
     return Citation(source_id=source, locator=locator, snippet=snippet)
 
@@ -331,6 +368,34 @@ ACS_WORKUP = MandatoryWorkup(
 
 WORKUPS: tuple[MandatoryWorkup, ...] = (PE_WORKUP, ACS_WORKUP)
 
+# A positive D-dimer, in a patient where PE_WORKUP was already armed, is not
+# one more piece of evidence to weigh against its acquisition cost -- it is
+# the indication for the confirmatory scan. Wells' own rule pairs risk
+# stratification with exactly this D-dimer-then-imaging sequence; engineering
+# judgement here, transcribing standard sequential-testing practice rather
+# than a specific verified sentence from the paper, and stated as such.
+PE_CONFIRM = ConfirmatoryWorkup(
+    name="Pulmonary embolism confirmation",
+    antecedent="lab:raised_d_dimer",
+    required=("imaging:ctpa_filling_defect",),
+    rationale=(
+        "A positive D-dimer, once PE has been armed as a live consideration "
+        "by the presentation, is the indication for CTPA rather than one "
+        "more finding to weigh by expected information gain -- the same "
+        "escalation from screening to confirmatory test that PE_WORKUP "
+        "already enforces for ordering the D-dimer, carried one step "
+        "further."
+    ),
+    citation=_cite(
+        "WELLS-2000",
+        "Wells PS et al., Thromb Haemost 2000;83:416-20",
+        "risk stratification is paired with D-dimer testing to guide the "
+        "decision to pursue definitive imaging, not read in isolation",
+    ),
+)
+
+CONFIRMATIONS: tuple[ConfirmatoryWorkup, ...] = (PE_CONFIRM,)
+
 
 def outstanding_workup(findings: list[Finding]) -> tuple[tuple[str, str], ...]:
     """Every triggered-but-incomplete workup, as (concept, workup name) pairs."""
@@ -338,6 +403,9 @@ def outstanding_workup(findings: list[Finding]) -> tuple[tuple[str, str], ...]:
     for workup in WORKUPS:
         for concept in workup.outstanding(findings):
             out.append((concept, workup.name))
+    for confirm in CONFIRMATIONS:
+        for concept in confirm.outstanding(findings):
+            out.append((concept, confirm.name))
     return tuple(out)
 
 
@@ -355,12 +423,15 @@ def vocabulary_gaps() -> dict[str, tuple[str, ...]]:
 
 __all__ = [
     "ACS_WORKUP",
+    "CONFIRMATIONS",
     "CURB65",
+    "ConfirmatoryWorkup",
     "Criterion",
     "ClinicalRule",
     "HEART",
     "MandatoryWorkup",
     "PERC",
+    "PE_CONFIRM",
     "PE_WORKUP",
     "RULES",
     "RuleKind",
