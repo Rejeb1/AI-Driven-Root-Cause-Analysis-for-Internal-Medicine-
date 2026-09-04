@@ -3,16 +3,16 @@
 
     python scripts/eval_real_cases.py
 
-Two cases, hand-extracted from open-access PMC case reports (see
+A handful of cases, hand-extracted from open-access PMC case reports (see
 ``dxagent.datasets.real_cases`` for exactly which ones and how each finding
 was read from the source text). This is a different, much smaller and much
 more honest thing than the ten fixture cases: those were invented to
 exercise the code; these are real, published patients the knowledge base
 never saw.
 
-Read this output as a single data point per case, not a benchmark. Two
+Read this output as one data point per case, not a benchmark. A handful of
 cases is not evidence of real-world accuracy in either direction -- it is
-one more real thing to look at than zero.
+more real evidence than zero.
 
 Not for clinical use. The knowledge base is still mostly invented; see
 RESPONSIBLE_AI.md.
@@ -61,13 +61,14 @@ def main() -> int:
     print(f"REAL-CASE EVALUATION  ({len(REAL_CASES)} cases from published PMC reports)")
     print(RULE)
     print(wrap(
-        "\nTwo real patients, not ten invented ones. Every finding below was "
+        "\nReal patients, not invented ones. Every finding below was "
         "read from the source case report by hand -- see "
         "dxagent/datasets/real_cases.py for the extraction and the citation. "
-        "This is one real data point per case, not a benchmark.\n"
+        "Each is one real data point, not a benchmark.\n"
     ))
 
     correct = 0
+    escalation_reasons: list[tuple[str, str]] = []
     for case in REAL_CASES:
         outcome = agent.run(case)
         print(THIN)
@@ -94,6 +95,7 @@ def main() -> int:
                     "  unresolved:     "
                     + humanise(outcome.escalation.unresolved_question)
                 )
+            escalation_reasons.append((case.case_id, outcome.escalation.reason))
         top3 = ", ".join(
             f"{h.label.replace('_', ' ')} {h.probability:.0%}"
             for h in outcome.differential.hypotheses[:3]
@@ -103,42 +105,31 @@ def main() -> int:
     print(f"\n{RULE}")
     print(f"  {correct} committed and correct, out of {len(REAL_CASES)} real cases.")
     print(wrap(
-        "  Not a benchmark result -- n=2, hand-picked for clarity, no "
-        "clinician review of the extraction. Reported this small on purpose "
-        "rather than not reported at all.",
+        f"  Not a benchmark result -- n={len(REAL_CASES)}, hand-picked for "
+        "clarity, no clinician review of the extraction. Reported this "
+        "small on purpose rather than not reported at all.",
         indent="  ",
     ))
-    print(wrap(
-        "  Both cases escalated rather than committed, and this run uses "
-        "uninformative_turns_still_count=False (LoopLimits) so an UNKNOWN "
-        "answer -- common in a real record, never seen in a fixture -- no "
-        "longer burns a turn for free. That surfaced two different, deeper "
-        "reasons neither case reaches its most decisive finding, and "
-        "neither is the turn-budget artefact this script showed before "
-        "that flag existed:",
-        indent="  ",
-    ))
-    print(wrap(
-        "  pmc-4565285: stopped on the *cost* budget, not turns -- CTPA "
-        "is this knowledge base's most expensive action, and by the time "
-        "cheaper questions were exhausted there was no budget left for it.",
-        indent="    ",
-    ))
-    print(wrap(
-        "  pmc-5841117: stopped because the selector judged nothing left "
-        "worth asking, with cost and turns both still available -- the "
-        "ECG-ST-changes test was never selected, which is a real "
-        "consequence of ranking by *this knowledge base's own* (mostly "
-        "invented) likelihoods, not a code defect.",
-        indent="    ",
-    ))
-    print(wrap(
-        "  Fixing the turn-accounting bug didn't fix the cases -- it "
-        "removed one artefact and exposed the two real constraints "
-        "underneath it. That is the honest result of this evaluation, not "
-        "a failure of the fix.",
-        indent="  ",
-    ))
+    if escalation_reasons:
+        print(wrap(
+            "  This run uses uninformative_turns_still_count=False "
+            "(LoopLimits), so an UNKNOWN answer -- common in a real record, "
+            "never seen in a fixture -- no longer burns a turn for free. "
+            "Escalations still happen, but for reasons that are now real "
+            "rather than a turn-budget artefact:",
+            indent="  ",
+        ))
+        for case_id, reason in escalation_reasons:
+            print(wrap(f"  {case_id}: {reason}", indent="    "))
+        print(wrap(
+            "  Fixing the turn-accounting bug didn't make these cases "
+            "commit -- it removed one artefact and let whatever real "
+            "constraint sits underneath (cost, or the selector's own "
+            "ranking under this knowledge base's mostly-invented "
+            "likelihoods) show through instead. That is the honest result "
+            "of this evaluation, not a failure of the fix.",
+            indent="  ",
+        ))
     print(RULE)
     return 0
 

@@ -22,11 +22,22 @@ for instance), it is left out rather than forced in. Getting this kind of
 judgement call wrong produces a confidently-wrong data point, which is worse
 than a missing one.
 
-This is a genuinely small sample -- two cases -- picked to be reasonably
-clear-cut, not representative of anything. It exists to add one real
-data point to an evaluation that is otherwise entirely invented, not to
+This is a genuinely small sample -- four cases -- picked to be reasonably
+clear-cut, not representative of anything. It exists to add a few real
+data points to an evaluation that is otherwise entirely invented, not to
 replace ``fixtures.py`` or to support any claim about real-world accuracy at
-n=2. Report it as what it is.
+n=4. Report it as what it is.
+
+One case considered and deliberately not included: PMC3599030, "NSTEMI or
+Not: A 59-Year-Old Man with Chest Pain and Troponin Elevation." Its
+presentation looks like ACS -- chest pain, troponin elevation, ECG changes
+-- but its actual confirmed diagnosis is a Stanford type A aortic
+dissection, which is not one of this project's 8 diagnoses. Using it under
+any of the 8 labels would mean typing in a wrong gold answer to make the
+data fit the schema, which is worse than not having the data point. Cases
+whose true cause falls outside the modelled 8 get left out rather than
+mislabelled -- a real, if unglamorous, limitation of a fixed 8-cause
+differential worth remembering.
 """
 
 from __future__ import annotations
@@ -121,6 +132,72 @@ REAL_CASES: tuple[Case, ...] = (
             # a typical <0.04 ng/mL cutoff, and the reason a coronary workup
             # was pursued in the source case
             "lab:raised_troponin": True,
+        },
+        vocabulary=frozenset(),
+    ),
+    # PMC13070269 -- case report of NSTEMI, triple-vessel disease confirmed
+    # on angiography, in a previously healthy 32-year-old man, potentially
+    # triggered by acute CMV infection. Included specifically because the
+    # pain is described as pleuritic, which is atypical for ACS and a real
+    # stress test for a knowledge base that (per SCOPE.md's discriminating-
+    # evidence table) treats pleuritic pain as arguing against ACS.
+    Case(
+        case_id="pmc-13070269",
+        presenting_complaint=(
+            "32-year-old man, burning pleuritic chest pain radiating to the "
+            "left shoulder with shortness of breath, fever the day before"
+        ),
+        diagnosis="acute_coronary_syndrome",
+        features={
+            # fever 101F the day before presentation, part of the presenting
+            # illness even though it had settled to 98F (normal) by the time
+            # vitals were recorded on arrival
+            "fever": True,
+            # "pleuritic in nature" -- stated explicitly, and atypical for ACS
+            "pleuritic_pain": True,
+            "dyspnoea_at_rest": True,
+            # "No tobacco/e-cigarette use"
+            "smoking_history": False,
+            # HR 117
+            "exam:tachycardia": True,
+            # "oxygen saturation: normal on room air"
+            "exam:hypoxia": False,
+            # "pulmonary examinations were unremarkable"
+            "exam:crackles": False,
+            # "ST segment depressions in inferior leads"
+            "exam:ecg_st_changes": True,
+            # hs-troponin T 2027 ng/L
+            "lab:raised_troponin": True,
+            # WBC 14.2 (elevated)
+            "lab:raised_wcc": True,
+        },
+        vocabulary=frozenset(),
+    ),
+    # PMC3982377 -- case report of a panic/anxiety attack causing
+    # spontaneous pneumomediastinum in a 19-year-old woman. The unusual
+    # complication (pneumomediastinum) is not modelled here; what is
+    # extracted is the panic-attack presentation and the negative cardiac
+    # and pulmonary workup that confirmed it, which is exactly the
+    # diagnosis-of-exclusion pattern this project's own fixtures.py already
+    # documents as structurally hard to source likelihoods for.
+    Case(
+        case_id="pmc-3982377",
+        presenting_complaint=(
+            "19-year-old woman, sudden trouble breathing and chest pain "
+            "with facial numbness after becoming anxious during an exam"
+        ),
+        diagnosis="panic_attack",
+        features={
+            "dyspnoea_at_rest": True,
+            "sudden_onset": True,
+            # HR 105 initially
+            "exam:tachycardia": True,
+            # SpO2 100%
+            "exam:hypoxia": False,
+            # "lungs were clear"
+            "exam:crackles": False,
+            # chest x-ray "normal"
+            "imaging:cxr_consolidation": False,
         },
         vocabulary=frozenset(),
     ),
