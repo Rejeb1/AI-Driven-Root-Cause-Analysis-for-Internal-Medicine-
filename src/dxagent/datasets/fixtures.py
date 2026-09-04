@@ -357,6 +357,33 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         low=0.35,
         high=0.85,
     ),
+    # Same source, same chapter, a different section (Evaluation, not History
+    # and Physical). Found by searching for this one specific unsourced cell
+    # after real-case testing showed the selector never picked it -- not a
+    # broad re-search of ground already covered.
+    #
+    # The source gives a floor, not a range: "more than half", not "35% to
+    # 85%" the way the friction rub sentence does. There is no honest way to
+    # invent an upper bound the source does not state, so none is given --
+    # `high=None` here means exactly that, not "unbounded above 1.0".
+    #
+    # This point estimate (0.50) is *lower* than the invented value it
+    # replaces (0.60). Sourcing it does not necessarily help the selector
+    # prioritise this test on the real case that prompted the search, and it
+    # was added anyway: the question was whether the number is real, not
+    # whether the real number is convenient.
+    ("pericarditis", "exam:ecg_st_changes"): measured(
+        0.50,
+        Citation(
+            "STATPEARLS-PERICARDITIS",
+            "NCBI Bookshelf NBK431080, Evaluation",
+            "more than half of patients with acute pericarditis exhibit "
+            "characteristic electrocardiogram changes that evolve through "
+            "4 stages over several weeks",
+        ),
+        low=0.50,
+        high=None,
+    ),
 }
 
 # Load-bearing numbers that no source can supply, and the reason is structural
