@@ -64,6 +64,7 @@ class WebOracle:
     findings, not a second source of truth for any decision.
     """
 
+    kb: object
     proposer: BayesianProposer
     presenting_complaint: str
     answers: "queue.Queue[Polarity]" = field(default_factory=queue.Queue)
@@ -99,10 +100,7 @@ class WebOracle:
         with self.lock:
             findings = list(self.findings)
         differential = self.proposer.propose(findings, self.presenting_complaint)
-        return [
-            {"label": h.label, "probability": h.probability}
-            for h in differential.hypotheses[:8]
-        ]
+        return [_hypothesis(h, self.kb) for h in differential.hypotheses[:8]]
 
 
 @dataclass
@@ -111,6 +109,7 @@ class Session:
     thread: threading.Thread
     done: threading.Event
     kb: object
+    limits: LoopLimits
     result: dict = field(default_factory=dict)
 
 
@@ -129,6 +128,23 @@ class AnswerRequest(BaseModel):
 
 def _citation(c: Citation) -> dict:
     return {"source_id": c.source_id, "snippet": c.snippet}
+
+
+def _hypothesis(h, kb) -> dict:
+    """One hypothesis, with its grounding, for the browser.
+
+    The citations travel on every turn rather than only with the final
+    result: the point of the grounding is that it is inspectable *while* the
+    differential moves, not a justification assembled afterwards.
+    """
+    entry = kb.get(h.label)
+    return {
+        "label": h.label,
+        "probability": h.probability,
+        "red_flag": bool(entry is not None and entry.red_flag),
+        "support": [_citation(c) for c in h.support if c.snippet],
+        "against": [_citation(c) for c in h.against if c.snippet],
+    }
 
 
 def _wait_for_next(
@@ -159,23 +175,19 @@ def _status(session_id: str) -> dict:
     oracle = session.oracle
     if session.done.is_set():
         outcome = session.result["outcome"]
-        differential = [
-            {
-                "label": h.label,
-                "probability": h.probability,
-                "support": [_citation(c) for c in h.support if c.snippet],
-                "against": [_citation(c) for c in h.against],
-            }
-            for h in outcome.differential.hypotheses[:6]
-        ]
         payload = {
             "session_id": session_id,
             "finished": True,
             "verdict": outcome.verdict.value,
             "confidence": outcome.confidence,
             "budget_spent": outcome.budget_spent,
+            "max_cost": session.limits.max_cost,
+            "max_turns": session.limits.max_turns,
             "turn": len(outcome.steps),
-            "differential": differential,
+            "differential": [
+                _hypothesis(h, session.kb)
+                for h in outcome.differential.hypotheses[:8]
+            ],
             "prediction": outcome.prediction,
             "history": oracle.history,
         }
@@ -196,8 +208,20 @@ def _status(session_id: str) -> dict:
         "finished": False,
         "turn": len(oracle.history) + 1,
         "cost_spent": oracle.cost_spent,
+        "max_cost": session.limits.max_cost,
+        "max_turns": session.limits.max_turns,
         "question": (
-            {"concept": action.target, "label": humanise(action.target), "kind": action.kind.value}
+            {
+                "concept": action.target,
+                "label": humanise(action.target),
+                "kind": action.kind.value,
+                "cost": action.cost,
+                # The selector's own stated reason for this question -- a
+                # rule-out, a mandated workup item, or expected information
+                # gain. Shown rather than hidden: it is the difference
+                # between a questionnaire and a reasoning trace.
+                "rationale": action.rationale,
+            }
             if action
             else None
         ),
@@ -211,7 +235,7 @@ def create_session(req: StartRequest) -> dict:
     complaint = req.complaint.strip() or "unspecified presentation"
     kb = build_knowledge_base(correlated=True)
     proposer = BayesianProposer(kb)
-    oracle = WebOracle(proposer=proposer, presenting_complaint=complaint)
+    oracle = WebOracle(kb=kb, proposer=proposer, presenting_complaint=complaint)
     case = Case(
         case_id=f"web-{uuid.uuid4().hex[:8]}",
         presenting_complaint=complaint,
@@ -219,17 +243,19 @@ def create_session(req: StartRequest) -> dict:
         diagnosis="unknown",
         initial_findings=(),
     )
+    limits = LoopLimits()
     agent = DiagnosticAgent(
         kb=kb,
         proposer=proposer,
         gate=AbstentionGate(kb=kb),
-        limits=LoopLimits(),
+        limits=limits,
     )
     session = Session(
         oracle=oracle,
         thread=None,  # type: ignore[arg-type]
         done=threading.Event(),
         kb=kb,
+        limits=limits,
     )
     session_id = uuid.uuid4().hex
 
