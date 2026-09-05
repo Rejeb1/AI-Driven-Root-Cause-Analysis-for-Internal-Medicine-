@@ -1,0 +1,5 @@
+# Generated deliverables are binary. Without this, git on Windows applies
+# CRLF conversion to them on checkout and the files are corrupted -- `git add`
+# warns "LF will be replaced by CRLF" and the warning is easy to skim past.
+*.pdf  binary
+*.pptx binary
