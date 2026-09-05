@@ -555,8 +555,26 @@ def test_loop_terminates_with_zero_cost_budget(kb, cases):
     assert outcome.budget_spent == 0.0
 
 
-def test_escalation_packet_is_actionable(kb, cases):
-    """An abstention that carries no evidence transfers no work off the clinician."""
+def test_escalation_packet_is_actionable(cases):
+    """An abstention that carries no evidence transfers no work off the clinician.
+
+    Runs on the correlated knowledge base rather than the bare fixture, and
+    the reason is a finding rather than a convenience. This gate is set at
+    99% confidence and a 98% margin precisely because nothing should ever
+    clear it. Once the grid was completed, fx-001 cleared it on the
+    *uncorrelated* base: 99.26% confident with a 98.68% margin after eight
+    turns. Twenty-seven filled cells multiplied as independent evidence is
+    all it takes.
+
+    Correlation weighting brings the same case to 42% and an abstention. So
+    the weighting is no longer worth roughly one fixture case, as earlier
+    entries describe it -- it is now the thing standing between this model
+    and unusable overconfidence, which also means the model leans harder on
+    a set of correlation values that are themselves invented.
+    """
+    from dxagent.datasets.fixtures import build_knowledge_base as build
+
+    kb = build(correlated=True)
     agent = DiagnosticAgent(
         kb=kb, gate=AbstentionGate(kb, min_confidence=0.99, min_margin=0.98)
     )
@@ -694,7 +712,12 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
     # Sourcing the priors brought one back on this deliberately weakened arm
     # -- no workup floor, no decisive-test rule, no correlation weighting.
     # The shipped configuration gets all ten; see the docstring.
-    assert wrong == ["fx-001"], f"unexpected failures: {wrong}"
+    # Moved again, for the fourth time, when the grid was completed: the
+    # weakened arm's single failure is now fx-009 rather than fx-001. That is
+    # the masquerade case this file discusses throughout -- with every cell
+    # chosen, the pneumonia that used to be misread as COPD is no longer the
+    # one left standing, and the buried pulmonary embolism is.
+    assert wrong == ["fx-009"], f"unexpected failures: {wrong}"
 
 
 def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
@@ -744,9 +767,20 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     # correct about a different knowledge base. The durable lesson is that a
     # mechanism's value is a property of the numbers underneath it, so
     # "does correlation weighting help" has no answer independent of them.
-    assert correlated == len(cases), "correlation now gets every fixture case"
-    assert plain < correlated, "and the plain loop gives one back"
-    assert both <= correlated, "decisive tests still do not improve on the best arm"
+    # Fifth reversal, and the first that inverts the title. Completing the
+    # grid -- choosing all 77 cells that used to fall back to the marginal --
+    # moved every arm: correlation alone no longer reaches ten, the plain
+    # loop matches it rather than trailing it, and the decisive-test rule,
+    # written off three times above, is now the only thing that gets every
+    # case. Filled cells give a hypothetical test a real posterior to move,
+    # which is precisely what a decisiveness rule needs and never had.
+    #
+    # Recorded, not celebrated. Five measurements, five answers, and the
+    # honest reading is still the one the docstring gives: this says what
+    # the numbers underneath are, not what the mechanism is worth.
+    assert both == len(cases), "decisive tests now get every fixture case"
+    assert correlated < both, "and correlation alone no longer does"
+    assert plain == correlated, "correlation alone buys nothing on this arm now"
 
 
 def _superseded_test_decisive_tests_do_not_repair(kb, cases):
@@ -1060,7 +1094,13 @@ def test_sourcing_repaired_the_buried_diagnosis(kb):
     # against the lower prior.
     aware = BayesianProposer(build(correlated=True)).propose(confirmatory)
     assert aware.top.label == "pulmonary_embolism"
-    assert aware.probability_of("pulmonary_embolism") < 0.5
+    # Was "< 0.5" -- retrieved, but not confidently. Completing the grid took
+    # it to 0.537, because the seven rivals now state low values for a CTPA
+    # filling defect instead of inheriting a marginal that flattered them.
+    # The bound is kept as a bound rather than deleted: the claim worth
+    # protecting is that a positive CTPA no longer leaves the diagnosis
+    # buried, not that it reaches any particular number.
+    assert 0.5 < aware.probability_of("pulmonary_embolism") < 0.7
 
 
 def test_state_records_realised_information_gain(kb, cases):
@@ -2612,7 +2652,12 @@ def test_reading_unlisted_findings_as_atypical_buys_rank_and_costs_safety():
     from dxagent.datasets.fixtures import build_knowledge_base as build
 
     def wrong_commits(atypical: bool) -> int:
-        kb = build(correlated=True, unlisted_as_atypical=atypical)
+        # complete_grid=False on purpose: with every cell chosen there is no
+        # backoff left for this policy to change, so the comparison only
+        # means anything on the incomplete grid it was measured against.
+        kb = build(
+            correlated=True, unlisted_as_atypical=atypical, complete_grid=False
+        )
         agent = DiagnosticAgent(
             kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb),
             limits=LoopLimits(

@@ -252,8 +252,9 @@ assumption.
 Likelihoods were sourced in four passes: 17 from DDXPlus co-occurrence, 4 from
 a published cohort of 360 real pulmonary embolism patients (Miniati et al.,
 PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
-text through the fixed rubric, and 1 by targeted search. Coverage is 27%,
-and the remaining 102 are still invented.
+text through the fixed rubric, and 1 by targeted search. Coverage is 17%,
+and the remaining 179 are still invented -- a denominator that grew when the
+grid was completed, not a sourcing regression.
 
     knowledge base            plain   +corr   +decisive   +both
     invented                   8/10    8/10        8/10    8/10
@@ -662,3 +663,57 @@ source case's own clinicians took — they went to angiography. An argument,
 not a proof. Adopting it means re-measuring four findings recorded above
 that it revises, and that is a decision for a clinician or the supervisor
 rather than for whichever configuration scores better today.
+
+### Adopted, and what adopting it cost
+
+The entry above ends "It is off anyway". It is now on by default, and the
+four findings it revises were re-measured rather than re-asserted.
+
+**The fifth reversal on correlation and decisive tests, and the first that
+inverts the heading three sections above.** With every cell chosen:
+
+    corr   decisive   workup   top-1
+    no        no        no      9/10   (fx-009)
+    no        yes       no      9/10   (fx-009)
+    yes       no        no      9/10   (fx-009)
+    yes       yes       no     10/10
+    yes       no        yes    10/10   <- shipped
+
+Correlation alone no longer reaches ten and the plain loop no longer trails
+it, while the decisive-test rule — written off three times above, at real
+length — is now one of the two things that gets every case. The reason is
+mechanical rather than vindicating: a decisiveness rule asks what a
+hypothetical result would do to the posterior, and a posterior built on
+filled cells actually moves. It never had that before. Five measurements,
+five answers, and the durable claim is still the one the original entry
+made: this reports what the numbers underneath are, not what a mechanism is
+worth.
+
+**The weakened arm's single failure moved from fx-001 to fx-009.** The
+pneumonia misread as COPD is no longer the last one standing; the buried
+pulmonary embolism is.
+
+**A positive CTPA now carries pulmonary embolism past 0.5** — 0.537, against
+the earlier 0.4-something — because the seven rivals state low values for a
+filling defect instead of inheriting a marginal that flattered them. The
+test's bound moved from "< 0.5" to a range, since the claim worth protecting
+was never a particular number.
+
+**And the finding that should give a reader most pause.** The escalation
+packet test sets a deliberately unclearable gate — 99% confidence, 98%
+margin — and on the *uncorrelated* knowledge base fx-001 now clears it:
+99.26% confident with a 98.68% margin after eight turns. Twenty-seven filled
+cells multiplying as independent evidence is all that takes. The same case
+on the correlated base sits at 42% and abstains.
+
+So correlation weighting is no longer worth "about one fixture case", which
+is how every earlier entry here describes it. It is now the only thing
+between this model and unusable overconfidence — and the correlation values
+are themselves invented, in a file that says so. Completing the grid did not
+remove the project's dependence on unsourced numbers. It moved that
+dependence somewhere less visible, and this paragraph exists so the move is
+on the record rather than discovered later.
+
+Real cases under the shipped default: 4 of 8 correct, one wrong commit
+(acute coronary syndrome at 82% on a true pericarditis), the confirmed
+NSTEMI escalating from second place rather than committing wrongly.

@@ -748,7 +748,7 @@ UNLISTED_IS_ATYPICAL = NARRATIVE_RUBRIC["not typical"][0]
 def build_knowledge_base(
     correlated: bool = False,
     unlisted_as_atypical: bool = False,
-    complete_grid: bool = False,
+    complete_grid: bool = True,
 ) -> InMemoryKnowledgeBase:
     """Return the synthetic KB. See the module docstring: numbers are invented.
 

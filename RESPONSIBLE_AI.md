@@ -7,7 +7,7 @@ rather than as future work.
 
 The single most important sentence in it is this one. **This system must not be
 used to make or influence a clinical decision about any real patient.** Not
-because of an unfinished feature, but because 73% of the numbers it reasons
+because of an unfinished feature, but because 83% of the numbers it reasons
 with are invented (`dxagent.provenance`), no clinician has reviewed any part of
 it, and its accuracy has never been measured on a real patient. Nothing further
 in this document softens that.
@@ -156,7 +156,7 @@ marketing:
 
 ### The dominant risk is the knowledge base, and it is measured
 
-102 of 139 likelihoods are invented. The eight disease priors are no longer
+179 of 216 likelihoods are invented. The eight disease priors are no longer
 among them — they are derived from published presentation-conditional
 aetiology, with bands wide enough to span the disagreement between the two
 sources.
