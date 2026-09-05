@@ -2583,6 +2583,93 @@ def test_unanswered_actions_still_cost_flag_changes_what_the_budget_buys():
     assert len(free.steps) > len(charged.steps)
 
 
+def test_reading_unlisted_findings_as_atypical_buys_rank_and_costs_safety():
+    """The measured negative result behind ``unlisted_as_atypical`` staying off.
+
+    The marginal backoff has a real cost: a raised troponin scores 0.45 under
+    asthma exacerbation because asthma lists no troponin entry, so findings
+    that should demolish a hypothesis barely move it, and a confirmed NSTEMI
+    ranked fifth. Reading an unlisted finding as "not typical" instead fixes
+    exactly that -- mean true-diagnosis rank over the eight real cases
+    improves from 2.62 to 2.00, and the NSTEMI climbs from fifth to second.
+
+    It is still the wrong trade, and this test exists so that nobody adopts
+    it on the ranking number alone. Every uncharacterised cell becomes
+    strongly discriminating at once, the posterior sharpens everywhere, and
+    the gate starts committing on cases it previously abstained from: real
+    commits go from 3 to 7, but three of them are wrong -- pericarditis
+    committed as acute coronary syndrome at 98%, and a confirmed NSTEMI
+    committed as pericarditis at 87%. An unexcluded ACS that escalates is
+    safe; a confident wrong commit on a real infarction is the failure this
+    whole gate exists to prevent. A fixture case breaks too.
+
+    Ranking improved while decisions got worse, which is precisely why this
+    project reports coverage and error separately.
+    """
+    from dxagent import AbstentionGate, DiagnosticAgent, LoopLimits, Verdict
+    from dxagent.belief import BayesianProposer
+    from dxagent.datasets import REAL_CASES
+    from dxagent.datasets.fixtures import build_knowledge_base as build
+
+    def wrong_commits(atypical: bool) -> int:
+        kb = build(correlated=True, unlisted_as_atypical=atypical)
+        agent = DiagnosticAgent(
+            kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb),
+            limits=LoopLimits(
+                uninformative_turns_still_count=False,
+                unanswered_actions_still_cost=False,
+            ),
+        )
+        bad = 0
+        for case in REAL_CASES:
+            outcome = agent.run(case)
+            if outcome.verdict is Verdict.COMMITTED:
+                bad += outcome.prediction != case.diagnosis
+        return bad
+
+    assert wrong_commits(False) == 0, "the shipped backoff commits nothing wrong"
+    assert wrong_commits(True) > 0, (
+        "if this stops being true the trade-off has changed and the default "
+        "is worth revisiting -- re-measure rather than flipping the flag"
+    )
+
+
+def test_escalation_names_a_workup_item_that_was_sought_but_unavailable():
+    """An escalation a clinician can act on names the missing test.
+
+    ``outstanding_workup`` cannot tell "not asked yet" from "asked, and the
+    record had no answer"; ``unavailable_workup`` intersects it with what was
+    actually asked, which is the difference between "could not narrow the
+    differential" and "a D-dimer was sought and never obtained".
+    """
+    from dxagent.agent import name_the_missing_workup
+    from dxagent.guidelines import unavailable_workup
+    from dxagent.schemas import CaseState, Finding, Polarity
+
+    # Rest dyspnoea arms the PE workup, which requires a D-dimer. The D-dimer
+    # was asked for and came back UNKNOWN -- sought, not available.
+    state = CaseState(case_id="t", presenting_complaint="breathless")
+    state.findings = [
+        Finding(concept="dyspnoea_at_rest", polarity=Polarity.PRESENT),
+        Finding(concept="lab:raised_d_dimer", polarity=Polarity.UNKNOWN),
+    ]
+    state.asked = {"dyspnoea_at_rest", "lab:raised_d_dimer"}
+
+    gaps = unavailable_workup(state.findings, state.asked)
+    assert [c for c, _ in gaps] == ["lab:raised_d_dimer"]
+
+    reason = name_the_missing_workup("top-1 confidence below threshold", state)
+    assert "lab:raised_d_dimer" in reason
+    assert "sought but not available" in reason
+
+    # Never asked at all is a different situation and must not be reported as
+    # unavailable -- the loop simply has not got to it yet.
+    unasked = CaseState(case_id="t2", presenting_complaint="breathless")
+    unasked.findings = [Finding(concept="dyspnoea_at_rest", polarity=Polarity.PRESENT)]
+    assert unavailable_workup(unasked.findings, unasked.asked) == ()
+    assert name_the_missing_workup("reason", unasked) == "reason"
+
+
 def test_default_cost_accounting_is_unchanged_by_the_new_flag(kb, cases):
     """The flag is opt-in: on the fixtures the shipped default is identical."""
     from dxagent import DiagnosticAgent, LoopLimits

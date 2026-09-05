@@ -147,7 +147,7 @@ def main() -> int:
         checked += 1
         finding = Finding(concept, Polarity.PRESENT)
         background = kb.background_likelihood(finding)
-        ratio = entry.likelihood(finding, kb.background(concept)) / background
+        ratio = entry.likelihood(finding, kb.backoff(concept)) / background
         ok = (ratio > 1.0) if direction == "raises" else (ratio < 1.0)
         if not ok:
             source = entry.sources.get(concept)

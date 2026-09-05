@@ -149,15 +149,30 @@ QUOTES: tuple[NarrativeQuote, ...] = (
             "rub, sometimes with dyspnea",
         ),
     ),
+    # Corrected against the source after a real misranking traced back here.
+    # This was transcribed as "almost always elevated" and converted through
+    # the "always" bucket to 0.95, which put a raised troponin at *higher*
+    # probability under pericarditis than under acute coronary syndrome
+    # (0.90) -- so the one objective cardiac marker in the vocabulary argued
+    # slightly for pericarditis. The manual says "often", not "almost
+    # always", and the published frequency is 30-50% (Imazio; AAFP 2014
+    # review), which sits inside the band "often" carries (0.35-0.75).
+    # Three separate checks, and the value falls out of the rubric rather
+    # than being chosen.
+    #
+    # The rest of the sentence is worth keeping for its own sake: the source
+    # states outright that troponin does not discriminate pericarditis from
+    # infarction, which is the honest reading of this row.
     NarrativeQuote(
         "pericarditis",
         "lab:raised_troponin",
-        "always",
+        "often",
         Citation(
             "MSD-19E",
             "Ch. 216 Pericarditis, Diagnosis",
-            "troponin is almost always elevated in acute pericarditis due "
-            "to epicardial involvement",
+            "troponin is often elevated in acute pericarditis due to "
+            "epicardial inflammation, so it cannot discriminate between "
+            "pericarditis, acute infarction, and pulmonary embolism",
         ),
     ),
     # The DSM definition itself, not a frequency claim about a population --

@@ -163,8 +163,8 @@ def confusable_pairs(
                 continue
             distance = sum(
                 abs(
-                    first.features.get(c, kb.background(c))
-                    - second.features.get(c, kb.background(c))
+                    first.features.get(c, kb.backoff(c))
+                    - second.features.get(c, kb.backoff(c))
                 )
                 for c in union
             ) / len(union)

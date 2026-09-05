@@ -40,7 +40,12 @@ from dataclasses import dataclass, field
 from typing import Annotated, Any, TypedDict
 
 from .actions import InformationGainSelector, classify
-from .agent import LoopLimits, choose_action, still_outstanding
+from .agent import (
+    LoopLimits,
+    choose_action,
+    name_the_missing_workup,
+    still_outstanding,
+)
 from .belief import BayesianProposer, ConsensusProposer, Proposer
 from .environment import Case, CaseOracle, Environment
 from .gate import AbstentionGate
@@ -206,7 +211,7 @@ class GraphAgent:
             differential=differential,
             confidence=confidence,
             escalation=Escalation(
-                reason=reason,
+                reason=name_the_missing_workup(reason, state),
                 differential=differential,
                 unresolved_question=unresolved,
                 findings=tuple(state.findings),

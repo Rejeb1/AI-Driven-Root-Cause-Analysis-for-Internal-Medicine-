@@ -120,6 +120,11 @@ class InMemoryKnowledgeBase:
     # supplied, and every earlier measurement still describes the same model.
     correlations: dict[frozenset[str], float] = field(default_factory=dict)
 
+    # What a disease that does not list a finding is assumed to say about it.
+    # None keeps the original marginal backoff; see ``backoff`` for what the
+    # alternative claims and why the choice is not obvious.
+    unlisted_likelihood: float | None = None
+
     _marginals: dict[str, float] = field(default_factory=dict, repr=False)
 
     def add(self, entry: DiseaseEntry) -> None:
@@ -129,11 +134,44 @@ class InMemoryKnowledgeBase:
     def background(self, concept: str) -> float:
         """Prevalence-weighted marginal P(concept present) across the KB.
 
-        Used as the backoff when a disease does not characterise a feature.
+        The population rate, and the denominator of every likelihood ratio in
+        ``evidence_split``. Distinct from ``backoff`` below, which is what to
+        assume for a *particular* disease that does not list this finding --
+        the two were one method until the distinction mattered, and merging
+        them again would corrupt every likelihood ratio.
         """
         if not self._marginals:
             self._recompute_marginals()
         return self._marginals.get(concept, 0.5)
+
+    def backoff(self, concept: str) -> float:
+        """P(concept | disease) to assume when the disease does not list it.
+
+        Two policies, and which one is right is an empirical question rather
+        than an obvious one, so both are available and the choice is recorded.
+
+        ``None`` (the original) backs off to the KB-wide marginal: maximum
+        entropy given no information, and a refusal to claim anything about a
+        cell no source described.
+
+        A number instead reads an unlisted finding as *weak evidence of
+        absence*: the reference texts that built this knowledge base enumerate
+        what each disease presents with, so a finding missing from a disease's
+        profile is one those texts did not consider a feature of it. That is
+        one stated modelling assumption applied uniformly, not a value chosen
+        per cell -- and it is a real assumption, which is why it is a field
+        rather than a hard-coded constant.
+
+        The cost of the marginal policy is measurable and was measured: with
+        it, a raised troponin scores 0.45 under asthma exacerbation, because
+        asthma lists no troponin entry and the marginal is dragged up by the
+        cardiac diagnoses that do. Two findings that should demolish an asthma
+        hypothesis -- a raised troponin and ischaemic ECG changes -- instead
+        barely move it, which is how a confirmed NSTEMI came to rank fifth.
+        """
+        if self.unlisted_likelihood is not None:
+            return self.unlisted_likelihood
+        return self.background(concept)
 
     def _recompute_marginals(self) -> None:
         weights = {e.label: max(e.prevalence, 1e-9) for e in self.entries.values()}
@@ -157,7 +195,7 @@ class InMemoryKnowledgeBase:
         entry = self.entries.get(label)
         if entry is None:
             return 1.0
-        return entry.likelihood(finding, background=self.background(finding.concept))
+        return entry.likelihood(finding, background=self.backoff(finding.concept))
 
     def correlation(self, first: str, second: str) -> float:
         """Measured dependence between two findings, 0.0 when unknown."""
@@ -262,7 +300,7 @@ class InMemoryKnowledgeBase:
             background = self.background_likelihood(finding)
             if background <= 0:
                 continue
-            ratio = entry.likelihood(finding, self.background(finding.concept)) / background
+            ratio = entry.likelihood(finding, self.backoff(finding.concept)) / background
             if ratio >= min_ratio:
                 supporting.append(self._evidence_citation(entry, finding, ratio))
             elif ratio <= 1.0 / min_ratio:

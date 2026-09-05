@@ -21,7 +21,7 @@ from .actions import InformationGainSelector, classify
 from .belief import BayesianProposer, ConsensusProposer, Proposer
 from .environment import Case, CaseOracle, Environment
 from .gate import AbstentionGate
-from .guidelines import outstanding_workup
+from .guidelines import outstanding_workup, unavailable_workup
 from .knowledge import InMemoryKnowledgeBase
 from .schemas import (
     Action,
@@ -165,6 +165,31 @@ def choose_action(
     ):
         action = mandated
     return action, mandated, ruleout, flip
+
+
+def name_the_missing_workup(reason: str, state: CaseState) -> str:
+    """Add the sought-but-unobtainable workup items to an escalation reason.
+
+    Without this the packet says the differential could not be narrowed and
+    stops there, which is true and close to useless: on the real PMC cases
+    the recurring blocker is a triggered ACS workup whose troponin the source
+    never records, so acute coronary syndrome cannot fall under the gate's
+    red-flag tolerance no matter how strong the evidence for anything else.
+    That is a specific, answerable request -- get a troponin -- and the
+    escalation packet exists precisely to hand that over rather than a shrug.
+
+    Shared by both engines for the usual reason: two copies of this drifted
+    once already.
+    """
+    gaps = unavailable_workup(state.findings, state.asked)
+    if not gaps:
+        return reason
+    items = ", ".join(sorted({concept for concept, _ in gaps}))
+    workups = ", ".join(sorted({name for _, name in gaps}))
+    return (
+        f"{reason}; {workups} could not be completed -- sought but not "
+        f"available: {items}"
+    )
 
 
 def still_outstanding(
@@ -315,7 +340,7 @@ class DiagnosticAgent:
             differential=differential,
             confidence=confidence,
             escalation=Escalation(
-                reason=reason,
+                reason=name_the_missing_workup(reason, state),
                 differential=differential,
                 unresolved_question=unresolved,
                 findings=tuple(state.findings),

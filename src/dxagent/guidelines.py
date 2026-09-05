@@ -409,6 +409,28 @@ def outstanding_workup(findings: list[Finding]) -> tuple[tuple[str, str], ...]:
     return tuple(out)
 
 
+def unavailable_workup(
+    findings: list[Finding], asked: set[str]
+) -> tuple[tuple[str, str], ...]:
+    """Workup items that were sought and came back UNKNOWN.
+
+    ``outstanding_workup`` cannot tell "not asked yet" from "asked, and the
+    record had no answer" -- both read as unanswered, which is right for
+    deciding what to do next and wrong for explaining why the loop stopped.
+    Intersecting it with what was actually asked separates them.
+
+    This is the difference between an escalation that says the differential
+    could not be narrowed and one that says a troponin was sought and never
+    obtained. The second is the one a clinician can act on, and it is the
+    stated purpose of the escalation packet.
+    """
+    return tuple(
+        (concept, name)
+        for concept, name in outstanding_workup(findings)
+        if concept in asked
+    )
+
+
 def vocabulary_gaps() -> dict[str, tuple[str, ...]]:
     """Criteria the current vocabulary cannot express, per rule.
 
@@ -438,5 +460,6 @@ __all__ = [
     "WELLS_PE",
     "WORKUPS",
     "outstanding_workup",
+    "unavailable_workup",
     "vocabulary_gaps",
 ]

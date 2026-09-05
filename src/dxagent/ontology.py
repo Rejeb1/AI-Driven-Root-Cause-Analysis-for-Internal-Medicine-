@@ -161,7 +161,7 @@ class Ontology:
                 background = kb.background_likelihood(finding)
                 if background <= 0:
                     continue
-                ratio = entry.likelihood(finding, kb.background(concept)) / background
+                ratio = entry.likelihood(finding, kb.backoff(concept)) / background
 
                 if ratio >= min_ratio:
                     relation = "supports"

@@ -30,6 +30,7 @@ import dataclasses
 from ..knowledge import Citation, DiseaseEntry, InMemoryKnowledgeBase, register_costs
 from ..merck import QUOTES as _MERCK_QUOTES
 from ..provenance import (
+    NARRATIVE_RUBRIC,
     LikelihoodSource,
     Provenance,
     from_narrative,
@@ -537,15 +538,36 @@ def _apply_sources(kb: InMemoryKnowledgeBase) -> None:
     kb._marginals.clear()
 
 
-def build_knowledge_base(correlated: bool = False) -> InMemoryKnowledgeBase:
+# What a disease that does not list a finding is taken to say about it, when
+# ``unlisted_as_atypical`` is on. Not a new invented constant: it is the point
+# estimate the project's own pre-committed narrative rubric already assigns to
+# "not typical", which is exactly the claim being made -- a reference text that
+# enumerates a disease's features and omits this one has said, weakly, that it
+# is not a feature of that disease. Taking the number from the rubric rather
+# than choosing one keeps the assumption inspectable and stops it drifting to
+# whatever value happens to score best.
+UNLISTED_IS_ATYPICAL = NARRATIVE_RUBRIC["not typical"][0]
+
+
+def build_knowledge_base(
+    correlated: bool = False, unlisted_as_atypical: bool = False
+) -> InMemoryKnowledgeBase:
     """Return the synthetic KB. See the module docstring: numbers are invented.
 
     ``correlated=True`` additionally supplies the dependence structure above.
     Off by default so that every measurement taken before it existed still
     describes the default knowledge base.
+
+    ``unlisted_as_atypical=True`` switches the backoff for uncharacterised
+    cells from the KB-wide marginal to the rubric's "not typical" value. See
+    ``InMemoryKnowledgeBase.backoff`` for the argument and what it costs; it
+    is off by default because it changes every uncharacterised cell at once
+    and that is a decision to take on measurement, not by default.
     """
     register_costs(COSTS)
-    kb = InMemoryKnowledgeBase()
+    kb = InMemoryKnowledgeBase(
+        unlisted_likelihood=UNLISTED_IS_ATYPICAL if unlisted_as_atypical else None
+    )
 
     kb.add(
         DiseaseEntry(

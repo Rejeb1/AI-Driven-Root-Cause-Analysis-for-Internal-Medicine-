@@ -176,7 +176,7 @@ class InformationGainSelector:
             if entry is None:
                 continue
             p_present += h.probability * entry.features.get(
-                concept, self.kb.background(concept)
+                concept, self.kb.backoff(concept)
             )
         return min(max(p_present, 0.0), 1.0)
 
@@ -293,7 +293,7 @@ class InformationGainSelector:
                 mass = sum(h.probability for h in others) or 1e-9
                 p_rest = sum(
                     h.probability
-                    * (self.kb.get(h.label).features.get(concept, self.kb.background(concept))
+                    * (self.kb.get(h.label).features.get(concept, self.kb.backoff(concept))
                        if self.kb.get(h.label) else 0.5)
                     for h in others
                 ) / mass

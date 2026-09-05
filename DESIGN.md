@@ -550,3 +550,56 @@ the strongest argument this project has for sourcing before tuning.
   whose nodes are findings and causes and whose edges are labelled; what exists
   derives that relation per call from likelihood ratios. The reasoning is
   auditable and every edge is cited, but there is no structure to traverse.
+
+## The uncharacterised-cell backoff: better ranking, worse decisions
+
+A real PMC patient — pmc-13070269, NSTEMI confirmed on angiography, troponin
+raised, ST depressions present — ranked **fifth at 6%**, behind asthma at 31%.
+Decomposing it found the mechanism, and it was not the cost model or the
+selector:
+
+    finding                observed    P(·|ACS)   P(·|asthma)
+    smoking_history        absent          0.28          0.80
+    pleuritic_pain         present         0.10          0.31
+    exam:ecg_st_changes    present         0.75          0.71
+    lab:raised_troponin    present         0.90          0.45
+
+Asthma lists no entry for troponin, ECG changes or pleuritic pain, so each
+backs off to the KB-wide marginal — which the cardiac diagnoses drag upward.
+A raised troponin therefore scores 0.45 under asthma rather than something
+near 0.02, and two findings that should demolish the hypothesis barely move
+it, while *absence of smoking history* counts nearly three times harder
+against ACS than a raised troponin counts for it.
+
+One correction came out of this and stands on its own: the Merck troponin
+sentence for pericarditis had been transcribed as "almost always elevated"
+and converted through the `always` bucket to 0.95, which put a raised
+troponin at higher probability under pericarditis than under ACS. The source
+says "often"; the published frequency is 30–50%, inside the band `often`
+carries. Corrected to 0.55, from the rubric rather than by choice. It moved
+the case from 6% to 7% and fixed nothing, which is the honest report.
+
+**The backoff policy itself was then changed, measured, and rejected.**
+`unlisted_as_atypical` reads a finding missing from a disease's profile as
+weak evidence of absence, at the rubric's "not typical" value, on the
+argument that a text enumerating a disease's features and omitting one has
+said something. As a ranking change it works:
+
+    policy            fixtures   real correct   commits   mean true rank
+    marginal (ship)      10/10          3/8         3          2.62
+    not-typical           9/10          4/8         7          2.00
+
+And as a safety change it is a disaster. Commits rise from 3 to 7 because
+every uncharacterised cell becomes strongly discriminating at once and the
+posterior sharpens everywhere — but **three of those seven commits are
+wrong**: pericarditis committed as acute coronary syndrome at 98%, and the
+confirmed NSTEMI this whole investigation started from committed as
+pericarditis at 87%. The case did climb from fifth to second, and then the
+gate acted on it. An unexcluded ACS that escalates is safe; a confident wrong
+commit on a real infarction is the failure the gate exists to prevent.
+
+Kept as a flag, off, with a test asserting the shipped policy makes no wrong
+commits and the alternative does. The lesson is the one this project keeps
+relearning in different clothes: mean rank improved while decisions got
+worse, which is why coverage and error are reported separately and why a
+ranking metric must never be the thing a change is adopted on.
