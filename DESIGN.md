@@ -253,7 +253,7 @@ Likelihoods were sourced in four passes: 17 from DDXPlus co-occurrence, 4 from
 a published cohort of 360 real pulmonary embolism patients (Miniati et al.,
 PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
 text through the fixed rubric, and 1 by targeted search. Coverage is 27%,
-and the remaining 99 are still invented.
+and the remaining 102 are still invented.
 
     knowledge base            plain   +corr   +decisive   +both
     invented                   8/10    8/10        8/10    8/10

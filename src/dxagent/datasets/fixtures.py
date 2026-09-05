@@ -373,6 +373,32 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
     # prioritise this test on the real case that prompted the search, and it
     # was added anyway: the question was whether the number is real, not
     # whether the real number is convenient.
+    # Sourced because the guess would have been badly wrong in the direction
+    # that matters. Filling this cell was prompted by a confirmed NSTEMI
+    # ranking fifth, and the tempting move was a low value -- COPD is not a
+    # cardiac diagnosis, so a raised troponin "should" argue against it. The
+    # literature says the opposite: troponin elevation is common in acute
+    # exacerbations, and inventing 0.05 here would have made the model
+    # discriminate COPD from ACS far more confidently than the evidence
+    # allows, in a direction nobody would have checked.
+    #
+    # The band is wide because the reported range genuinely is: 18-27% on
+    # conventional assays, up to 74% with high-sensitivity troponin T, which
+    # is an assay difference rather than a disagreement about patients. The
+    # point estimate is this study's own headline figure; note its abstract
+    # says 32% where its results table gives 19 of 50, which is 38%. The
+    # discrepancy is the source's, recorded rather than silently resolved.
+    ("copd_exacerbation", "lab:raised_troponin"): measured(
+        0.32,
+        Citation(
+            "NOORAIN-2016",
+            "Noorain S, Lung India 2016;33(1):53-57",
+            "cardiac troponin I was positive in 32% of patients admitted "
+            "with acute exacerbation of COPD (n=50, cutoff 0.017 ug/L)",
+        ),
+        low=0.18,
+        high=0.74,
+    ),
     ("pericarditis", "exam:ecg_st_changes"): measured(
         0.50,
         Citation(
@@ -701,6 +727,19 @@ def build_knowledge_base(
                 "lab:raised_wcc": 0.40,
                 "lab:raised_bnp": 0.20,
                 "lab:raised_d_dimer": 0.25,
+                # Placeholder; sourced in _FROM_LITERATURE below, and the
+                # sourced figure is far higher than this file would have
+                # guessed. See that entry.
+                "lab:raised_troponin": 0.32,
+                # Invented, and stated as a claim rather than left to the
+                # marginal: COPD is an airway disease, and ischaemic-pattern
+                # ST change is not part of how an exacerbation presents.
+                # Left uncharacterised it inherited the KB marginal of 0.71,
+                # because the only two entries describing this finding are
+                # both cardiac -- so the model held that ST changes were
+                # likelier than not in a COPD exacerbation. Any stated value
+                # beats that, and a low one is the honest reading.
+                "exam:ecg_st_changes": 0.08,
                 "imaging:cxr_consolidation": 0.20,
                 "imaging:cxr_pulmonary_oedema": 0.08,
             },
@@ -725,6 +764,21 @@ def build_knowledge_base(
                 "exam:crackles": 0.10,
                 "lab:raised_wcc": 0.20,
                 "lab:raised_bnp": 0.05,
+                # Both invented, both stated for the same reason as the COPD
+                # pair above: uncharacterised, these inherited marginals of
+                # 0.45 and 0.71, so a raised troponin and ischaemic ECG
+                # changes barely argued against asthma at all -- which is how
+                # a confirmed NSTEMI came to rank behind it.
+                #
+                # Set lower than the COPD figures deliberately. The sourced
+                # COPD number (0.32) reflects a population with epicardial
+                # disease, right-heart strain and decades of smoking; an
+                # asthma exacerbation population is younger and largely
+                # without those, so demand ischaemia is rarer. That ordering
+                # is the defensible part; the exact values are not, and both
+                # are tagged invented.
+                "lab:raised_troponin": 0.08,
+                "exam:ecg_st_changes": 0.05,
                 "imaging:cxr_consolidation": 0.05,
                 "imaging:cxr_pulmonary_oedema": 0.03,
             },
