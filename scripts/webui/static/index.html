@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dxagent — Live Consultation</title>
+<style>
+  :root {
+    --ink: #16202b;
+    --muted: #5d6b7a;
+    --line: #e3e8ee;
+    --soft: #f4f6f9;
+    --panel: #ffffff;
+    --navy: #12263c;
+    --teal: #0e7c7b;
+    --teal-bg: #e4f3f2;
+    --blue: #1d4e8f;
+    --blue-bg: #dbe6f5;
+    --amber: #b06b00;
+    --amber-bg: #fbeacd;
+    --green: #1f7a3d;
+    --green-bg: #dcf0e2;
+    --plum: #6b3fa0;
+    --red: #a92929;
+    --red-bg: #f8dcdb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--soft);
+    color: var(--ink);
+  }
+  header {
+    background: var(--navy);
+    color: #fff;
+    padding: 22px 32px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  header h1 { margin: 0; font-size: 22px; letter-spacing: 0.2px; }
+  header .badge {
+    font-size: 11.5px;
+    color: #cddae8;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.18);
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+  main {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 28px;
+    box-shadow: 0 1px 3px rgba(16,24,40,0.04);
+  }
+  .hidden { display: none !important; }
+
+  /* ---- start screen ---- */
+  #start h2 { margin-top: 0; font-size: 19px; }
+  #start p.lead { color: var(--muted); font-size: 14.5px; line-height: 1.55; }
+  textarea {
+    width: 100%;
+    min-height: 90px;
+    font-size: 15px;
+    font-family: inherit;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1.5px solid var(--line);
+    resize: vertical;
+    color: var(--ink);
+  }
+  textarea:focus { outline: none; border-color: var(--teal); }
+  .btn {
+    appearance: none;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 22px;
+    font-size: 14.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.05s ease, opacity 0.15s ease;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--teal); color: #fff; }
+  .btn-primary:hover { opacity: 0.92; }
+  .btn-ghost { background: var(--soft); color: var(--ink); border: 1px solid var(--line); }
+  .btn-row { display: flex; gap: 10px; margin-top: 16px; }
+
+  /* ---- consult screen ---- */
+  .statline {
+    display: flex; gap: 22px; margin-bottom: 22px; flex-wrap: wrap;
+  }
+  .stat {
+    background: var(--soft); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 16px; font-size: 12.5px; color: var(--muted);
+  }
+  .stat b { color: var(--ink); font-size: 14px; }
+
+  .question-card {
+    background: var(--teal-bg);
+    border-radius: 14px;
+    padding: 26px;
+    margin-bottom: 26px;
+  }
+  .question-card .kicker {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--teal); font-weight: 700; margin-bottom: 8px;
+  }
+  .question-card .qtext { font-size: 19px; font-weight: 600; margin-bottom: 18px; }
+  .answer-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .answer-btn {
+    flex: 1; min-width: 110px;
+    padding: 14px 10px;
+    border-radius: 10px;
+    border: 1.5px solid transparent;
+    font-size: 14.5px; font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.05s ease, filter 0.15s ease;
+  }
+  .answer-btn:active { transform: translateY(1px); }
+  .answer-btn:hover { filter: brightness(0.96); }
+  .ans-yes { background: var(--green); color: #fff; }
+  .ans-no { background: var(--red); color: #fff; }
+  .ans-unknown { background: #fff; color: var(--muted); border-color: var(--line); }
+
+  .section-title {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); font-weight: 700; margin: 26px 0 12px;
+  }
+
+  .diff-row { margin-bottom: 10px; }
+  .diff-label {
+    display: flex; justify-content: space-between; font-size: 13.5px;
+    margin-bottom: 4px;
+  }
+  .diff-label .name { font-weight: 600; }
+  .diff-track {
+    height: 10px; background: var(--soft); border-radius: 999px; overflow: hidden;
+  }
+  .diff-fill {
+    height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--blue), var(--teal));
+    transition: width 0.4s ease;
+  }
+  .diff-fill.leader { background: linear-gradient(90deg, var(--teal), var(--green)); }
+
+  .history-item {
+    display: flex; justify-content: space-between; padding: 9px 0;
+    border-bottom: 1px solid var(--line); font-size: 13.5px;
+  }
+  .history-item:last-child { border-bottom: none; }
+  .history-item .a-present { color: var(--green); font-weight: 700; }
+  .history-item .a-absent { color: var(--red); font-weight: 700; }
+  .history-item .a-unknown { color: var(--muted); font-weight: 700; }
+
+  /* ---- result screen ---- */
+  .result-banner {
+    border-radius: 14px; padding: 26px; margin-bottom: 24px; color: #fff;
+  }
+  .result-banner.committed { background: linear-gradient(135deg, var(--green), #13502a); }
+  .result-banner.escalated { background: linear-gradient(135deg, var(--amber), #7a4700); }
+  .result-banner .verdict { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.85; }
+  .result-banner .headline { font-size: 26px; font-weight: 800; margin: 6px 0 4px; text-transform: capitalize; }
+  .result-banner .sub { font-size: 14px; opacity: 0.92; }
+
+  .hyp-card {
+    border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px;
+  }
+  .hyp-card .hyp-head {
+    display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;
+  }
+  .hyp-card .hyp-name { font-weight: 700; font-size: 15px; text-transform: capitalize; }
+  .hyp-card .hyp-prob { font-weight: 800; font-size: 15px; color: var(--teal); }
+  .cite-group { font-size: 12.5px; margin-top: 6px; }
+  .cite-group .cite-label { font-weight: 700; color: var(--muted); margin-bottom: 3px; }
+  .cite-group.support .cite-label { color: var(--green); }
+  .cite-group.against .cite-label { color: var(--red); }
+  .cite-item { color: var(--muted); margin: 2px 0; padding-left: 10px; border-left: 2px solid var(--line); }
+
+  footer {
+    text-align: center; color: var(--muted); font-size: 12px; padding: 28px 24px 40px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>dxagent — Live Consultation</h1>
+  <span class="badge">Not for clinical use — invented knowledge base</span>
+</header>
+
+<main>
+
+  <section id="start" class="card">
+    <h2>What brings the patient in today?</h2>
+    <p class="lead">
+      Type a presenting complaint. The agent will ask one question at a time —
+      answer as the patient — and its differential will update live until it
+      commits to a diagnosis with cited evidence, or escalates naming exactly
+      what's still unresolved. There's no gold answer here; you're inventing
+      the patient as you go.
+    </p>
+    <textarea id="complaint" placeholder="e.g. 64-year-old woman, sudden shortness of breath and chest pain worse on deep breathing"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="begin">Begin consultation</button>
+    </div>
+  </section>
+
+  <section id="consult" class="card hidden">
+    <div class="statline">
+      <div class="stat">Turn <b id="stat-turn">1</b></div>
+      <div class="stat">Cost spent <b id="stat-cost">0.0</b></div>
+    </div>
+
+    <div class="question-card">
+      <div class="kicker">Question <span id="q-kind"></span></div>
+      <div class="qtext" id="q-text">…</div>
+      <div class="answer-row">
+        <button class="answer-btn ans-yes" data-ans="present">Yes / present</button>
+        <button class="answer-btn ans-no" data-ans="absent">No / absent</button>
+        <button class="answer-btn ans-unknown" data-ans="unknown">Don't know</button>
+      </div>
+    </div>
+
+    <div class="section-title">Live differential</div>
+    <div id="diff-list"></div>
+
+    <div class="section-title">History</div>
+    <div id="history-list"></div>
+  </section>
+
+  <section id="result" class="card hidden">
+    <div class="result-banner" id="result-banner">
+      <div class="verdict" id="result-verdict"></div>
+      <div class="headline" id="result-headline"></div>
+      <div class="sub" id="result-sub"></div>
+    </div>
+
+    <div class="section-title">Differential</div>
+    <div id="result-diff"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="restart">Start a new consultation</button>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  dxagent · agentic diagnostic reasoning for dyspnoea and chest pain · knowledge base is largely invented, see RESPONSIBLE_AI.md
+</footer>
+
+<script>
+const API = "/api/session";
+let sessionId = null;
+
+const el = (id) => document.getElementById(id);
+const show = (id) => el(id).classList.remove("hidden");
+const hide = (id) => el(id).classList.add("hidden");
+
+function renderDifferential(container, hyps, { withCitations = false } = {}) {
+  container.innerHTML = "";
+  hyps.forEach((h, i) => {
+    if (withCitations) {
+      const card = document.createElement("div");
+      card.className = "hyp-card";
+      const supportHtml = (h.support || []).slice(0, 3).map(c =>
+        `<div class="cite-item">[${c.source_id}] ${c.snippet}</div>`).join("");
+      const againstHtml = (h.against || []).slice(0, 3).map(c =>
+        `<div class="cite-item">[${c.source_id}] ${c.snippet}</div>`).join("");
+      card.innerHTML = `
+        <div class="hyp-head">
+          <div class="hyp-name">${i + 1}. ${h.label.replaceAll("_", " ")}</div>
+          <div class="hyp-prob">${Math.round(h.probability * 100)}%</div>
+        </div>
+        ${supportHtml ? `<div class="cite-group support"><div class="cite-label">Supporting</div>${supportHtml}</div>` : ""}
+        ${againstHtml ? `<div class="cite-group against"><div class="cite-label">Against</div>${againstHtml}</div>` : `<div class="cite-group"><div class="cite-label">Nothing in the knowledge base argues against this</div></div>`}
+      `;
+      container.appendChild(card);
+    } else {
+      const row = document.createElement("div");
+      row.className = "diff-row";
+      row.innerHTML = `
+        <div class="diff-label">
+          <span class="name">${h.label.replaceAll("_", " ")}</span>
+          <span>${Math.round(h.probability * 100)}%</span>
+        </div>
+        <div class="diff-track">
+          <div class="diff-fill ${i === 0 ? "leader" : ""}" style="width:${h.probability * 100}%"></div>
+        </div>
+      `;
+      container.appendChild(row);
+    }
+  });
+}
+
+function renderHistory(list) {
+  const container = el("history-list");
+  container.innerHTML = "";
+  if (!list.length) {
+    container.innerHTML = `<div style="color:var(--muted);font-size:13px;">No questions answered yet.</div>`;
+    return;
+  }
+  [...list].reverse().forEach(item => {
+    const row = document.createElement("div");
+    row.className = "history-item";
+    row.innerHTML = `<span>${item.label}</span><span class="a-${item.answer}">${item.answer}</span>`;
+    container.appendChild(row);
+  });
+}
+
+function renderState(data) {
+  if (data.finished) {
+    hide("consult");
+    show("result");
+    const committed = data.verdict === "committed";
+    const banner = el("result-banner");
+    banner.className = "result-banner " + (committed ? "committed" : "escalated");
+    el("result-verdict").textContent = committed ? "Committed" : "Escalated";
+    el("result-headline").textContent = committed
+      ? data.prediction.replaceAll("_", " ")
+      : "No commit — a question remains open";
+    if (committed) {
+      el("result-sub").textContent =
+        `Confidence ${Math.round(data.confidence * 100)}% · cost ${data.budget_spent.toFixed(1)} · ${data.turn} turns`;
+    } else {
+      const unresolved = data.escalation?.unresolved_question;
+      el("result-sub").textContent = data.escalation?.reason +
+        (unresolved ? ` — unresolved: ${unresolved}` : "");
+    }
+    renderDifferential(el("result-diff"), data.differential, { withCitations: true });
+    return;
+  }
+
+  hide("start");
+  show("consult");
+  el("stat-turn").textContent = data.turn;
+  el("stat-cost").textContent = data.cost_spent.toFixed(1);
+  if (data.question) {
+    el("q-kind").textContent = `(${data.question.kind})`;
+    el("q-text").textContent = data.question.label;
+  }
+  renderDifferential(el("diff-list"), data.differential);
+  renderHistory(data.history);
+}
+
+async function begin() {
+  const complaint = el("complaint").value.trim();
+  el("begin").disabled = true;
+  el("begin").textContent = "Starting…";
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ complaint }),
+    });
+    const data = await res.json();
+    sessionId = data.session_id;
+    renderState(data);
+  } finally {
+    el("begin").disabled = false;
+    el("begin").textContent = "Begin consultation";
+  }
+}
+
+async function answer(polarity) {
+  document.querySelectorAll(".answer-btn").forEach(b => b.disabled = true);
+  try {
+    const res = await fetch(`${API}/${sessionId}/answer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ polarity }),
+    });
+    const data = await res.json();
+    renderState(data);
+  } finally {
+    document.querySelectorAll(".answer-btn").forEach(b => b.disabled = false);
+  }
+}
+
+el("begin").addEventListener("click", begin);
+el("complaint").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && e.metaKey) begin();
+});
+document.querySelectorAll(".answer-btn").forEach(btn => {
+  btn.addEventListener("click", () => answer(btn.dataset.ans));
+});
+el("restart").addEventListener("click", () => {
+  sessionId = null;
+  el("complaint").value = "";
+  hide("result");
+  show("start");
+});
+</script>
+
+</body>
+</html>

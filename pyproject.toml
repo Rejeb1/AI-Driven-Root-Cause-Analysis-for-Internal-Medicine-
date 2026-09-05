@@ -29,6 +29,11 @@ stack = [
     "sentence-transformers>=3",
     "qdrant-client>=1.9",
 ]
+# scripts/webui/server.py -- a browser front end for the live consultation
+# consult.py already does on a terminal. Reuses the same DiagnosticAgent loop
+# unchanged (see the module docstring for how); this extra is just the web
+# framework, not a second reasoning path.
+webui = ["fastapi>=0.110", "uvicorn>=0.29"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

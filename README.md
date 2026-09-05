@@ -24,6 +24,15 @@ python3 scripts/consult.py           # a live consultation -- you play the patie
 python3 scripts/eval_real_cases.py   # 8 real patients from published PMC case reports
 ```
 
+**Browser UI.** `scripts/consult.py` on a web page instead of a terminal --
+same unmodified `DiagnosticAgent` loop, a live differential that updates
+after every answer, and a cited result at the end:
+
+```bash
+pip install -e ".[webui]"
+python3 scripts/webui/server.py      # http://127.0.0.1:8420
+```
+
 Everything above is offline and deterministic. Tests that need the optional
 stack skip themselves when it is absent, so a clean checkout is always green --
 that is deliberate, because it keeps the dependency-free loop usable as the
