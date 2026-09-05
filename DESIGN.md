@@ -603,3 +603,62 @@ commits and the alternative does. The lesson is the one this project keeps
 relearning in different clothes: mean rank improved while decisions got
 worse, which is why coverage and error are reported separately and why a
 ranking metric must never be the thing a change is adopted on.
+
+## Completing the grid: 77 cells nobody had chosen
+
+The backoff investigation left a question it did not answer. Filling four
+cardiac-marker cells helped and held safety, but the audit that prompted it
+found the same defect in **77 cells** — every place a disease does not list a
+finding and the KB-wide marginal answers for it. The marginal is computed
+only over the diseases that *do* describe a finding, so the more specific a
+sign is, the higher the number it hands to every disease that lacks it:
+
+    finding                listed for            asserted for everyone else
+    wheeze_subjective      COPD, asthma                              0.89
+    exam:friction_rub      pericarditis only                         0.60
+    recent_immobility      pulmonary embolism only                   0.61
+    calf_tenderness        pulmonary embolism only                   0.40
+
+Read the last two: they are Wells criteria, which exist to identify pulmonary
+embolism, and the model was asserting recent immobility at 61% in panic
+attack and calf tenderness at 40% in pneumonia. A pericardial friction
+rub — among the most specific signs in this differential — was a coin flip
+for every disease that is not pericarditis.
+
+**The backoff was never "no claim".** The reasoner used a number either way.
+The only question was whether anyone had chosen it, and nobody had.
+
+`_COMPLETIONS` chooses all 77. Not by one rule: blanket-low was already
+measured and rejected above, and the reason it failed is the split the
+completions turn on. A finding can be missing from a profile because the
+pathology does not produce it — a friction rub needs an inflamed pericardium,
+a filling defect needs clot — or because it is a *risk factor the disease
+does not cause at all*. A pneumonia patient can perfectly well have been
+immobile for three days or smoked for forty years, so those cells get base
+rates, not floors. That is the same trap that nearly produced an invented
+0.05 for troponin in COPD before the literature said 32%.
+
+    config                fixtures  no-workup arm  real correct  wrong  rank
+    marginal (shipped)      10/10          10/10           3/8      0   2.38
+    complete_grid           10/10           9/10           4/8      1   2.00
+
+It buys real ground: the confirmed NSTEMI climbs from fourth to second and
+escalates there rather than committing wrongly, mean rank matches the
+rejected blanket policy without its three wrong commits, and the shipped
+configuration still gets every fixture case.
+
+It is off anyway, and the reasons are worth being explicit about. It is 77
+invented numbers from one non-clinician in a single sitting. It takes the
+sourced fraction from 27% to 17% — not a regression, but the count finally
+including claims the model was already making. It costs a fixture case on
+the no-workup arm and moves that arm's failure from fx-001 to fx-009. And it
+turns one abstention into a wrong commit: acute coronary syndrome at 82% on
+a true pericarditis.
+
+That last one is the closest call in this document. The error runs *toward*
+the time-critical diagnosis, which is the direction section 2 of
+RESPONSIBLE_AI.md argues the system should prefer, and the direction the
+source case's own clinicians took — they went to angiography. An argument,
+not a proof. Adopting it means re-measuring four findings recorded above
+that it revises, and that is a decision for a clinician or the supervisor
+rather than for whichever configuration scores better today.

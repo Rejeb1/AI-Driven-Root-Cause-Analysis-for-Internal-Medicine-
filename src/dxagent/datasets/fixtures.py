@@ -516,6 +516,176 @@ _PRIORS: dict[str, tuple[float, float, float]] = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Completing the grid.
+#
+# Every cell below was previously absent from its disease's feature dict and
+# therefore answered by the KB-wide marginal. That was never "no claim": the
+# reasoner used a number either way, so the only question was whether anyone
+# chose it. Nobody did, and the marginal chose badly, because it is computed
+# only over the diseases that *do* describe a finding -- so the more specific
+# a sign is, the higher the value it hands to every disease that lacks it.
+# A pericardial friction rub, listed only for pericarditis at 0.60, was
+# therefore asserted at 0.60 for panic attack. Recent immobility, a Wells
+# criterion listed only for pulmonary embolism at 0.61, was asserted at 0.61
+# for pneumonia. These are worse than invented numbers; they are invented
+# numbers nobody can be held to.
+#
+# So they are chosen here, deliberately and visibly, and they are INVENTED --
+# the provenance report counts them as such and the sourced fraction drops
+# accordingly. That drop is not a regression. It is the count finally
+# including claims the model was already making.
+#
+# The values are not one rule applied 77 times. Blanket-low was measured and
+# rejected (see DESIGN.md), and the reason it failed is visible in the split
+# below: a finding can be absent from a disease's profile for two entirely
+# different reasons.
+#
+#   Disease-generated signs -- produced by the pathology itself. A friction
+#   rub needs an inflamed pericardium; a CTPA filling defect needs clot.
+#   Absent from another disease's profile, these really are near-absent.
+#
+#   Risk factors and comorbid findings -- NOT produced by the disease, so
+#   their rate in a disease's population is a base rate, not zero. A patient
+#   with pneumonia can perfectly well have been immobile for three days or
+#   have smoked for forty years. Setting these low would be exactly as wrong
+#   as the marginal is, in the opposite direction, and this is the same trap
+#   that nearly produced an invented 0.05 for troponin in COPD before the
+#   literature said 32%.
+#
+# None of this is sourced and none of it is clinician-reviewed. It is one
+# engineer's judgement, recorded so it can be argued with.
+_COMPLETIONS: dict[tuple[str, str], float] = {}
+
+
+def _complete(concept: str, values: dict[str, float]) -> None:
+    for label, value in values.items():
+        _COMPLETIONS[(label, concept)] = value
+
+
+# -- disease-generated signs ------------------------------------------------
+# Pericardial rub: needs inflamed pericardium. Slightly higher for the two
+# diseases that can produce a *pleural* rub an examiner might record here.
+_complete("exam:friction_rub", {
+    "pulmonary_embolism": 0.05, "community_acquired_pneumonia": 0.05,
+    "acute_coronary_syndrome": 0.03, "acute_pulmonary_oedema": 0.02,
+    "copd_exacerbation": 0.02, "asthma_exacerbation": 0.02,
+    "panic_attack": 0.02,
+})
+# Clot on CTPA. Near-absent without pulmonary embolism.
+_complete("imaging:ctpa_filling_defect", {
+    "copd_exacerbation": 0.02, "asthma_exacerbation": 0.02, "pericarditis": 0.02,
+})
+# ST changes. Not near-zero everywhere: PE genuinely mimics ACS on the ECG
+# (the project's own PE case report is titled exactly that), and oedema is
+# often ischaemia-driven.
+_complete("exam:ecg_st_changes", {
+    "pulmonary_embolism": 0.25, "acute_pulmonary_oedema": 0.20,
+    "community_acquired_pneumonia": 0.05, "panic_attack": 0.03,
+})
+# Oedema on CXR. ACS causes cardiogenic oedema often enough that a low value
+# would be wrong; pericarditis gives effusion rather than oedema.
+_complete("imaging:cxr_pulmonary_oedema", {
+    "acute_coronary_syndrome": 0.20, "pericarditis": 0.05, "panic_attack": 0.02,
+})
+# Raised JVP. Not a respiratory sign, but tamponade physiology makes it a
+# real pericarditis finding, and RV infarction makes it a real ACS one.
+_complete("exam:raised_jvp", {
+    "pericarditis": 0.35, "acute_coronary_syndrome": 0.15,
+    "asthma_exacerbation": 0.05, "panic_attack": 0.02,
+})
+_complete("exam:hypoxia", {
+    "acute_coronary_syndrome": 0.20, "pericarditis": 0.08,
+})
+_complete("lab:raised_bnp", {"pericarditis": 0.15, "panic_attack": 0.03})
+_complete("lab:raised_d_dimer", {"asthma_exacerbation": 0.12})
+
+# -- shared symptoms, rate varying by disease -------------------------------
+# Wheeze: the marginal handed 0.89 to six diseases because only the two
+# airway diseases describe it. "Cardiac asthma" makes oedema the highest of
+# the rest.
+_complete("wheeze_subjective", {
+    "acute_pulmonary_oedema": 0.30, "community_acquired_pneumonia": 0.20,
+    "pulmonary_embolism": 0.10, "panic_attack": 0.10,
+    "acute_coronary_syndrome": 0.08, "pericarditis": 0.03,
+})
+_complete("exam:reduced_breath_sounds", {
+    "community_acquired_pneumonia": 0.35, "acute_pulmonary_oedema": 0.15,
+    "pulmonary_embolism": 0.10, "acute_coronary_syndrome": 0.05,
+    "pericarditis": 0.05, "panic_attack": 0.02,
+})
+_complete("palpitations", {
+    "pulmonary_embolism": 0.25, "acute_pulmonary_oedema": 0.20,
+    "pericarditis": 0.20, "copd_exacerbation": 0.12,
+    "asthma_exacerbation": 0.12, "community_acquired_pneumonia": 0.08,
+})
+_complete("pleuritic_pain", {
+    "copd_exacerbation": 0.10, "acute_pulmonary_oedema": 0.08,
+    "asthma_exacerbation": 0.08,
+})
+_complete("exertional_chest_pain", {
+    "pulmonary_embolism": 0.15, "copd_exacerbation": 0.10,
+    "community_acquired_pneumonia": 0.08, "asthma_exacerbation": 0.08,
+})
+_complete("orthopnoea", {
+    "acute_coronary_syndrome": 0.20, "pericarditis": 0.15, "panic_attack": 0.05,
+})
+_complete("leg_swelling", {
+    "acute_coronary_syndrome": 0.10, "pericarditis": 0.10,
+    "asthma_exacerbation": 0.05, "panic_attack": 0.03,
+})
+
+# -- risk factors: base rates, deliberately NOT low -------------------------
+# The trap this whole block exists to avoid. Immobility and smoking are not
+# caused by any of these diseases, so their rate in each disease's population
+# is roughly the population's own -- higher where the disease selects for an
+# older, sicker, more sedentary group, and lower in panic attack, which
+# selects for the young.
+_complete("recent_immobility", {
+    "acute_pulmonary_oedema": 0.20, "community_acquired_pneumonia": 0.18,
+    "copd_exacerbation": 0.18, "acute_coronary_syndrome": 0.12,
+    "pericarditis": 0.10, "asthma_exacerbation": 0.08, "panic_attack": 0.05,
+})
+_complete("calf_tenderness", {
+    "acute_pulmonary_oedema": 0.10, "copd_exacerbation": 0.06,
+    "community_acquired_pneumonia": 0.05, "acute_coronary_syndrome": 0.05,
+    "pericarditis": 0.05, "asthma_exacerbation": 0.04, "panic_attack": 0.03,
+})
+_complete("smoking_history", {
+    "acute_pulmonary_oedema": 0.45, "community_acquired_pneumonia": 0.35,
+    "pulmonary_embolism": 0.30, "pericarditis": 0.25, "panic_attack": 0.25,
+})
+
+
+def _complete_uncharacterised(kb: InMemoryKnowledgeBase) -> None:
+    """Write the chosen values in, and refuse to paper over a stale entry.
+
+    Raising rather than skipping when a cell is already characterised keeps
+    this block from quietly shadowing a sourced number later: if sourcing
+    reaches one of these cells, the completion for it must be deleted
+    deliberately, and the failure says so.
+    """
+    by_disease: dict[str, dict[str, float]] = {}
+    for (label, concept), value in _COMPLETIONS.items():
+        by_disease.setdefault(label, {})[concept] = value
+
+    for label, additions in by_disease.items():
+        entry = kb.entries.get(label)
+        if entry is None:
+            raise KeyError(f"_COMPLETIONS names {label!r}, not in the KB")
+        features = dict(entry.features)
+        for concept, value in additions.items():
+            if concept in features:
+                raise KeyError(
+                    f"_COMPLETIONS sets {label}/{concept}, which the entry "
+                    "already characterises. Delete the completion rather than "
+                    "letting it shadow the existing value."
+                )
+            features[concept] = value
+        kb.entries[label] = dataclasses.replace(entry, features=features)
+    kb._marginals.clear()
+
+
 def _apply_sources(kb: InMemoryKnowledgeBase) -> None:
     """Overwrite invented likelihoods with sourced ones, recording provenance."""
     by_disease: dict[str, dict[str, tuple[float, LikelihoodSource]]] = {}
@@ -576,7 +746,9 @@ UNLISTED_IS_ATYPICAL = NARRATIVE_RUBRIC["not typical"][0]
 
 
 def build_knowledge_base(
-    correlated: bool = False, unlisted_as_atypical: bool = False
+    correlated: bool = False,
+    unlisted_as_atypical: bool = False,
+    complete_grid: bool = False,
 ) -> InMemoryKnowledgeBase:
     """Return the synthetic KB. See the module docstring: numbers are invented.
 
@@ -589,6 +761,12 @@ def build_knowledge_base(
     ``InMemoryKnowledgeBase.backoff`` for the argument and what it costs; it
     is off by default because it changes every uncharacterised cell at once
     and that is a decision to take on measurement, not by default.
+
+    ``complete_grid=True`` writes the 77 chosen values in ``_COMPLETIONS``
+    into the entries, so no cell falls back to anything. Off by default for
+    a reason recorded rather than assumed: it is 77 invented numbers from one
+    non-clinician, it takes the sourced fraction from 27% to 17%, and it
+    revises four findings this project had already measured. See DESIGN.md.
     """
     register_costs(COSTS)
     kb = InMemoryKnowledgeBase(
@@ -832,6 +1010,8 @@ def build_knowledge_base(
             citations=_cite("FIXTURE-KB", "panic", "synthetic entry, not sourced"),
         )
     )
+    if complete_grid:
+        _complete_uncharacterised(kb)
     _apply_sources(kb)
     if correlated:
         kb.set_correlations(correlation_pairs())

@@ -2634,6 +2634,66 @@ def test_reading_unlisted_findings_as_atypical_buys_rank_and_costs_safety():
     )
 
 
+def test_completing_the_grid_buys_rank_and_costs_one_wrong_commit():
+    """The measured trade behind ``complete_grid`` being off by default.
+
+    Filling all 77 uncharacterised cells removes indefensible values -- a
+    pericardial friction rub asserted at 0.60 for panic attack, Wells
+    criteria handed to every disease at pulmonary embolism's own rate -- and
+    it works: mean true-diagnosis rank over the real cases improves 2.38 to
+    2.00 and the confirmed NSTEMI climbs from fourth to second, where it
+    escalates rather than committing wrongly.
+
+    It is still not obviously worth it, which is why it is a flag. It is 77
+    invented numbers from one non-clinician in one sitting, it takes the
+    sourced fraction from 27% to 17%, it costs a fixture case on the
+    no-workup arm, and it turns one abstention into a wrong commit --
+    acute coronary syndrome committed at 82% on a true pericarditis.
+
+    That wrong commit errs *toward* the time-critical diagnosis, which is
+    the direction this project's asymmetry says to prefer and the direction
+    the source case's own clinicians took (they went to angiography). That
+    is an argument for adopting it, not a proof, and the decision wants a
+    clinician rather than a passing test.
+    """
+    from dxagent import AbstentionGate, DiagnosticAgent, LoopLimits, Verdict
+    from dxagent.belief import BayesianProposer
+    from dxagent.datasets import REAL_CASES
+    from dxagent.datasets.fixtures import build_knowledge_base as build
+
+    def measure(grid: bool) -> tuple[int, float]:
+        kb = build(correlated=True, complete_grid=grid)
+        agent = DiagnosticAgent(
+            kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb),
+            limits=LoopLimits(
+                uninformative_turns_still_count=False,
+                unanswered_actions_still_cost=False,
+            ),
+        )
+        wrong, ranks = 0, []
+        for case in REAL_CASES:
+            outcome = agent.run(case)
+            labels = [h.label for h in outcome.differential.hypotheses]
+            ranks.append(labels.index(case.diagnosis) + 1)
+            if outcome.verdict is Verdict.COMMITTED:
+                wrong += outcome.prediction != case.diagnosis
+        return wrong, sum(ranks) / len(ranks)
+
+    off_wrong, off_rank = measure(False)
+    on_wrong, on_rank = measure(True)
+
+    assert off_wrong == 0, "the shipped grid still commits nothing wrong"
+    assert on_wrong > off_wrong, "completing the grid trades an abstention away"
+    assert on_rank < off_rank, "and buys ranking with it"
+
+    # No cell is left to fall back on once the grid is complete.
+    kb = build(correlated=True, complete_grid=True)
+    every = {c for e in kb.diseases() for c in e.features}
+    assert not [
+        (e.label, c) for c in every for e in kb.diseases() if c not in e.features
+    ]
+
+
 def test_escalation_names_a_workup_item_that_was_sought_but_unavailable():
     """An escalation a clinician can act on names the missing test.
 
