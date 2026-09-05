@@ -3,566 +3,510 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>dxagent — Live Consultation</title>
+<title>dxagent — consultation record</title>
 <style>
+/* ============================================================ tokens ==
+   One idea runs through this sheet: medicine is set in serif, the
+   machine's own workings are set in monospace. Probabilities, costs,
+   citations, provenance tags and identifiers are the model talking about
+   itself; findings, questions and diagnoses are clinical content. The
+   typeface says which is which, so the colour does not have to.
+   ==================================================================== */
 :root {
-  --bg: #060910;
-  --bg-2: #0b1220;
-  --glass: rgba(255,255,255,0.045);
-  --glass-2: rgba(255,255,255,0.028);
-  --stroke: rgba(255,255,255,0.09);
-  --stroke-2: rgba(255,255,255,0.055);
-  --text: #e9eef7;
-  --muted: #8496ae;
-  --dim: #5b6b83;
-  --teal: #2dd4bf;
-  --blue: #60a5fa;
-  --violet: #a78bfa;
-  --green: #34d399;
-  --rose: #fb7185;
-  --amber: #fbbf24;
-  --radius: 18px;
-  --ease: cubic-bezier(.2,.8,.2,1);
+  --paper:      #f6f5f2;
+  --sheet:      #fffffe;
+  --ink:        #16181b;
+  --ink-2:      #3c4249;
+  --muted:      #757b83;
+  --faint:      #a3a8ae;
+  --rule:       #e0ded8;
+  --rule-2:     #ebe9e4;
+  --present:    #1d6b3f;
+  --absent:     #a2222b;
+  --flag:       #a2222b;
+  --mark:       #16181b;
+  --serif: Iowan Old Style, "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 * { box-sizing: border-box; }
-html, body { height: 100%; }
+html { -webkit-text-size-adjust: 100%; }
 body {
-  margin: 0;
-  background:
-    radial-gradient(1100px 600px at 12% -8%, rgba(45,212,191,0.10), transparent 60%),
-    radial-gradient(900px 550px at 92% 4%, rgba(96,165,250,0.10), transparent 62%),
-    radial-gradient(800px 600px at 50% 110%, rgba(167,139,250,0.07), transparent 65%),
-    var(--bg);
-  color: var(--text);
-  font-family: ui-sans-serif, -apple-system, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
-  font-size: 15px;
-  line-height: 1.5;
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--serif); font-size: 16px; line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  min-height: 100%;
 }
-.tnum { font-variant-numeric: tabular-nums; }
-
-/* ---------------------------------------------------------------- header */
-header {
-  position: sticky; top: 0; z-index: 40;
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 16px; flex-wrap: wrap;
-  padding: 16px 28px;
-  background: rgba(6,9,16,0.72);
-  backdrop-filter: blur(18px) saturate(140%);
-  border-bottom: 1px solid var(--stroke-2);
-}
-.brand { display: flex; align-items: center; gap: 12px; }
-.mark {
-  width: 34px; height: 34px; border-radius: 11px;
-  background: linear-gradient(140deg, var(--teal), var(--blue) 60%, var(--violet));
-  display: grid; place-items: center;
-  font-weight: 800; font-size: 15px; color: #04121a;
-  box-shadow: 0 6px 22px rgba(45,212,191,0.28);
-}
-.brand h1 { margin: 0; font-size: 16px; font-weight: 650; letter-spacing: -0.2px; }
-.brand .sub { margin: 0; font-size: 11.5px; color: var(--dim); letter-spacing: 0.2px; }
-.warn {
-  font-size: 11px; letter-spacing: .3px; color: #fcd9a0;
-  background: rgba(251,191,36,0.10);
-  border: 1px solid rgba(251,191,36,0.28);
-  padding: 6px 12px; border-radius: 999px; white-space: nowrap;
-}
-
-/* ------------------------------------------------------------------ shell */
-main { max-width: 1240px; margin: 0 auto; padding: 30px 24px 90px; }
-.stage { animation: rise .45s var(--ease) both; }
-@keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.num  { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .hidden { display: none !important; }
 
-.panel {
-  background: linear-gradient(180deg, var(--glass), var(--glass-2));
-  border: 1px solid var(--stroke);
-  border-radius: var(--radius);
-  backdrop-filter: blur(14px);
+/* ============================================================= chrome == */
+.topbar {
+  border-bottom: 1px solid var(--rule);
+  background: var(--sheet);
+  position: sticky; top: 0; z-index: 20;
 }
-
-/* ------------------------------------------------------------------ start */
-#start { max-width: 720px; margin: 6vh auto 0; padding: 40px; }
-#start .eyebrow {
-  font-size: 11.5px; letter-spacing: 2px; text-transform: uppercase;
-  color: var(--teal); font-weight: 700; margin-bottom: 14px;
+.topbar-in {
+  max-width: 1080px; margin: 0 auto; padding: 13px 28px;
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
 }
-#start h2 {
-  margin: 0 0 14px; font-size: 34px; line-height: 1.12; letter-spacing: -1px; font-weight: 700;
-  background: linear-gradient(120deg, #fff 20%, #9fd8ff 75%, #b7a6ff);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
+.wordmark { display: flex; align-items: baseline; gap: 10px; }
+.wordmark .name {
+  font-family: var(--mono); font-size: 13.5px; font-weight: 600;
+  letter-spacing: .01em; color: var(--ink);
 }
-#start p { color: var(--muted); font-size: 14.5px; margin: 0 0 26px; max-width: 58ch; }
-textarea {
-  width: 100%; min-height: 108px; resize: vertical;
-  background: rgba(255,255,255,0.035);
-  border: 1px solid var(--stroke); border-radius: 14px;
-  padding: 16px 18px; color: var(--text); font: inherit;
-  transition: border-color .2s, box-shadow .2s, background .2s;
-}
-textarea::placeholder { color: var(--dim); }
-textarea:focus {
-  outline: none; border-color: rgba(45,212,191,0.55);
-  background: rgba(255,255,255,0.055);
-  box-shadow: 0 0 0 4px rgba(45,212,191,0.10);
-}
-.examples { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 24px; }
-.chip {
-  font-size: 12.5px; color: var(--muted); cursor: pointer;
-  background: rgba(255,255,255,0.04); border: 1px solid var(--stroke-2);
-  padding: 7px 13px; border-radius: 999px;
-  transition: all .18s var(--ease);
-}
-.chip:hover { color: var(--text); border-color: rgba(45,212,191,0.45); transform: translateY(-1px); }
-
-.btn {
-  border: none; border-radius: 13px; cursor: pointer;
-  font: inherit; font-weight: 650; font-size: 14.5px;
-  padding: 14px 26px;
-  transition: transform .12s var(--ease), box-shadow .2s, filter .2s, opacity .2s;
-}
-.btn:disabled { opacity: .55; cursor: default; }
-.btn-primary {
-  background: linear-gradient(135deg, var(--teal), #38bdf8);
-  color: #04141b;
-  box-shadow: 0 10px 30px rgba(45,212,191,0.22);
-}
-.btn-primary:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 14px 38px rgba(45,212,191,0.3); }
-.btn-ghost {
-  background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--stroke);
-}
-.btn-ghost:hover { background: rgba(255,255,255,0.09); transform: translateY(-1px); }
-
-/* ------------------------------------------------------------- consult */
-.grid { display: grid; grid-template-columns: 1.25fr .95fr; gap: 20px; align-items: start; }
-@media (max-width: 940px) { .grid { grid-template-columns: 1fr; } }
-
-.gauges { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
-.gauge { flex: 1; min-width: 180px; padding: 14px 18px; border-radius: 14px;
-  background: var(--glass-2); border: 1px solid var(--stroke-2); }
-.gauge .g-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 9px; }
-.gauge .g-name { font-size: 11px; letter-spacing: 1.3px; text-transform: uppercase; color: var(--dim); font-weight: 700; }
-.gauge .g-val { font-size: 14px; font-weight: 700; }
-.g-track { height: 5px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden; }
-.g-fill { height: 100%; border-radius: 999px; width: 0; transition: width .7s var(--ease); }
-.g-turns .g-fill { background: linear-gradient(90deg, var(--blue), var(--violet)); }
-.g-cost .g-fill { background: linear-gradient(90deg, var(--teal), var(--amber)); }
-
-#qcard { padding: 30px; position: relative; overflow: hidden; }
-#qcard::before {
-  content: ""; position: absolute; inset: -1px -1px auto -1px; height: 2px;
-  background: linear-gradient(90deg, transparent, var(--teal), var(--blue), transparent);
+.wordmark .desc { font-size: 13px; color: var(--muted); font-style: italic; }
+.stamp {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em;
+  color: var(--flag); border: 1.5px solid var(--flag);
+  padding: 4px 8px; transform: rotate(-1.6deg); white-space: nowrap;
   opacity: .8;
 }
-.q-meta { display: flex; align-items: center; gap: 9px; margin-bottom: 16px; flex-wrap: wrap; }
-.kindtag {
-  font-size: 10.5px; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 800;
-  padding: 5px 11px; border-radius: 999px;
+
+main { max-width: 1080px; margin: 0 auto; padding: 34px 28px 90px; }
+.view { animation: fade .3s ease both; }
+@keyframes fade { from { opacity: 0 } }
+
+/* section label: small caps + a rule that runs to the end of the column */
+.lab {
+  display: flex; align-items: center; gap: 12px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 14px;
 }
-.k-ask { background: rgba(96,165,250,.14); color: #93c5fd; border: 1px solid rgba(96,165,250,.3); }
-.k-examine { background: rgba(167,139,250,.14); color: #c4b5fd; border: 1px solid rgba(167,139,250,.3); }
-.k-lab { background: rgba(45,212,191,.14); color: #5eead4; border: 1px solid rgba(45,212,191,.3); }
-.k-imaging { background: rgba(251,191,36,.14); color: #fcd34d; border: 1px solid rgba(251,191,36,.3); }
-.costtag { font-size: 11.5px; color: var(--dim); }
-#qtext {
-  font-size: 30px; font-weight: 680; letter-spacing: -.7px; line-height: 1.18;
-  margin-bottom: 14px; text-transform: capitalize;
+.lab::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+/* ============================================================== start == */
+#start { max-width: 660px; }
+#start .ref { font-family: var(--mono); font-size: 11px; color: var(--faint); letter-spacing: .08em; margin-bottom: 22px; }
+#start h1 { font-size: 40px; line-height: 1.1; font-weight: 400; margin: 0 0 18px; letter-spacing: -.01em; }
+#start .intro { font-size: 16.5px; color: var(--ink-2); margin: 0 0 30px; }
+#start .intro em { font-style: italic; }
+
+textarea {
+  width: 100%; min-height: 92px; resize: vertical;
+  font-family: var(--serif); font-size: 16.5px; line-height: 1.45; color: var(--ink);
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 2px;
+  padding: 14px 15px;
 }
+textarea::placeholder { color: var(--faint); font-style: italic; }
+textarea:focus { outline: none; border-color: var(--ink); }
+
+.egs { margin: 22px 0 30px; border-top: 1px solid var(--rule); }
+.eg {
+  display: flex; gap: 14px; align-items: baseline; width: 100%; text-align: left;
+  padding: 10px 4px; background: none; border: none; border-bottom: 1px solid var(--rule-2);
+  font-family: var(--serif); font-size: 15px; color: var(--ink-2); cursor: pointer;
+}
+.eg:hover { background: #f0eeE9; color: var(--ink); }
+.eg .n { font-family: var(--mono); font-size: 10.5px; color: var(--faint); }
+
+.btn {
+  font-family: var(--mono); font-size: 12px; letter-spacing: .07em; text-transform: uppercase;
+  padding: 12px 20px; border-radius: 2px; cursor: pointer;
+  border: 1px solid var(--ink); background: var(--ink); color: var(--sheet);
+}
+.btn:hover { background: #000; }
+.btn:disabled { opacity: .4; cursor: default; }
+.btn-o { background: none; color: var(--ink); }
+.btn-o:hover { background: var(--ink); color: var(--sheet); }
+
+/* =========================================================== telemetry == */
+.telem {
+  display: flex; gap: 28px; flex-wrap: wrap; align-items: center;
+  border-top: 1px solid var(--ink); border-bottom: 1px solid var(--rule);
+  padding: 9px 2px; margin-bottom: 26px;
+  font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: .04em;
+}
+.telem b { color: var(--ink); font-weight: 600; }
+.telem .meter { width: 74px; height: 3px; background: var(--rule); display: inline-block; vertical-align: middle; margin-left: 8px; }
+.telem .meter i { display: block; height: 100%; width: 0; background: var(--ink); transition: width .5s ease; }
+
+/* ============================================================== layout == */
+.cols { display: grid; grid-template-columns: 1fr 400px; gap: 42px; align-items: start; }
+@media (max-width: 900px) { .cols { grid-template-columns: 1fr; gap: 34px; } }
+
+/* ============================================================ question == */
+.qwrap { border-top: 1px solid var(--ink); padding-top: 18px; }
+.qmeta {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em;
+  color: var(--muted); text-transform: uppercase; margin-bottom: 10px;
+  display: flex; gap: 14px; flex-wrap: wrap;
+}
+.qmeta .kind { color: var(--ink); }
+#qtext { font-size: 33px; line-height: 1.14; font-weight: 400; margin-bottom: 16px; letter-spacing: -.01em; }
 #qwhy {
-  font-size: 12.8px; color: var(--muted); margin-bottom: 26px;
-  padding: 11px 14px; border-radius: 11px;
-  background: rgba(255,255,255,0.032); border: 1px solid var(--stroke-2);
+  font-family: var(--mono); font-size: 11.5px; line-height: 1.65; color: var(--muted);
+  border-left: 2px solid var(--rule); padding: 2px 0 2px 12px; margin-bottom: 26px;
 }
-#qwhy b { color: var(--teal); font-weight: 650; }
+#qwhy span { color: var(--ink-2); }
 
-.answers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 11px; }
-@media (max-width: 560px) { .answers { grid-template-columns: 1fr; } }
-.abtn {
-  position: relative; cursor: pointer; font: inherit;
-  border-radius: 14px; padding: 17px 12px 15px;
-  border: 1px solid var(--stroke); background: rgba(255,255,255,0.04);
-  color: var(--text); text-align: center;
-  transition: transform .12s var(--ease), border-color .2s, background .2s, box-shadow .2s;
+.ans { display: flex; gap: 0; border: 1px solid var(--ink); border-radius: 2px; overflow: hidden; }
+.ans button {
+  flex: 1; background: var(--sheet); border: none; border-right: 1px solid var(--rule);
+  padding: 15px 8px 13px; cursor: pointer; font-family: var(--serif); font-size: 17px; color: var(--ink);
+  transition: background .12s;
 }
-.abtn .a-main { font-weight: 700; font-size: 15px; display: block; }
-.abtn .a-key {
-  display: inline-block; margin-top: 6px; font-size: 10.5px; color: var(--dim);
-  border: 1px solid var(--stroke); border-radius: 6px; padding: 1px 6px;
+.ans button:last-child { border-right: none; }
+.ans button .k {
+  display: block; font-family: var(--mono); font-size: 9.5px; color: var(--faint);
+  letter-spacing: .1em; margin-top: 5px;
 }
-.abtn:not(:disabled):hover { transform: translateY(-3px); }
-.abtn:disabled { opacity: .45; cursor: default; }
-.a-yes:not(:disabled):hover { border-color: rgba(52,211,153,.6); background: rgba(52,211,153,.13); box-shadow: 0 10px 26px rgba(52,211,153,.16); }
-.a-no:not(:disabled):hover { border-color: rgba(251,113,133,.6); background: rgba(251,113,133,.13); box-shadow: 0 10px 26px rgba(251,113,133,.16); }
-.a-unk:not(:disabled):hover { border-color: var(--stroke); background: rgba(255,255,255,.085); }
-.a-yes .a-main { color: #6ee7b7; }
-.a-no .a-main { color: #fda4af; }
-.a-unk .a-main { color: var(--muted); }
+.ans button:not(:disabled):hover { background: #efece6; }
+.ans button:disabled { opacity: .35; cursor: default; }
+.ans .yes:not(:disabled):hover { background: #e8f1ea; color: var(--present); }
+.ans .no:not(:disabled):hover  { background: #f7e9ea; color: var(--absent); }
 
-/* thinking */
-#thinking { display: flex; align-items: center; gap: 11px; margin-top: 20px; color: var(--muted); font-size: 13px; }
-.dots { display: inline-flex; gap: 5px; }
-.dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); animation: bounce 1.05s infinite ease-in-out; }
-.dots i:nth-child(2) { animation-delay: .14s; }
-.dots i:nth-child(3) { animation-delay: .28s; }
-@keyframes bounce { 0%,80%,100% { transform: translateY(0); opacity:.35 } 40% { transform: translateY(-6px); opacity:1 } }
+#thinking {
+  font-family: var(--mono); font-size: 11px; color: var(--muted);
+  margin-top: 14px; letter-spacing: .05em;
+}
+#thinking i { font-style: normal; animation: blink 1s steps(1) infinite; }
+#thinking i:nth-child(2) { animation-delay: .25s }
+#thinking i:nth-child(3) { animation-delay: .5s }
+@keyframes blink { 50% { opacity: 0 } }
 
-/* ------------------------------------------------------- differential */
-.side { padding: 24px; }
-.side h3, .hist h3 {
-  margin: 0 0 4px; font-size: 11.5px; letter-spacing: 1.6px; text-transform: uppercase;
-  color: var(--dim); font-weight: 800;
+/* ================================================================ log == */
+.log { margin-top: 42px; }
+.log table { width: 100%; border-collapse: collapse; }
+.log th {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); font-weight: 400; text-align: left; padding: 0 0 7px;
+  border-bottom: 1px solid var(--rule);
 }
-.side .hint { font-size: 11.5px; color: var(--dim); margin: 0 0 18px; }
+.log th.r, .log td.r { text-align: right; }
+.log td { padding: 8px 0; border-bottom: 1px solid var(--rule-2); font-size: 15px; }
+.log td.i { font-family: var(--mono); font-size: 10.5px; color: var(--faint); width: 30px; }
+.log td.res { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; }
+.res-present { color: var(--present); }
+.res-absent  { color: var(--absent); }
+.res-unknown { color: var(--faint); }
+.log .empty { font-style: italic; color: var(--faint); font-size: 14.5px; padding: 10px 0; }
 
-.dx { padding: 11px 0; border-bottom: 1px solid var(--stroke-2); cursor: pointer; }
-.dx:last-child { border-bottom: none; }
-.dx-head { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
-.dx-name { font-size: 13.6px; font-weight: 600; text-transform: capitalize; flex: 1;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dx-pct { font-size: 13.5px; font-weight: 750; }
-.flag {
-  font-size: 9px; font-weight: 800; letter-spacing: .8px; padding: 2px 6px; border-radius: 5px;
-  background: rgba(251,113,133,.14); color: #fda4af; border: 1px solid rgba(251,113,133,.3);
+/* ======================================================= differential == */
+.dxt { width: 100%; border-collapse: collapse; }
+.dxt th {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); font-weight: 400; text-align: left; padding: 0 0 7px;
+  border-bottom: 1px solid var(--ink);
 }
-.dx-track { height: 7px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden; }
-.dx-fill {
-  height: 100%; border-radius: 999px; width: 0;
-  background: linear-gradient(90deg, rgba(96,165,250,.75), rgba(45,212,191,.85));
-  transition: width .65s var(--ease);
+.dxt th.r { text-align: right; }
+.dxrow { border-bottom: 1px solid var(--rule-2); cursor: pointer; }
+.dxrow:hover > td { background: #f0eeE9; }
+.dxrow td { padding: 9px 0 8px; vertical-align: baseline; }
+.dxrow td.rank { font-family: var(--mono); font-size: 10.5px; color: var(--faint); width: 26px; }
+.dxrow td.nm { font-size: 15.5px; line-height: 1.25; }
+.dxrow td.nm .fl {
+  font-family: var(--mono); font-size: 8.5px; letter-spacing: .09em; color: var(--flag);
+  border: 1px solid var(--flag); padding: 1px 4px; margin-left: 7px; vertical-align: 2px;
 }
-.dx.lead .dx-fill { background: linear-gradient(90deg, var(--teal), var(--green)); box-shadow: 0 0 16px rgba(52,211,153,.45); }
-.dx.lead .dx-pct { color: var(--green); }
-.dx-ev { display: none; margin-top: 11px; padding-left: 11px; border-left: 2px solid var(--stroke); }
-.dx.open .dx-ev { display: block; animation: rise .3s var(--ease) both; }
-.ev-h { font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; font-weight: 800; margin: 8px 0 4px; }
-.ev-h.s { color: #6ee7b7; } .ev-h.a { color: #fda4af; }
-.ev-i { font-size: 11.8px; color: var(--muted); margin: 3px 0; line-height: 1.45; }
-.ev-i code { color: var(--dim); font-size: 11px; }
+.dxrow td.p { font-family: var(--mono); font-size: 13px; text-align: right; width: 62px; font-variant-numeric: tabular-nums; }
+.dxrow.lead td.nm, .dxrow.lead td.p { font-weight: 600; }
+.barcell { padding: 0 0 9px !important; }
+.bar { height: 3px; background: var(--rule); }
+.bar i { display: block; height: 100%; width: 0; background: var(--ink-2); transition: width .55s cubic-bezier(.2,.8,.2,1); }
+.dxrow.lead .bar i { background: var(--ink); }
 
-/* history */
-.hist { padding: 22px 24px; margin-top: 20px; }
-.h-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 13px; border-bottom: 1px solid var(--stroke-2); }
-.h-row:last-child { border-bottom: none; }
-.h-n { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center;
-  font-size: 10.5px; font-weight: 700; color: var(--dim); background: rgba(255,255,255,.05); flex: none; }
-.h-label { flex: 1; color: var(--muted); text-transform: capitalize; }
-.h-ans { font-size: 11px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; }
-.h-present { background: rgba(52,211,153,.14); color: #6ee7b7; }
-.h-absent { background: rgba(251,113,133,.14); color: #fda4af; }
-.h-unknown { background: rgba(255,255,255,.05); color: var(--dim); }
-.h-empty { font-size: 12.5px; color: var(--dim); padding: 6px 0; }
+.ev { display: none; padding: 2px 0 14px 26px; }
+.dxrow.open + .evrow .ev { display: block; animation: fade .25s ease both; }
+.ev h4 {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
+  font-weight: 400; margin: 10px 0 5px; color: var(--muted);
+}
+.ev h4.s { color: var(--present); } .ev h4.a { color: var(--absent); }
+.ev p { font-family: var(--mono); font-size: 11px; line-height: 1.6; color: var(--ink-2); margin: 0 0 4px; }
+.ev p .src { color: var(--faint); }
+.ev .none { font-family: var(--serif); font-style: italic; font-size: 13.5px; color: var(--muted); }
+.evrow td { padding: 0; border: none; }
 
-/* ----------------------------------------------------------- result */
-#result { max-width: 900px; margin: 0 auto; }
-.verdict-card { padding: 38px; position: relative; overflow: hidden; margin-bottom: 20px; }
-.verdict-card::after {
-  content: ""; position: absolute; width: 420px; height: 420px; right: -140px; top: -190px;
-  border-radius: 50%; filter: blur(70px); opacity: .3; pointer-events: none;
+/* ============================================================= result == */
+#result { max-width: 780px; }
+.verdict { border-top: 3px solid var(--ink); padding-top: 20px; margin-bottom: 34px; }
+.verdict .tag {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 14px;
 }
-.verdict-card.committed::after { background: var(--green); }
-.verdict-card.escalated::after { background: var(--amber); }
-.v-tag {
-  display: inline-flex; align-items: center; gap: 7px;
-  font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase; font-weight: 800;
-  padding: 6px 13px; border-radius: 999px; margin-bottom: 18px;
+.verdict.esc { border-top-color: var(--absent); }
+.verdict.esc .tag { color: var(--absent); }
+.verdict h2 { font-size: 42px; line-height: 1.08; font-weight: 400; margin: 0 0 14px; letter-spacing: -.015em; }
+.verdict .why { font-size: 16px; color: var(--ink-2); max-width: 60ch; margin: 0 0 24px; }
+.vstats { display: flex; gap: 0; border-top: 1px solid var(--rule); }
+.vstats div { flex: 1; padding: 13px 0; border-right: 1px solid var(--rule-2); }
+.vstats div:last-child { border-right: none; }
+.vstats .v { font-family: var(--mono); font-size: 21px; }
+.vstats .k { font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
+.unres {
+  border-left: 2px solid var(--absent); padding: 4px 0 4px 13px; margin-top: 22px;
+  font-family: var(--mono); font-size: 11.5px; line-height: 1.6; color: var(--ink-2);
 }
-.committed .v-tag { background: rgba(52,211,153,.14); color: #6ee7b7; border: 1px solid rgba(52,211,153,.32); }
-.escalated .v-tag { background: rgba(251,191,36,.13); color: #fcd34d; border: 1px solid rgba(251,191,36,.32); }
-.v-head { font-size: 38px; font-weight: 730; letter-spacing: -1.3px; line-height: 1.1; text-transform: capitalize; margin-bottom: 12px; }
-.v-sub { color: var(--muted); font-size: 14.5px; max-width: 62ch; }
-.v-stats { display: flex; gap: 26px; margin-top: 24px; flex-wrap: wrap; }
-.v-stat .n { font-size: 25px; font-weight: 750; letter-spacing: -.5px; }
-.v-stat .l { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--dim); font-weight: 700; }
-.unresolved {
-  margin-top: 22px; padding: 14px 17px; border-radius: 13px;
-  background: rgba(251,191,36,.07); border: 1px solid rgba(251,191,36,.22);
-  font-size: 13.5px; color: #fcd9a0;
+.unres b { color: var(--absent); font-weight: 400; }
+
+footer {
+  max-width: 1080px; margin: 0 auto; padding: 0 28px 46px;
+  font-family: var(--mono); font-size: 10.5px; color: var(--faint); line-height: 1.7;
+  border-top: 1px solid var(--rule); padding-top: 16px;
 }
-footer { text-align: center; color: var(--dim); font-size: 11.5px; padding: 0 24px 44px; }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="brand">
-    <div class="mark">dx</div>
-    <div>
-      <h1>dxagent — Live Consultation</h1>
-      <p class="sub">Agentic diagnostic reasoning · dyspnoea &amp; chest pain</p>
-    </div>
+<div class="topbar"><div class="topbar-in">
+  <div class="wordmark">
+    <span class="name">dxagent</span>
+    <span class="desc">consultation record</span>
   </div>
-  <span class="warn">Not for clinical use — knowledge base is largely invented</span>
-</header>
+  <div class="stamp">NOT FOR CLINICAL USE</div>
+</div></div>
 
 <main>
 
   <!-- ------------------------------------------------------------ start -->
-  <section id="start" class="panel stage">
-    <div class="eyebrow">New consultation</div>
-    <h2>What brings the patient in today?</h2>
-    <p>
-      The agent asks one question at a time — you answer as the patient — and its
-      differential re-ranks after every answer, showing which evidence moved it and why
-      it chose that question. It ends by committing with cited evidence, or escalating
-      and naming exactly what it could not resolve.
+  <section id="start" class="view">
+    <div class="ref">FORM 01 · PRESENTING COMPLAINT</div>
+    <h1>What brings the patient in today?</h1>
+    <p class="intro">
+      The agent asks one question at a time and you answer as the patient. After every
+      answer it re-ranks eight competing diagnoses, and it shows <em>why</em> it chose the
+      question it chose. It finishes by committing to a diagnosis with cited evidence, or
+      by escalating and naming the question it could not resolve.
     </p>
-    <textarea id="complaint" placeholder="e.g. 64-year-old woman, sudden shortness of breath and sharp chest pain, worse lying flat"></textarea>
-    <div class="examples" id="examples"></div>
-    <button class="btn btn-primary" id="begin">Begin consultation →</button>
+    <textarea id="complaint" placeholder="64-year-old woman, sudden shortness of breath and sharp chest pain, worse lying flat"></textarea>
+    <div class="egs" id="egs"></div>
+    <button class="btn" id="begin">Begin consultation</button>
   </section>
 
   <!-- ---------------------------------------------------------- consult -->
-  <section id="consult" class="stage hidden">
-    <div class="gauges">
-      <div class="gauge g-turns">
-        <div class="g-top"><span class="g-name">Turn</span><span class="g-val tnum" id="g-turn-val">1 / 12</span></div>
-        <div class="g-track"><div class="g-fill" id="g-turn-fill"></div></div>
-      </div>
-      <div class="gauge g-cost">
-        <div class="g-top"><span class="g-name">Cost budget</span><span class="g-val tnum" id="g-cost-val">0.0 / 40</span></div>
-        <div class="g-track"><div class="g-fill" id="g-cost-fill"></div></div>
-      </div>
+  <section id="consult" class="view hidden">
+    <div class="telem">
+      <span>TURN <b id="t-turn">01/12</b><span class="meter"><i id="t-turn-m"></i></span></span>
+      <span>COST <b id="t-cost">0.0/40.0</b><span class="meter"><i id="t-cost-m"></i></span></span>
+      <span id="t-case" style="color:var(--faint)"></span>
     </div>
 
-    <div class="grid">
+    <div class="cols">
       <div>
-        <div class="panel" id="qcard">
-          <div class="q-meta">
-            <span class="kindtag k-ask" id="qkind">ask</span>
-            <span class="costtag" id="qcost"></span>
+        <div class="qwrap">
+          <div class="qmeta">
+            <span class="kind" id="qkind">ask</span>
+            <span id="qcost"></span>
           </div>
-          <div id="qtext">…</div>
+          <h2 id="qtext">—</h2>
           <div id="qwhy"></div>
-          <div class="answers">
-            <button class="abtn a-yes" data-ans="present"><span class="a-main">Present</span><span class="a-key">Y</span></button>
-            <button class="abtn a-no" data-ans="absent"><span class="a-main">Absent</span><span class="a-key">N</span></button>
-            <button class="abtn a-unk" data-ans="unknown"><span class="a-main">Not known</span><span class="a-key">U</span></button>
+          <div class="ans">
+            <button class="yes" data-ans="present">Present<span class="k">Y</span></button>
+            <button class="no"  data-ans="absent">Absent<span class="k">N</span></button>
+            <button class="unk" data-ans="unknown">Not known<span class="k">U</span></button>
           </div>
-          <div id="thinking" class="hidden">
-            <span class="dots"><i></i><i></i><i></i></span> reasoning over the updated evidence…
-          </div>
+          <div id="thinking" class="hidden">recomputing the differential<i>.</i><i>.</i><i>.</i></div>
         </div>
 
-        <div class="panel hist">
-          <h3>Evidence gathered</h3>
-          <div id="hist-list"></div>
+        <div class="log">
+          <div class="lab">Evidence gathered</div>
+          <table><thead><tr><th></th><th>Finding</th><th class="r">Result</th></tr></thead>
+            <tbody id="logbody"></tbody></table>
         </div>
       </div>
 
-      <div class="panel side">
-        <h3>Live differential</h3>
-        <p class="hint">Click any diagnosis to see the evidence behind it.</p>
-        <div id="dx-list"></div>
+      <div>
+        <div class="lab">Differential</div>
+        <table class="dxt">
+          <thead><tr><th></th><th>Diagnosis</th><th class="r">P</th></tr></thead>
+          <tbody id="dxbody"></tbody>
+        </table>
+        <p style="font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:12px;letter-spacing:.04em">
+          Select a row for its supporting and contradicting evidence.
+        </p>
       </div>
     </div>
   </section>
 
   <!-- ----------------------------------------------------------- result -->
-  <section id="result" class="stage hidden">
-    <div class="panel verdict-card" id="vcard">
-      <div class="v-tag" id="v-tag"></div>
-      <div class="v-head" id="v-head"></div>
-      <div class="v-sub" id="v-sub"></div>
-      <div class="v-stats" id="v-stats"></div>
-      <div class="unresolved hidden" id="v-unresolved"></div>
+  <section id="result" class="view hidden">
+    <div class="verdict" id="verdict">
+      <div class="tag" id="v-tag"></div>
+      <h2 id="v-head"></h2>
+      <p class="why" id="v-why"></p>
+      <div class="vstats" id="v-stats"></div>
+      <div class="unres hidden" id="v-unres"></div>
     </div>
 
-    <div class="panel side" style="padding:26px">
-      <h3>Final differential</h3>
-      <p class="hint">Click any diagnosis to see the evidence behind it.</p>
-      <div id="r-dx-list"></div>
-    </div>
+    <div class="lab">Final differential</div>
+    <table class="dxt">
+      <thead><tr><th></th><th>Diagnosis</th><th class="r">P</th></tr></thead>
+      <tbody id="rdxbody"></tbody>
+    </table>
 
-    <div style="margin-top:20px">
-      <button class="btn btn-ghost" id="restart">← Start a new consultation</button>
-    </div>
+    <div style="margin-top:34px"><button class="btn btn-o" id="restart">New consultation</button></div>
   </section>
 
 </main>
 
-<footer>dxagent · the knowledge base is largely invented and no clinician has reviewed it — see RESPONSIBLE_AI.md</footer>
+<footer>
+  Research instrument. The knowledge base is largely invented, no clinician has reviewed any
+  part of it, and its accuracy has never been measured on a real patient — see RESPONSIBLE_AI.md.
+</footer>
 
 <script>
 const API = "/api/session";
-let sessionId = null;
-let busy = false;
+let sessionId = null, busy = false;
 
-const $ = (id) => document.getElementById(id);
-const show = (id) => $(id).classList.remove("hidden");
-const hide = (id) => $(id).classList.add("hidden");
-const pretty = (s) => s.replaceAll("_", " ");
+const $ = id => document.getElementById(id);
+const show = id => $(id).classList.remove("hidden");
+const hide = id => $(id).classList.add("hidden");
+const pretty = s => s.replaceAll("_", " ");
+const pad = n => String(n).padStart(2, "0");
 
-const EXAMPLES = [
+const EGS = [
   "78-year-old man, seven days of worsening breathlessness on exertion, no chest pain",
-  "23-year-old man, one day of right-sided pleuritic chest pain and fever",
+  "23-year-old man, one day of right-sided pleuritic chest pain, haemoptysis and fever",
   "45-year-old woman, two weeks of breathlessness, worse lying flat, swollen legs",
   "19-year-old woman, sudden breathlessness and chest tightness during an exam",
 ];
-
-$("examples").innerHTML = "";
-EXAMPLES.forEach(text => {
-  const chip = document.createElement("button");
-  chip.className = "chip";
-  chip.textContent = text.length > 52 ? text.slice(0, 50) + "…" : text;
-  chip.title = text;
-  chip.onclick = () => { $("complaint").value = text; $("complaint").focus(); };
-  $("examples").appendChild(chip);
+EGS.forEach((t, i) => {
+  const b = document.createElement("button");
+  b.className = "eg";
+  b.innerHTML = `<span class="n">${pad(i + 1)}</span><span>${t}</span>`;
+  b.onclick = () => { $("complaint").value = t; $("complaint").focus(); };
+  $("egs").appendChild(b);
 });
 
-/* ---- animated number ------------------------------------------------- */
-function countTo(node, target, suffix = "%") {
-  const from = parseFloat(node.dataset.v || "0");
-  if (Math.abs(from - target) < 0.01) { node.textContent = Math.round(target) + suffix; return; }
+/* animated tabular figure ------------------------------------------------ */
+function countTo(node, target) {
+  const from = parseFloat(node.dataset.v ?? "0");
   node.dataset.v = target;
-  const t0 = performance.now(), dur = 550;
+  if (Math.abs(from - target) < 0.05) { node.textContent = target.toFixed(1) + "%"; return; }
+  const t0 = performance.now();
   (function step(now) {
-    const p = Math.min(1, (now - t0) / dur);
-    const eased = 1 - Math.pow(1 - p, 3);
-    node.textContent = Math.round(from + (target - from) * eased) + suffix;
+    const p = Math.min(1, (now - t0) / 500);
+    const e = 1 - Math.pow(1 - p, 3);
+    node.textContent = (from + (target - from) * e).toFixed(1) + "%";
     if (p < 1) requestAnimationFrame(step);
   })(performance.now());
 }
 
-/* ---- differential with FLIP reordering -------------------------------- */
-function renderDx(container, hyps) {
-  const first = new Map();
-  container.querySelectorAll(".dx").forEach(el => first.set(el.dataset.label, el.getBoundingClientRect().top));
+/* differential table, reordered with a FLIP transition ------------------- */
+function renderDx(tbody, hyps) {
+  const before = new Map();
+  tbody.querySelectorAll(".dxrow").forEach(r => before.set(r.dataset.label, r.getBoundingClientRect().top));
 
   hyps.forEach((h, i) => {
-    let row = container.querySelector(`.dx[data-label="${h.label}"]`);
+    let row = tbody.querySelector(`.dxrow[data-label="${h.label}"]`);
+    let evrow;
     if (!row) {
-      row = document.createElement("div");
-      row.className = "dx";
-      row.dataset.label = h.label;
-      row.innerHTML = `
-        <div class="dx-head">
-          <span class="dx-name"></span>
-          <span class="flag hidden">RED FLAG</span>
-          <span class="dx-pct tnum">0%</span>
-        </div>
-        <div class="dx-track"><div class="dx-fill"></div></div>
-        <div class="dx-ev"></div>`;
-      row.addEventListener("click", () => row.classList.toggle("open"));
-      container.appendChild(row);
+      row = document.createElement("tr");
+      row.className = "dxrow"; row.dataset.label = h.label;
+      row.innerHTML = `<td class="rank"></td>
+        <td class="nm"><span class="t"></span><span class="fl hidden">RED FLAG</span>
+          <div class="bar" style="margin-top:7px"><i></i></div></td>
+        <td class="p num">0.0%</td>`;
+      evrow = document.createElement("tr");
+      evrow.className = "evrow"; evrow.dataset.for = h.label;
+      evrow.innerHTML = `<td></td><td colspan="2"><div class="ev"></div></td>`;
+      row.onclick = () => row.classList.toggle("open");
+      tbody.append(row, evrow);
+    } else {
+      evrow = tbody.querySelector(`.evrow[data-for="${h.label}"]`);
     }
-    row.querySelector(".dx-name").textContent = pretty(h.label);
-    row.querySelector(".flag").classList.toggle("hidden", !h.red_flag);
-    row.querySelector(".dx-fill").style.width = (h.probability * 100).toFixed(1) + "%";
-    countTo(row.querySelector(".dx-pct"), h.probability * 100);
+    row.querySelector(".rank").textContent = pad(i + 1);
+    row.querySelector(".nm .t").textContent = pretty(h.label);
+    row.querySelector(".fl").classList.toggle("hidden", !h.red_flag);
+    row.querySelector(".bar i").style.width = (h.probability * 100).toFixed(1) + "%";
+    countTo(row.querySelector(".p"), h.probability * 100);
     row.classList.toggle("lead", i === 0);
 
-    const ev = row.querySelector(".dx-ev");
-    const cite = (c) => `<div class="ev-i"><code>[${c.source_id}]</code> ${c.snippet}</div>`;
-    ev.innerHTML =
-      (h.support?.length ? `<div class="ev-h s">Supporting</div>${h.support.slice(0, 4).map(cite).join("")}` : "") +
-      (h.against?.length ? `<div class="ev-h a">Against</div>${h.against.slice(0, 4).map(cite).join("")}`
-                         : `<div class="ev-h a">Against</div><div class="ev-i">Nothing in the knowledge base argues against this.</div>`);
-    container.appendChild(row); // reorder to match ranking
+    const cite = c => `<p><span class="src">[${c.source_id}]</span> ${c.snippet}</p>`;
+    evrow.querySelector(".ev").innerHTML =
+      (h.support?.length ? `<h4 class="s">Supporting</h4>${h.support.slice(0, 4).map(cite).join("")}` : "") +
+      (h.against?.length ? `<h4 class="a">Contradicting</h4>${h.against.slice(0, 4).map(cite).join("")}`
+        : `<h4 class="a">Contradicting</h4><p class="none">Nothing in the knowledge base argues against this.</p>`);
+    tbody.append(row, evrow);
   });
 
-  container.querySelectorAll(".dx").forEach(el => {
-    const was = first.get(el.dataset.label);
+  tbody.querySelectorAll(".dxrow").forEach(r => {
+    const was = before.get(r.dataset.label);
     if (was == null) return;
-    const delta = was - el.getBoundingClientRect().top;
-    if (!delta) return;
-    el.style.transition = "none";
-    el.style.transform = `translateY(${delta}px)`;
+    const d = was - r.getBoundingClientRect().top;
+    if (!d) return;
+    r.style.transition = "none"; r.style.transform = `translateY(${d}px)`;
     requestAnimationFrame(() => {
-      el.style.transition = "transform .55s var(--ease)";
-      el.style.transform = "";
+      r.style.transition = "transform .5s cubic-bezier(.2,.8,.2,1)";
+      r.style.transform = "";
     });
   });
 }
 
-function renderHistory(list) {
-  const box = $("hist-list");
-  if (!list.length) { box.innerHTML = `<div class="h-empty">Nothing asked yet.</div>`; return; }
-  box.innerHTML = list.map((it, i) => `
-    <div class="h-row">
-      <span class="h-n">${i + 1}</span>
-      <span class="h-label">${it.label}</span>
-      <span class="h-ans h-${it.answer}">${it.answer}</span>
-    </div>`).reverse().join("");
+function renderLog(list) {
+  const b = $("logbody");
+  if (!list.length) { b.innerHTML = `<tr><td colspan="3" class="empty">Nothing asked yet.</td></tr>`; return; }
+  b.innerHTML = list.map((it, i) => `
+    <tr><td class="i">${pad(i + 1)}</td>
+        <td>${it.label}</td>
+        <td class="res r res-${it.answer}">${it.answer.toUpperCase()}</td></tr>`
+  ).reverse().join("");
 }
 
-/* ---- state rendering -------------------------------------------------- */
+/* ------------------------------------------------------------- render -- */
 function renderState(d) {
   if (d.finished) return renderResult(d);
-
   hide("start"); show("consult");
 
-  const maxT = d.max_turns || 12, maxC = d.max_cost || 40;
-  $("g-turn-val").textContent = `${d.turn} / ${maxT}`;
-  $("g-turn-fill").style.width = Math.min(100, (d.turn / maxT) * 100) + "%";
-  $("g-cost-val").textContent = `${d.cost_spent.toFixed(1)} / ${maxC}`;
-  $("g-cost-fill").style.width = Math.min(100, (d.cost_spent / maxC) * 100) + "%";
+  const mt = d.max_turns || 12, mc = d.max_cost || 40;
+  $("t-turn").textContent = `${pad(d.turn)}/${mt}`;
+  $("t-turn-m").style.width = Math.min(100, d.turn / mt * 100) + "%";
+  $("t-cost").textContent = `${d.cost_spent.toFixed(1)}/${mc.toFixed(1)}`;
+  $("t-cost-m").style.width = Math.min(100, d.cost_spent / mc * 100) + "%";
+  $("t-case").textContent = "CASE " + d.session_id.slice(0, 8).toUpperCase();
 
   if (d.question) {
     const q = d.question;
-    const tag = $("qkind");
-    tag.textContent = q.kind;
-    tag.className = "kindtag k-" + q.kind;
-    $("qcost").textContent = q.cost ? `costs ${q.cost.toFixed(1)}` : "";
-    const t = $("qtext");
-    t.style.animation = "none"; void t.offsetWidth;
-    t.style.animation = "rise .4s var(--ease) both";
-    t.textContent = q.label;
-    $("qwhy").innerHTML = q.rationale ? `<b>Why this question:</b> ${q.rationale}` : "";
+    $("qkind").textContent = q.kind.toUpperCase();
+    $("qcost").textContent = q.cost ? `COST ${q.cost.toFixed(1)}` : "";
+    $("qtext").textContent = q.label;
+    $("qwhy").innerHTML = q.rationale ? `selected because: <span>${q.rationale}</span>` : "";
   }
-  renderDx($("dx-list"), d.differential);
-  renderHistory(d.history);
+  renderDx($("dxbody"), d.differential);
+  renderLog(d.history);
 }
 
 function renderResult(d) {
   hide("consult"); hide("start"); show("result");
-  const committed = d.verdict === "committed";
-  const card = $("vcard");
-  card.className = "panel verdict-card " + (committed ? "committed" : "escalated");
-  $("v-tag").textContent = committed ? "● Committed" : "▲ Escalated to a clinician";
-  $("v-head").textContent = committed ? pretty(d.prediction) : "No commit — a question is still open";
-  $("v-sub").textContent = committed
-    ? "The gate's six conditions all held: calibrated confidence, margin over the runner-up, grounding, red-flag tolerance, proposer agreement and evidence fit."
+  const ok = d.verdict === "committed";
+  $("verdict").className = "verdict" + (ok ? "" : " esc");
+  $("v-tag").textContent = ok ? "Verdict — committed" : "Verdict — escalated to a clinician";
+  $("v-head").textContent = ok ? pretty(d.prediction) : "No commit";
+  $("v-why").textContent = ok
+    ? "All six gate conditions held: calibrated confidence, margin over the runner-up, grounding, red-flag tolerance, proposer agreement and evidence fit."
     : d.escalation?.reason || "";
-
   $("v-stats").innerHTML = `
-    <div class="v-stat"><div class="n tnum">${committed ? Math.round(d.confidence * 100) + "%" : "—"}</div><div class="l">Confidence</div></div>
-    <div class="v-stat"><div class="n tnum">${d.turn}</div><div class="l">Turns used</div></div>
-    <div class="v-stat"><div class="n tnum">${d.budget_spent.toFixed(1)}</div><div class="l">Cost spent</div></div>`;
-
-  const un = $("v-unresolved");
-  if (!committed && d.escalation?.unresolved_question) {
-    un.innerHTML = `<b>Unresolved question:</b> ${d.escalation.unresolved_question}`;
-    un.classList.remove("hidden");
-  } else un.classList.add("hidden");
-
-  renderDx($("r-dx-list"), d.differential);
+    <div><div class="v">${ok ? (d.confidence * 100).toFixed(0) + "%" : "—"}</div><div class="k">Confidence</div></div>
+    <div><div class="v">${d.turn}</div><div class="k">Turns</div></div>
+    <div><div class="v">${d.budget_spent.toFixed(1)}</div><div class="k">Cost</div></div>
+    <div><div class="v">${d.history.length}</div><div class="k">Findings</div></div>`;
+  const u = $("v-unres");
+  if (!ok && d.escalation?.unresolved_question) {
+    u.innerHTML = `<b>unresolved:</b> ${d.escalation.unresolved_question}`;
+    u.classList.remove("hidden");
+  } else u.classList.add("hidden");
+  renderDx($("rdxbody"), d.differential);
 }
 
-/* ---- network ---------------------------------------------------------- */
+/* ------------------------------------------------------------ network -- */
 function setBusy(on) {
   busy = on;
-  document.querySelectorAll(".abtn").forEach(b => b.disabled = on);
+  document.querySelectorAll(".ans button").forEach(b => b.disabled = on);
   $("thinking").classList.toggle("hidden", !on);
 }
 
 async function begin() {
-  const complaint = $("complaint").value.trim();
   const btn = $("begin");
   btn.disabled = true; btn.textContent = "Starting…";
   try {
-    const r = await fetch(API, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ complaint }),
-    });
+    const r = await fetch(API, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ complaint: $("complaint").value.trim() }) });
     const d = await r.json();
     sessionId = d.session_id;
     renderState(d);
-  } catch (e) {
-    alert("Could not reach the agent: " + e);
-  } finally {
-    btn.disabled = false; btn.textContent = "Begin consultation →";
-  }
+  } catch (e) { alert("Could not reach the agent: " + e); }
+  finally { btn.disabled = false; btn.textContent = "Begin consultation"; }
 }
 
 async function answer(polarity) {
@@ -571,21 +515,19 @@ async function answer(polarity) {
   try {
     const r = await fetch(`${API}/${sessionId}/answer`, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ polarity }),
-    });
+      body: JSON.stringify({ polarity }) });
     renderState(await r.json());
   } finally { setBusy(false); }
 }
 
-/* ---- wiring ----------------------------------------------------------- */
 $("begin").onclick = begin;
 $("complaint").addEventListener("keydown", e => {
   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) begin();
 });
-document.querySelectorAll(".abtn").forEach(b => b.onclick = () => answer(b.dataset.ans));
+document.querySelectorAll(".ans button").forEach(b => b.onclick = () => answer(b.dataset.ans));
 $("restart").onclick = () => {
   sessionId = null; $("complaint").value = "";
-  $("dx-list").innerHTML = ""; $("r-dx-list").innerHTML = "";
+  $("dxbody").innerHTML = ""; $("rdxbody").innerHTML = "";
   hide("result"); show("start");
 };
 document.addEventListener("keydown", e => {
