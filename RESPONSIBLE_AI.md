@@ -213,6 +213,23 @@ assumptions reports self-consistency as accuracy:
   — pleuritic pain in PE, 71% simulated against 33% observed — the
   disagreement is reported rather than reconciled.
 
+### The mandated model and evaluation harness never ran
+
+Every number in this project comes from the Bayesian proposer and the
+knowledge-base fallback the single-pass baseline uses in place of an LLM —
+never from the Claude Opus 4.x-class model the brief mandates, and never
+through AgentClinic, the evaluation harness the brief names. Both are
+missing for reasons that would not resolve with more time on this machine:
+no API credit existed for the mandated model at any point in the project, and
+AgentClinic needs its own key plus a code fork to accept this agent rather
+than its own. See `SCOPE.md` §4 for the detail.
+
+The consequence for how to read every result in this document and in
+`DESIGN.md`: they describe a Bayesian reasoner over a partly-invented
+knowledge base, calibrated and gated, evaluated against two non-LLM
+baselines. They say nothing about how an LLM proposer would perform on the
+same cases, because one has never been run.
+
 ### Automation bias
 
 The system's output is a ranked differential with citations, which is more

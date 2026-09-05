@@ -274,6 +274,24 @@ scope decision rather than an unfinished task.
 **MIMIC-IV was not pursued.** Credentialing takes weeks and would clear after
 the point of use.
 
+**AgentClinic and the mandated model were not exercised.** Section 6 names
+AgentClinic as the evaluation harness and a Claude Opus 4.x-class model as the
+required stack; neither has run against this system, for two different
+reasons rather than one shared excuse. AgentClinic needs an OpenAI or
+Replicate API key to drive its own doctor/patient simulation loop, and using
+it properly means forking its code to accept this project's agent in place of
+its own — not a configuration change, and not attempted. The mandated model
+has not run live at all: no API credit was available for the project's
+duration. The LLM layer (`dxagent.llm.LLMClient`) has been a swappable
+Protocol since week 1 for exactly this reason — `AnthropicLLM`'s default
+model id now points at the current Opus-tier release as the honest current
+equivalent of what the brief specifies, but that default has never actually
+been called. The brief's required single-pass baseline is meant to be an LLM
+prompted directly on the case; without a key it falls back to a single-pass
+KB reasoner instead and says so in its own output rather than silently
+reusing the label, but every result in this project still comes from the
+Bayesian proposer and that KB fallback, never from the mandated model itself.
+
 ## 5. What "done" means for this presentation
 
 - A ranked differential over the eight causes, each hypothesis carrying
