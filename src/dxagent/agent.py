@@ -82,6 +82,26 @@ class LoopLimits:
     # reserved for questions that can actually move the differential.
     uninformative_turns_still_count: bool = True
 
+    # Whether an action whose findings all came back UNKNOWN still draws on
+    # the cost budget. Default True preserves every existing result exactly.
+    #
+    # The same argument as the flag above, applied to the other budget, and
+    # measured before it was believed: on the real PMC cases, 98% and 78% of
+    # the exhausted cost budget had gone on actions that returned UNKNOWN --
+    # in one case a CTPA charged at 20.0 against a report that never mentions
+    # a CTPA. Cost models performing a test. If the record never recorded one,
+    # no test was performed and no cost was incurred, so charging for it
+    # prices a scan that did not happen and then reports the resulting
+    # early stop as "cost budget exhausted", which is a statement about the
+    # source document rather than about the agent.
+    #
+    # Affordability is still checked at full price before the action runs:
+    # the agent must be able to afford the test it orders. Only afterwards,
+    # on learning nothing was performed, is the charge dropped. With this and
+    # the turn flag both off the binding constraint becomes exhaustion of
+    # informative actions, which is the honest one for an incomplete record.
+    unanswered_actions_still_cost: bool = True
+
 
 def mandatory_action(kb, state: CaseState) -> Action | None:
     """The next unsatisfied item of a triggered guideline workup, if any.
@@ -274,7 +294,12 @@ class DiagnosticAgent:
                     )
 
             findings = list(environment.respond(action))
-            state.record(action, findings, calibrated)
+            state.record(
+                action,
+                findings,
+                calibrated,
+                charge_uninformative=self.limits.unanswered_actions_still_cost,
+            )
 
     def _escalate(
         self,

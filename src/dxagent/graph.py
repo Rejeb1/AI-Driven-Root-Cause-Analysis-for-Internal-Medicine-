@@ -181,7 +181,12 @@ class GraphAgent:
     def _observe(self, state: ReasoningState) -> ReasoningState:
         action = state["action"]
         findings = list(state["environment"].respond(action))
-        state["state"].record(action, findings, state["differential"])
+        state["state"].record(
+            action,
+            findings,
+            state["differential"],
+            charge_uninformative=self.limits.unanswered_actions_still_cost,
+        )
         return {}
 
     @staticmethod

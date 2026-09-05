@@ -54,7 +54,17 @@ def main() -> int:
         # the same as one that actually narrows the differential, and both
         # real cases ran out of budget before reaching their single most
         # decisive finding. See LoopLimits.uninformative_turns_still_count.
-        limits=LoopLimits(uninformative_turns_still_count=False),
+        # Both budget flags are set for the same reason, and the second was
+        # only believed after being measured: on these cases 98% and 78% of
+        # the exhausted cost budget had gone on actions that returned
+        # UNKNOWN, a CTPA charged at 20.0 against a report that never
+        # mentions one among them. A finding the source never recorded means
+        # no test was performed, so it costs neither a turn nor money. Both
+        # default the other way, so nothing else in the project moves.
+        limits=LoopLimits(
+            uninformative_turns_still_count=False,
+            unanswered_actions_still_cost=False,
+        ),
     )
 
     print(RULE)
@@ -112,22 +122,25 @@ def main() -> int:
     ))
     if escalation_reasons:
         print(wrap(
-            "  This run uses uninformative_turns_still_count=False "
-            "(LoopLimits), so an UNKNOWN answer -- common in a real record, "
-            "never seen in a fixture -- no longer burns a turn for free. "
-            "Escalations still happen, but for reasons that are now real "
-            "rather than a turn-budget artefact:",
+            "  Both LoopLimits budget flags are off for this run "
+            "(uninformative_turns_still_count, unanswered_actions_still_cost), "
+            "because a finding the source never recorded means no test was "
+            "performed: it costs neither a turn nor money. Charging for it "
+            "billed one case 20.0 for a CTPA its report never mentions, and "
+            "98% of that case's exhausted budget went the same way. The "
+            "escalations that remain are these:",
             indent="  ",
         ))
         for case_id, reason in escalation_reasons:
             print(wrap(f"  {case_id}: {reason}", indent="    "))
         print(wrap(
-            "  Fixing the turn-accounting bug didn't make these cases "
-            "commit -- it removed one artefact and let whatever real "
-            "constraint sits underneath (cost, or the selector's own "
-            "ranking under this knowledge base's mostly-invented "
-            "likelihoods) show through instead. That is the honest result "
-            "of this evaluation, not a failure of the fix.",
+            "  Neither budget fix raised the number that commits. What they "
+            "changed is what the escalations mean: no case now stops because "
+            "it ran out of turns or money, so every remaining escalation is "
+            "the agent having asked what it could and still being unable to "
+            "separate the diagnoses on what these reports actually record. "
+            "That is a statement about the evidence rather than about the "
+            "harness, which is the whole reason for removing the artefacts.",
             indent="  ",
         ))
     print(RULE)

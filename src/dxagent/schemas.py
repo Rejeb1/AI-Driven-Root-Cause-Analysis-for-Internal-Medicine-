@@ -294,14 +294,31 @@ class CaseState:
                 return f
         return None
 
-    def record(self, action: Action, findings: list[Finding], differential: Differential) -> None:
+    def record(
+        self,
+        action: Action,
+        findings: list[Finding],
+        differential: Differential,
+        *,
+        charge_uninformative: bool = True,
+    ) -> None:
+        """Fold one executed action and its findings into the state.
+
+        ``charge_uninformative`` says whether an action every one of whose
+        findings came back UNKNOWN still draws on the cost budget. True keeps
+        the original behaviour and is the default. The caller sets it from
+        ``LoopLimits.unanswered_actions_still_cost``; see that field for why
+        the distinction exists at all.
+        """
         entropy_before = self.differential.entropy if self.differential else math.log(
             max(len(differential.hypotheses), 2)
         )
         self.findings.extend(findings)
         if action.target:
             self.asked.add(action.target)
-        self.budget_spent += action.cost
+        informative = any(f.polarity is not Polarity.UNKNOWN for f in findings)
+        if charge_uninformative or informative:
+            self.budget_spent += action.cost
         self.differential = differential
         self.history.append(
             Step(

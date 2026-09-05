@@ -2538,3 +2538,59 @@ def test_uninformative_turns_still_count_flag_changes_when_the_loop_stops():
     # count, not a coincidence.
     assert counting_outcome.steps[-1].index + 1 <= 3
     assert free_outcome.steps[-1].index + 1 > 3
+
+
+def test_unanswered_actions_still_cost_flag_changes_what_the_budget_buys():
+    """A test the record never recorded was never performed, so never billed.
+
+    Measured on the real PMC cases before the flag existed: 98% of one
+    exhausted cost budget had gone on actions that came back UNKNOWN,
+    including a CTPA charged at 20.0 against a report that never mentions
+    one. The default keeps charging, so every earlier result stands.
+    """
+    from dxagent import AbstentionGate, DiagnosticAgent, LoopLimits
+    from dxagent.belief import BayesianProposer
+    from dxagent.datasets import build_knowledge_base
+    from dxagent.environment import Case
+
+    kb = build_knowledge_base(correlated=True)
+    # Answers nothing: every action necessarily comes back UNKNOWN.
+    blank = Case(
+        case_id="blank",
+        presenting_complaint="nothing volunteered",
+        features={},
+        diagnosis="pulmonary_embolism",
+        vocabulary=frozenset(),
+    )
+
+    def run(charge: bool):
+        agent = DiagnosticAgent(
+            kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb),
+            limits=LoopLimits(
+                unanswered_actions_still_cost=charge,
+                uninformative_turns_still_count=False,
+                max_turns=3,
+            ),
+        )
+        return agent.run(blank)
+
+    charged, free = run(True), run(False)
+
+    assert charged.budget_spent > 0, "the default must still bill for actions"
+    assert free.budget_spent == 0, "nothing was performed, so nothing is owed"
+    # And the freed budget buys real reach: more of the vocabulary gets asked
+    # rather than the loop stopping on a bill for tests that never happened.
+    assert len(free.steps) > len(charged.steps)
+
+
+def test_default_cost_accounting_is_unchanged_by_the_new_flag(kb, cases):
+    """The flag is opt-in: on the fixtures the shipped default is identical."""
+    from dxagent import DiagnosticAgent, LoopLimits
+
+    for case in cases:
+        a = DiagnosticAgent(kb=kb, limits=LoopLimits()).run(case)
+        b = DiagnosticAgent(
+            kb=kb, limits=LoopLimits(unanswered_actions_still_cost=True)
+        ).run(case)
+        assert a.budget_spent == b.budget_spent
+        assert a.differential.top.label == b.differential.top.label
