@@ -69,6 +69,25 @@ class InformationGainSelector:
     # believes will not happen.
     min_flip_outcome: float = 0.05
 
+    # Discrimination above which ``ruleout_action`` prefers a candidate
+    # outright, ahead of cost-efficiency rather than blended with it.
+    #
+    # A survey across every fixture and real case found a clean gap here:
+    # CTPA (0.91) and D-dimer (0.69) for pulmonary embolism, troponin (0.57)
+    # for ACS, all clear 0.5; every history or exam finding in the current
+    # vocabulary sits at 0.45 or below. discrimination / (cost + cost_offset)
+    # is the right rule for choosing between similarly-informative cheap
+    # options, but it silently prices a confirmatory test against a $1 exam
+    # finding as if they served the same purpose. They do not: a test this
+    # close to conclusive is worth ordering *because* it settles the
+    # question, not because it is a bargain -- CTPA at cost 20 scored 0.04
+    # against exam:raised_jvp's 0.11 despite discriminating pulmonary
+    # embolism more than three times as strongly, and the cheaper, weaker
+    # test kept winning the turn until the budget that would have covered
+    # the CTPA was gone. Below this line, cost-efficiency remains the
+    # tiebreaker it already was.
+    decisive_discrimination: float = 0.5
+
     def candidates(self, state: CaseState, differential: Differential, top_k: int = 5) -> list[Action]:
         """Rank available actions, best first."""
         considered = differential.top_k(top_k)
@@ -263,7 +282,7 @@ class InformationGainSelector:
         if not live:
             return None
 
-        best: tuple[float, Action] | None = None
+        best: tuple[tuple[int, float], Action] | None = None
         for hypothesis in live:
             entry = self.kb.get(hypothesis.label)
             for concept, p_given in entry.features.items():
@@ -283,6 +302,10 @@ class InformationGainSelector:
                     continue
                 cost = max(self.kb.cost_of(concept), 1e-6)
                 score = discrimination / (cost + self.cost_offset)
+                # A near-conclusive test outranks every non-decisive one
+                # outright; cost-efficiency only breaks ties within a tier.
+                decisive = 1 if discrimination >= self.decisive_discrimination else 0
+                rank = (decisive, score)
                 action = Action(
                     kind=classify(concept),
                     target=concept,
@@ -294,8 +317,8 @@ class InformationGainSelector:
                         f"{discrimination:.2f}"
                     ),
                 )
-                if best is None or score > best[0]:
-                    best = (score, action)
+                if best is None or rank > best[0]:
+                    best = (rank, action)
         return best[1] if best else None
 
     def _red_flag_weight(self, concept: str, labels: tuple[str, ...]) -> float:
