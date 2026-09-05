@@ -252,9 +252,8 @@ assumption.
 Likelihoods were sourced in four passes: 17 from DDXPlus co-occurrence, 4 from
 a published cohort of 360 real pulmonary embolism patients (Miniati et al.,
 PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
-text through the fixed rubric, and 1 by targeted search. Coverage is 17%,
-and the remaining 179 are still invented -- a denominator that grew when the
-grid was completed, not a sourcing regression.
+text through the fixed rubric, and 1 by targeted search. Coverage is 27%,
+and the remaining 102 are still invented.
 
     knowledge base            plain   +corr   +decisive   +both
     invented                   8/10    8/10        8/10    8/10
@@ -664,10 +663,13 @@ not a proof. Adopting it means re-measuring four findings recorded above
 that it revises, and that is a decision for a clinician or the supervisor
 rather than for whichever configuration scores better today.
 
-### Adopted, and what adopting it cost
+### Adopted, measured, and reverted
 
-The entry above ends "It is off anyway". It is now on by default, and the
-four findings it revises were re-measured rather than re-asserted.
+The entry above ends "It is off anyway". It was then turned on, the four
+findings it revises were re-measured rather than re-asserted, and it was
+turned off again once the real-case calibration was measured. The
+measurements below all describe the flag-on configuration and remain
+true of it; the decision at the end of this section is what changed.
 
 **The fifth reversal on correlation and decisive tests, and the first that
 inverts the heading three sections above.** With every cell chosen:
@@ -717,3 +719,110 @@ on the record rather than discovered later.
 Real cases under the shipped default: 4 of 8 correct, one wrong commit
 (acute coronary syndrome at 82% on a true pericarditis), the confirmed
 NSTEMI escalating from second place rather than committing wrongly.
+
+### Correcting the overconfidence claim, and damping what caused it
+
+The entry above says correlation weighting is "the only thing between this
+model and unusable overconfidence", on the evidence that fx-001 cleared a
+99%/98% gate on the uncorrelated base. That was the wrong evidence and the
+claim was overstated. fx-001 is a case the model gets *right*, so 99.26%
+there is confidence, not overconfidence, and on the fixture set completing
+the grid actually **improved** calibration in every arm — ECE 0.286 to 0.143
+correlated, 0.199 to 0.074 plain, with every arm underconfident rather than
+over.
+
+The concern survives, but only on the evidence that matters. Fixtures are
+generated from the knowledge base the model reasons over, so their
+calibration measures self-consistency. On the eight real PMC cases, which
+are not:
+
+    complete_grid   ECE     Brier   mean conf   accuracy   overconfidence
+    off             0.303   0.103       0.520       0.50           +0.020
+    on              0.347   0.207       0.695       0.50           +0.195
+
+Top-1 accuracy did not move. The Brier score doubled and twenty points of
+unearned confidence appeared, which is the real cost of adopting the grid
+and is what the wrong commit is made of.
+
+The mechanism was findable. Nine findings — pleuritic pain, rest dyspnoea,
+palpitations, tachycardia, friction rub, hypoxia, white count, D-dimer and
+CTPA — sat in no correlation group at all. That cost nothing while most of
+them backed off to the marginal for most diseases and contributed a
+likelihood ratio near one. Completing the grid turned all nine into real
+evidence multiplying independently.
+
+Four groups were added on the same basis as the original five, findings a
+clinician reads as one story: respiratory distress (rest dyspnoea, hypoxia,
+tachycardia), infection (fever, white count), inflamed pleura or pericardium
+(pleuritic pain, friction rub), and palpitations with tachycardia. The last
+changed no metric at all and is kept because the claim is true, not because
+it earned its place.
+
+    real cases          ECE     Brier   overconfidence
+    grid off          0.303     0.103          +0.020
+    grid on           0.347     0.207          +0.195
+    grid on + groups  0.288     0.171          +0.156
+
+ECE now sits below where it was before the grid was completed; Brier and
+overconfidence are recovered part of the way and no further. Ranking, the
+fixture set and the real-case commits are all unchanged by the damping —
+4 of 8 correct, one wrong, mean rank 2.00, fixtures 10/10.
+
+**D-dimer and CTPA were deliberately left ungrouped.** They are genuinely
+correlated, and damping them together is precisely what would undo the
+fx-009 repair: the point of that case is that a positive CTPA must survive a
+cluster of absent VTE findings. Correlating the decisive test with the
+picture it exists to overrule would be a fix that breaks the thing this
+knowledge base was most recently repaired to do.
+
+What remains true, in weaker form than the entry above claimed: the model
+now leans harder on correlation values that are themselves invented, and the
+residual +0.156 overconfidence on real patients is unexplained by anything
+measured here.
+
+### The decision, and why calibration outranked ranking
+
+Two configurations, both measured, both defensible on their own terms:
+
+    config                      wrong   Brier   overconf   real ok   rank   invented
+    marginal backoff (shipped)      0   0.103     +0.020       3/8   2.38    102/139
+    completed grid + damping        1   0.171     +0.156       4/8   2.00    179/216
+
+The completed grid wins on ranking and on one more correct commit. It is not
+adopted, and the reasoning is worth stating because the losing column is the
+one that looks better at a glance.
+
+**It degrades the claim this project is actually making.** Calibrated
+abstention is the thesis; ranking is not, and this document already records
+the trap — mean rank improving while decisions get worse — twice, in the
+blanket-backoff entry and again above. Adopting a milder instance of the
+same trade with that written down would be choosing the metric that flatters
+rather than the one that matters.
+
+**It is inconsistent with a decision already taken.** The blanket-low
+backoff was rejected for this exact trade and a test enforces it. Accepting
+a gentler version of the same harm, because it is gentler, is motivated
+reasoning rather than a new finding.
+
+**It triples the invented count on one non-clinician's judgement**, in a
+single sitting, with no clinician available to review it, in a project whose
+central limitation is precisely how many of its numbers are invented and how
+well the reader can tell which.
+
+**And its main cost is unexplained.** The residual +0.156 overconfidence on
+real patients survives the correlation damping and is not accounted for by
+anything measured here. A change whose principal harm cannot be explained
+does not belong on the default path.
+
+What that leaves standing is a real defect, stated rather than fixed: 73
+cells still answer from the marginal, so the model asserts a pericardial
+friction rub at 0.60 in panic attack and hands Wells criteria to every
+disease at pulmonary embolism's own rates. Those are indefensible values,
+they are documented here, and the completions that would replace them sit
+behind `complete_grid` fully measured, for a clinician to adopt rather than
+an engineer to assume.
+
+The four correlation groups added to damp the completions went with them.
+They help only when the grid is complete: with it off they cost two fixture
+cases (10/10 to 8/10), which is the clearest possible evidence that they
+were compensating for the completions rather than correcting the model.
