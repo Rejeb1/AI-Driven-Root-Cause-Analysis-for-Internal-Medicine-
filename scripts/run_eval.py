@@ -36,7 +36,12 @@ def load(args) -> tuple:
         test = loader.load_cases(args.test_file, limit=args.limit)
         return loader.build_knowledge_base(train), train, test
 
-    kb = build_knowledge_base()
+    # correlated=True is the shipped configuration -- consult.py, demo.py,
+    # eval_real_cases.py and the web UI all build it this way. This script
+    # did not, so for most of the project the headline metrics described a
+    # knowledge base nobody ran. It understated the system rather than
+    # flattering it, which is why it survived so long unnoticed.
+    kb = build_knowledge_base(correlated=True)
     cases = build_cases()
     calibration, evaluation = split_cases(cases, calibration_fraction=0.35)
     return kb, calibration, evaluation

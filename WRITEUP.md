@@ -318,18 +318,33 @@ what it wants and pay per question.
 | system | top-1 | top-5 | MRR | evidence seen |
 |---|---|---|---|---|
 | retrieval-only (no inference) | 71.4% | 100% | 0.857 | 27.0 findings |
-| single-pass (KB, no loop) | 85.7% | 100% | 0.929 | 27.0 findings |
-| **agentic loop** | 85.7% | 100% | 0.929 | **9.6 findings** |
+| single-pass (KB, no loop) | 100% | 100% | 1.000 | 27.0 findings |
+| **agentic loop** | 100% | 100% | 1.000 | **10.1 findings** |
 
-The evidence column is the result. The loop matches single-pass top-1 while
-seeing 35% of the findings. Comparing accuracy without that column is the
-complete-profile flattery that MEDDxAgent criticises. And a retrieval-only
-baseline landing this close to the loop is a finding about the benchmark's
-difficulty, not a compliment to the retriever.
+The evidence column is the result, not the accuracy column. The loop matches
+single-pass top-1 while seeing 38% of the findings. Comparing accuracy without
+that column is the complete-profile flattery that MEDDxAgent criticises. And a
+retrieval-only baseline landing within one case of the loop is a finding about
+the benchmark's difficulty, not a compliment to the retriever.
 
 Selective prediction, with the gate active: coverage 71.4%, selective accuracy
-**100%**, against full-coverage accuracy of 85.7% — the gate declines the cases
-it gets wrong. AURC 0.040.
+100%, full-coverage accuracy 100%, **accuracy gained +0.0%**, abstention
+precision **0.0%**, AURC 0.000.
+
+**Read that as a criticism of the fixture set, not a defence of the gate.**
+The gate abstains on two cases it would have answered correctly, and buys
+nothing for it, because the underlying model now gets all seven right and
+there is no error left to decline. A test set the system saturates cannot
+measure a mechanism whose whole purpose is knowing when to stop. The evidence
+that the gate does something is elsewhere: zero wrong commits on the eight
+real cases, and +10.9% accuracy gained at 52.9% abstention precision on the
+much larger DDXPlus runs recorded in `DESIGN.md`.
+
+Calibration on this split is ECE 0.303, Brier 0.097, mean confidence 69.7%
+against 100% accuracy — that is **underconfidence of 30 points**, the
+opposite failure to the one this project spends most of its time guarding
+against, and another symptom of a saturated set rather than a property to
+celebrate.
 
 ### The numbers that are not results
 
@@ -372,20 +387,40 @@ was performed — it should cost neither a turn nor money. With that corrected, 
 case stops for running out of money, and every escalation is now a statement
 about the evidence rather than about the harness.
 
-### A configuration inconsistency I found while writing this
+### A configuration inconsistency found while writing this, and fixed
 
-`scripts/run_eval.py` builds its knowledge base **without** correlation
+`scripts/run_eval.py` built its knowledge base **without** correlation
 weighting, while `consult.py`, `demo.py`, `eval_real_cases.py` and the web UI
-all build it **with**. So the headline 85.7% above comes from a configuration
-the project does not otherwise ship. With correlation on, the same held-out
-split gives **7/7**.
+all build it **with**. For most of this project's life the headline metrics
+therefore described a configuration nobody ran. It understated the system
+rather than flattering it, which is presumably why it survived unnoticed: a
+number that is too low does not prompt anyone to check it.
 
-This does not flatter the system — it understates it — but it is an
-inconsistency either way, and the metric-producing scripts (`run_eval.py`,
-`sensitivity.py`, `plausibility_check.py`) are exactly the ones that should
-match what ships. It is recorded here rather than silently fixed, because
-changing it changes every headline number in the project and that should be a
-deliberate act.
+It is now fixed, and the figures above are the corrected ones. The change is
+worth stating in full because it moved the two numbers a reader is most
+likely to quote:
+
+| | before | after |
+|---|---|---|
+| loop top-1 (held-out) | 85.7% | **100%** |
+| single-pass baseline | 85.7% | **100%** |
+| MRR | 0.929 | 1.000 |
+| Brier | 0.103 | 0.097 |
+| abstention precision | 50.0% | **0.0%** |
+| accuracy gained by the gate | +14.3% | **+0.0%** |
+
+The first three lines look like an improvement and are not one — nothing
+about the system changed, only which configuration was measured. The last two
+are the honest cost: with the model now correct on all seven cases, the gate
+has nothing left to decline and its apparent value on this set drops to zero.
+
+**One correction to my own claim.** I first wrote that three metric-producing
+scripts shared this bug. Checking each: `sensitivity.py` has an explicit
+`--correlated` flag whose results are reported both ways in `SCOPE.md`, which
+is a deliberate design rather than an oversight; and `plausibility_check.py`
+produces byte-identical output either way, because the evidence table is built
+from likelihood ratios against the marginal, which correlation weighting does
+not touch. Only `run_eval.py` was actually wrong.
 
 ### The ablation, and what it says about the invented numbers
 

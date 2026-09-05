@@ -968,3 +968,55 @@ The practical consequence is that the earlier estimate of 45-50% achievable
 coverage was too optimistic. Without a cohort reporting findings by final
 diagnosis — the one source shape that would fill whole columns, and the one
 none of these searches found — the realistic ceiling is nearer 36-40%.
+
+
+## The headline evaluation was measuring the wrong knowledge base
+
+Found while writing WRITEUP.md, which is the argument for writing the
+document: assembling every number in one place is what made two of them
+visibly disagree.
+
+`scripts/run_eval.py` built its knowledge base with `build_knowledge_base()`
+— correlation weighting off. Every other entry point in `scripts/`
+(`consult.py`, `demo.py`, `eval_real_cases.py`, and the web UI) builds it with
+`correlated=True`. So for most of this project's life the headline metrics,
+including both required baselines, described a configuration that nothing
+shipped.
+
+It understated the system, and that is probably why it lasted. A number that
+comes out too low does not prompt anyone to go looking for a bug. Every
+mechanism this document credits with fixing a case was being credited on a
+knowledge base the evaluation was not using.
+
+    metric                        before    after
+    loop top-1 (held-out, n=7)     85.7%     100%
+    single-pass baseline           85.7%     100%
+    MRR                            0.929     1.000
+    Brier                          0.103     0.097
+    mean evidence seen               9.6      10.1
+    abstention precision           50.0%      0.0%
+    accuracy gained by the gate    +14.3%    +0.0%
+
+The first four rows are not an improvement. Nothing about the system changed;
+only which configuration was measured. The last two rows are the real news and
+they run the other way: with the model now correct on all seven held-out
+cases, the gate abstains twice and gains nothing, because there is no error
+left to decline.
+
+**That is a fact about the fixture set, not about the gate.** Ten hand-written
+cases were always described here as a smoke test; they are now demonstrably
+saturated, and a saturated set cannot measure a mechanism whose entire purpose
+is knowing when to stop. Calibration says the same thing from the other side:
+mean confidence 69.7% against 100% accuracy is 30 points of *under*confidence,
+the opposite of the failure this project spends most of its effort guarding
+against. The evidence that the gate earns its keep is the DDXPlus runs
+recorded above (+10.9% accuracy gained, 52.9% abstention precision) and the
+zero wrong commits across the eight real cases — not this split.
+
+Two scripts were suspected alongside it and cleared, which is worth recording
+so nobody re-opens it. `sensitivity.py` takes an explicit `--correlated` flag
+and SCOPE.md reports its results both ways, so that is a deliberate design.
+`plausibility_check.py` produces byte-identical output either way, because the
+evidence table is built from likelihood ratios against the marginal and
+correlation weighting does not enter that computation. Only `run_eval.py` was
+wrong.
