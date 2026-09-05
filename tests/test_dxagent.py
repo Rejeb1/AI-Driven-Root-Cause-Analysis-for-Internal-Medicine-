@@ -1800,6 +1800,12 @@ def test_documented_coverage_figures_match_the_knowledge_base(kb):
     Deliberately only pins the *coverage* figures, not every number in the
     documents. Those are the ones that move whenever anyone does sourcing
     work, which is what makes them the ones that go stale.
+
+    The denominator is taken from the knowledge base, not written into the
+    pattern. The first version of this test hardcoded 135; when sourcing took
+    the total to 153 the patterns stopped matching any document and the test
+    went on passing, which is the exact failure it exists to prevent, one
+    level up.
     """
     from pathlib import Path
 
@@ -1809,20 +1815,31 @@ def test_documented_coverage_figures_match_the_knowledge_base(kb):
     root = Path(__file__).resolve().parent.parent
     documents = {
         name: (root / name).read_text(encoding="utf-8")
-        for name in ("SCOPE.md", "DESIGN.md", "RESPONSIBLE_AI.md")
+        for name in ("SCOPE.md", "DESIGN.md", "RESPONSIBLE_AI.md", "WRITEUP.md")
     }
 
     stale: list[str] = []
     invented = str(coverage.invented)
     percent = f"{coverage.coverage:.0%}"
+    total = coverage.total
+
+    # The denominator is read from the knowledge base rather than written in.
+    # An earlier version of this test hardcoded 135, and when the total moved
+    # to 153 the two patterns using it silently stopped matching anything --
+    # a drift guard that had itself drifted, passing because it was looking
+    # for a string no document contained any more.
+    of_total = re.compile(rf"(\d+) of {total}\b")
+    percent_of_total = re.compile(rf"(\d+)% (?:sourced|of the {total})")
 
     for name, text in documents.items():
-        # Any "<n> of 135" claim must use the live invented count.
-        for quoted in re.findall(r"(\d+) of 135", text):
+        # Any "<n> of <total>" claim must use the live invented count.
+        for quoted in of_total.findall(text):
             if quoted != invented:
-                stale.append(f"{name}: says '{quoted} of 135', live count is {invented}")
-        # Any "<n>% sourced" or "Coverage is <n>%" claim must match.
-        for quoted in re.findall(r"(\d+)% (?:sourced|of the 135)", text):
+                stale.append(
+                    f"{name}: says '{quoted} of {total}', live count is {invented}"
+                )
+        # Any "<n>% sourced" or "<n>% of the <total>" claim must match.
+        for quoted in percent_of_total.findall(text):
             if f"{quoted}%" != percent:
                 stale.append(f"{name}: says '{quoted}% sourced', live figure is {percent}")
         # "Coverage is N%" must be *sourcing* coverage, not the abstention

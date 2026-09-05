@@ -399,6 +399,40 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         low=0.18,
         high=0.74,
     ),
+    # The first sourcing pass in this project that *confirmed* an invented
+    # value instead of overturning it. The cell held 0.20 by judgement; the
+    # three largest studies in a systematic review pool to 0.18. Recorded
+    # because the entries above all tell the opposite story, and a file that
+    # only preserves the corrections which embarrassed the author is keeping
+    # a flattering record of its own honesty.
+    #
+    # It also confirms a prediction about *which* cells are sourceable at
+    # all. Consolidation is a binary radiological observation, so studies
+    # using "consolidation", "new infiltrate" and "pneumonic infiltrate" are
+    # answering one question and can be pooled. The natriuretic-peptide cells
+    # were attempted first and abandoned for the opposite reason: BNP against
+    # NT-proBNP, cutoffs of 100 against 300 against age-specific, so the
+    # published figures are not on a common scale and a column assembled from
+    # them would manufacture comparisons the sources do not support.
+    #
+    # The band is the literature's own spread and it is wide: 13% to 54%
+    # across seven studies. The point estimate takes the three largest
+    # (Emerman 88/685, Myint 1505/9338, Saleh 2714/14111 -> 4307/24134),
+    # which are ED and national-audit populations; the high end comes from
+    # small selected inpatient cohorts of 63 and 113 patients.
+    ("copd_exacerbation", "imaging:cxr_consolidation"): measured(
+        0.18,
+        Citation(
+            "AECOPD-IMAGING-SR-2020",
+            "Thoracic Imaging at Exacerbation of COPD: A Systematic Review, "
+            "PMC7385406, chest radiograph studies",
+            "consolidation or new infiltrate in 4307 of 24134 exacerbations "
+            "across the three largest included studies (Emerman 1993, "
+            "Myint 2011, Saleh 2015); reported range 13-54%",
+        ),
+        low=0.13,
+        high=0.54,
+    ),
     ("pericarditis", "exam:ecg_st_changes"): measured(
         0.50,
         Citation(

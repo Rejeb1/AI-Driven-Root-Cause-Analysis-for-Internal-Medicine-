@@ -254,8 +254,8 @@ a published cohort of 360 real pulmonary embolism patients (Miniati et al.,
 PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
 text through the fixed rubric, 3 by targeted search, and 14 from PIOPED II's
 arm of patients investigated for embolism who turned out not to have one
-(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 33%, and the
-remaining 102 are still invented.
+(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 34%, and the
+remaining 101 are still invented.
 
 That last pass is the one worth copying. The other four asked what a disease
 looks like. It asked what the *rivals* look like, which is the half of a
@@ -665,7 +665,7 @@ configuration still gets every fixture case.
 
 It is off anyway, and the reasons are worth being explicit about. It is 63
 invented numbers from one non-clinician in a single sitting. It takes the
-sourced fraction from 33% to 24% — not a regression, but the count finally
+sourced fraction from 34% to 24% — not a regression, but the count finally
 including claims the model was already making. And it turns one abstention
 into a wrong commit: acute coronary syndrome at 82% on a true pericarditis.
 
@@ -909,3 +909,62 @@ The general lesson is the one this project keeps relearning in different
 forms. An invented number does not announce itself by making results worse.
 This one made a result better, held up a documented claim, and was wrong by
 two to three times.
+
+
+## Which cells are sourceable at all: a taxonomy, and one negative result
+
+The PIOPED pass raised an obvious question: what else is reachable? The answer
+turned out to depend on the *kind* of finding, not on how much literature
+exists about it, and the two attempts that established this are worth keeping
+because one of them failed.
+
+**Natriuretic peptide was attempted first and abandoned.** It looked like the
+best target: `lab:raised_bnp` was 0 of 6 sourced, the presentation studied in
+that literature is acute dyspnoea, which is exactly this project's, and
+separating heart failure from COPD and pneumonia in a breathless patient is
+the question those studies were built to answer. Three cohorts were checked.
+Ray 2006 (Crit Care, n=514) stratifies natriuretic peptide by *death*, not by
+diagnosis. Morrison 2002 (JACC) gives means and standard deviations by
+diagnosis, not proportions above a threshold. The Breathing Not Properly
+by-diagnosis breakdown is not in free full text.
+
+One usable figure did surface — 104 of 167 (62%) of acute COPD
+exacerbations without left ventricular dysfunction had elevated NT-proBNP —
+and it was still not taken, for the reason that decides this whole question.
+That figure sits on an age-specific NT-proBNP threshold. A heart-failure
+figure would sit on BNP > 100 pg/mL. Different analyte, different cutoff. A
+column assembled from them would manufacture a comparison the sources do not
+support, which is the same artefact class this document already refuses to
+reconcile when DDXPlus says 71% and a real cohort says 33% for pleuritic pain
+in pulmonary embolism.
+
+**Chest radiography was attempted second and worked**, for the complementary
+reason. Consolidation is a binary radiological observation, so studies saying
+"consolidation", "new infiltrate" and "pneumonic infiltrate" are answering one
+question and can be pooled. `("copd_exacerbation", "imaging:cxr_consolidation")`
+is now measured at 0.18.
+
+That gives a taxonomy of the remaining 101, and it is more useful than the
+sourcing itself:
+
+    kind of finding                                     cells   sourceable
+    binary observation, universal definition              ~20   yes, one study at a time
+    continuous biomarker, assay-dependent cutoff          ~27   only from a single cohort
+                                                                reporting every disease
+    differentially caused by the rivals                   ~26   only from a by-diagnosis
+                                                                cohort; pooling smears it
+    genuinely unpublished (P(raised BNP | panic attack))  ~28   no
+
+The third row is the one that keeps catching people, this author included.
+PIOPED II's Table 6 reports crackles in 112 of 632 and decreased breath sounds
+in 109 of 632 in its no-PE arm, and those numbers are *right there*, already
+extracted. They are unusable pooled: pneumonia and pulmonary oedema cause
+crackles and asthma causes wheeze, so a figure averaged over the seven rivals
+would smear asthma's rate across pericarditis. The PIOPED pass worked only
+because immobility and calf tenderness are risk factors that none of the eight
+diseases causes.
+
+The practical consequence is that the earlier estimate of 45-50% achievable
+coverage was too optimistic. Without a cohort reporting findings by final
+diagnosis — the one source shape that would fill whole columns, and the one
+none of these searches found — the realistic ceiling is nearer 36-40%.
