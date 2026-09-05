@@ -102,8 +102,8 @@ contradicted, all four for that reason:
   this is recorded rather than adjusted.
 
 **Most of these numbers are still invented, and which ones are not is
-recorded.** 27% of the 135 likelihoods carry a citation — 15 from DDXPlus, 14
-from the Merck Manual's narrative text, 7 from published cohorts.
+recorded.** 33% of the 153 likelihoods carry a citation — 15 from DDXPlus, 14
+from the Merck Manual's narrative text, 22 from published cohorts.
 `scripts/sensitivity.py` reports the split and `dxagent.provenance` tracks it
 per number. See *Constraints*.
 
@@ -196,7 +196,7 @@ here holds symptoms, signs, laboratory results and imaging findings, and
 nothing in scope reasons about medication. That is a scope fact rather than a
 substitution.
 
-**The likelihood tables are still mostly invented — 102 of 139.** UMLS was
+**The likelihood tables are still mostly invented — 102 of 153.** UMLS was
 probed and found unusable for this purpose — mostly translations and billing
 crosswalks, and its one clinical relation mixes symptoms, risk factors and
 treatment complications without distinguishing them. HPO supplies concepts but
@@ -239,7 +239,7 @@ be the misconduct this project's provenance tiers exist to prevent.
 **The disease priors are now derived from published aetiology, with wide
 bands.** They were invented for most of this project. Until recently they were also invisible to the audit —
 `dxagent.provenance` covered `P(finding | disease)` only, so a reader saw
-"27% sourced" with no hint that the priors were not part of that fraction at
+"33% sourced" with no hint that the priors were not part of that fraction at
 all. They now carry the same provenance tier as the likelihoods and are
 reported on their own line (`8 disease priors: 0 sourced, 8 invented`),
 counted separately rather than folded in, because merging them would let a

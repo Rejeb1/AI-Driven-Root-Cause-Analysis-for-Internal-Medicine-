@@ -667,18 +667,29 @@ def _superseded_test_decisive_test_signal_flags_the_masquerade_failures(kb, case
 
 
 def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
-    """Where the remaining failure lives, once every safety rule is removed.
+    """Where the remaining failures live, once every safety rule is removed.
 
     This arm switches off the workup floor, the decisive-test rule and
     correlation weighting -- everything that exists to catch a masquerade --
-    and one case fails: fx-001, a pneumonia read as COPD. **The shipped
-    configuration gets all ten**, which is the number that describes the
-    system; this one describes what the safety machinery is carrying.
+    and two cases fail: fx-001, a pneumonia read as COPD, and fx-009, a
+    pulmonary embolism read as pneumonia. **The shipped configuration gets
+    all ten**, which is the number that describes the system; this one
+    describes what the safety machinery is carrying.
 
     The count here has moved every time the knowledge base has: two failures
-    on invented numbers, none after the Merck likelihoods, one again now that
-    the priors are sourced. Pinned rather than deleted so the next move is
-    noticed rather than discovered.
+    on invented numbers, none after the Merck likelihoods, one once the
+    priors were sourced, and two again now that immobility and the signs of a
+    DVT are measured from PIOPED II rather than guessed.
+
+    That last move is worth stating plainly, because it made a number go the
+    wrong way for the right reason. fx-009 used to pass on this arm partly
+    because its rivals were penalised for *absent* venous-thromboembolism
+    findings at invented rates of 0.61 and 0.40 -- a pneumonia patient was
+    treated as unlikely to be free of calf tenderness. PIOPED II measured
+    those rates at 0.19 and 0.23 in patients investigated for embolism who
+    did not have one, so the penalty was largely an artefact and it is now
+    gone. The case did not get harder; the model stopped being wrong in a
+    direction that happened to help.
     """
     plain = DiagnosticAgent(
         kb=kb,
@@ -691,10 +702,23 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
         for case in cases
         if plain.run(case).differential.top.label != case.diagnosis
     ]
-    # Sourcing the priors brought one back on this deliberately weakened arm
-    # -- no workup floor, no decisive-test rule, no correlation weighting.
-    # The shipped configuration gets all ten; see the docstring.
-    assert wrong == ["fx-001"], f"unexpected failures: {wrong}"
+    # Sourcing brought these back on this deliberately weakened arm -- no
+    # workup floor, no decisive-test rule, no correlation weighting. The
+    # shipped configuration gets all ten; see the docstring.
+    assert wrong == ["fx-001", "fx-009"], f"unexpected failures: {wrong}"
+
+    # Correlation weighting alone -- still no workup floor, still no
+    # decisive-test rule -- carries both of them. That is the measurement
+    # behind calling it the load-bearing piece of this arm.
+    aware = DiagnosticAgent(
+        kb=build_knowledge_base(correlated=True),
+        limits=LoopLimits(require_decisive_tests=False, require_workup=False),
+    )
+    assert not [
+        case.case_id
+        for case in cases
+        if aware.run(case).differential.top.label != case.diagnosis
+    ]
 
 
 def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
@@ -1547,21 +1571,30 @@ def test_correlation_rescues_a_diagnosis_buried_by_repeated_evidence():
     assert p_aware > 5 * p_naive
 
 
-def test_correlation_and_sourcing_together_repair_the_case(kb):
-    """Two causes, fixed one at a time, and the order is the point.
+def test_correlation_survives_the_sourcing_that_removed_its_prop():
+    """A repair that was resting on a bad number, and what was left after.
 
-    The superseded version of this test recorded that correlation weighting
-    alone was not enough: it stopped four correlated negatives from being
-    counted as four independent penalties, and pulmonary embolism still lost.
-    Its docstring named the remaining cause -- "the likelihood values
-    themselves, which are invented and too extreme" -- as a hypothesis.
+    This test used to assert that correlation weighting plus Merck sourcing
+    put pulmonary embolism top of this evidence set. That was true, and part
+    of the reason was indefensible. Pneumonia and the rest were penalised for
+    the *absence* of calf tenderness and recent immobility at invented rates
+    of 0.40 and 0.61 -- as though a pneumonia patient would usually have a
+    swollen calf. PIOPED II measured those rates at 0.23 and 0.19 among
+    patients investigated for embolism who turned out not to have one, and
+    with real numbers the penalty is small and pulmonary embolism no longer
+    reaches the top of *this frozen evidence set* from the proposer alone.
 
-    That hypothesis was tested by sourcing three of those values from the
-    Merck Manual, and it held. Neither fix alone repairs this evidence set;
-    together they do.
+    So the claim is narrowed to what survives, which is still the mechanism
+    the correlation work was for: four correlated negatives are not four
+    independent penalties. Weighting them lifts pulmonary embolism from
+    fourth at 3.9% to second at 27.6% -- seven-fold -- on identical evidence
+    and an identical knowledge base.
+
+    The case itself is not lost. fx-009 is a case, not an evidence set, and
+    the shipped loop goes on to gather the evidence this snapshot freezes out
+    and commits to pulmonary embolism correctly. That assertion is the last
+    one here, and it is the one that describes the system.
     """
-    from dxagent.datasets.fixtures import build_knowledge_base
-
     evidence = [
         Finding("fever", Polarity.PRESENT),
         Finding("productive_cough", Polarity.PRESENT),
@@ -1571,16 +1604,36 @@ def test_correlation_and_sourcing_together_repair_the_case(kb):
         Finding("recent_immobility", Polarity.ABSENT),
         Finding("imaging:ctpa_filling_defect", Polarity.PRESENT),
     ]
-    aware = BayesianProposer(build_knowledge_base(correlated=True)).propose(evidence)
-    assert aware.top.label == "pulmonary_embolism"
 
-    # Correlation weighting is still doing work: without it the same evidence
-    # is read less favourably, which is why this is a two-cause story rather
-    # than a sourcing story.
-    plain = BayesianProposer(build_knowledge_base(correlated=False)).propose(evidence)
-    assert aware.probability_of("pulmonary_embolism") > plain.probability_of(
-        "pulmonary_embolism"
-    )
+    def look(correlated: bool) -> tuple[int, float]:
+        differential = BayesianProposer(
+            build_knowledge_base(correlated=correlated)
+        ).propose(evidence)
+        labels = [h.label for h in differential.hypotheses]
+        return (
+            labels.index("pulmonary_embolism") + 1,
+            differential.probability_of("pulmonary_embolism"),
+        )
+
+    plain_rank, plain_p = look(False)
+    aware_rank, aware_p = look(True)
+
+    assert (plain_rank, aware_rank) == (4, 2), "correlation still moves the rank"
+    assert aware_p > 5 * plain_p, f"a lift, not a nudge: {plain_p:.3f} -> {aware_p:.3f}"
+
+    # Pinned so that a later change putting it back on top is noticed rather
+    # than quietly celebrated: on this evidence set alone it is still second.
+    assert plain_p < 0.10 < aware_p < 0.50
+
+    # And the case, run properly, is still answered. Correlated is the
+    # shipped configuration -- every entry point in scripts/ builds it that
+    # way -- so this is the arm whose result describes the system.
+    case = next(c for c in build_cases() if c.case_id == "fx-009")
+    kb = build_knowledge_base(correlated=True)
+    outcome = DiagnosticAgent(
+        kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb)
+    ).run(case)
+    assert outcome.prediction == case.diagnosis == "pulmonary_embolism"
 
 
 # --------------------------------------------------------------------------
@@ -2637,18 +2690,17 @@ def test_reading_unlisted_findings_as_atypical_buys_rank_and_costs_safety():
 def test_completing_the_grid_buys_rank_and_costs_one_wrong_commit():
     """The measured trade behind ``complete_grid`` being off by default.
 
-    Filling all 77 uncharacterised cells removes indefensible values -- a
-    pericardial friction rub asserted at 0.60 for panic attack, Wells
-    criteria handed to every disease at pulmonary embolism's own rate -- and
-    it works: mean true-diagnosis rank over the real cases improves 2.38 to
-    2.00 and the confirmed NSTEMI climbs from fourth to second, where it
-    escalates rather than committing wrongly.
+    Filling the remaining uncharacterised cells removes indefensible values
+    -- a pericardial friction rub asserted at 0.60 for panic attack -- and it
+    works: mean true-diagnosis rank over the real cases improves 2.50 to
+    1.875, and the number of cases the loop is willing to commit on rises
+    from three to five.
 
-    It is still not obviously worth it, which is why it is a flag. It is 77
-    invented numbers from one non-clinician in one sitting, it takes the
-    sourced fraction from 27% to 17%, it costs a fixture case on the
-    no-workup arm, and it turns one abstention into a wrong commit --
-    acute coronary syndrome committed at 82% on a true pericarditis.
+    There were 77 such cells; PIOPED II has since measured 14 of them, so the
+    flag now writes 63. That is the shape of the argument against it. It is
+    63 invented numbers from one non-clinician in one sitting, it takes the
+    sourced fraction from 33% back down to 24%, and it turns one abstention
+    into a wrong commit -- acute coronary syndrome on a true pericarditis.
 
     That wrong commit errs *toward* the time-critical diagnosis, which is
     the direction this project's asymmetry says to prefer and the direction

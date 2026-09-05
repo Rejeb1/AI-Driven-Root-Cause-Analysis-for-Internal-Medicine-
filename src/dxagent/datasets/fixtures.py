@@ -438,6 +438,87 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
 # the honest description of them is that they encode a definitional relation
 # rather than an observed rate.
 
+# ---------------------------------------------------------------------------
+# PIOPED II's "No PE" arm, for findings no disease here causes.
+#
+# A route that only became visible when someone asked why a clinician was
+# needed for numbers the internet might hold. Most cells in this grid really
+# are unpublished -- nobody measures P(raised BNP | panic attack). But two of
+# them are Wells criteria, and PE rule-out studies necessarily report how
+# often each criterion appears in the patients who turned out *not* to have
+# a pulmonary embolism. That negative arm is exactly this knowledge base's
+# other seven diseases: people who presented with acute dyspnoea or chest
+# pain and had something else.
+#
+# Pooling across those seven is legitimate here and would not be for most
+# findings. Immobility and the signs of a DVT are not *caused* by pneumonia
+# or by a panic attack, so their rate barely depends on which of the seven a
+# patient turns out to have. Wheeze, breath sounds and crackles are also in
+# this paper's tables and are deliberately not taken from it: those vary by
+# disease, and the pooled figure would smear asthma's rate across
+# pericarditis.
+#
+# Both replace an inherited marginal that was indefensible -- 0.61 for
+# immobility and 0.40 for DVT signs, in every disease that did not describe
+# them, because pulmonary embolism was the only entry that did.
+#
+# Worth recording that the guess would have gone the wrong way again. The
+# invented values written for these cells earlier ranged 0.03-0.10 for DVT
+# signs; the measured figure is 0.23, two to eight times higher. That is the
+# third time in this session that sourcing has overturned an intuition, and
+# every time the intuition was too tidy.
+_PIOPED_NO_PE_CITATION = Citation(
+    "PIOPED-II-2007",
+    "Stein PD et al., Am J Med 2007;120(10):871-9, Tables 3 and 6",
+    "among patients investigated for suspected pulmonary embolism in whom it "
+    "was excluded, immobilization was present in 121 of 632 (19%) and signs "
+    "of deep venous thrombosis in the calf or thigh in 146 of 632 (23%)",
+)
+
+# Every disease here except pulmonary embolism itself, which describes both
+# findings already and from a stronger source.
+_NON_PE_DISEASES: tuple[str, ...] = (
+    "community_acquired_pneumonia",
+    "acute_coronary_syndrome",
+    "acute_pulmonary_oedema",
+    "copd_exacerbation",
+    "asthma_exacerbation",
+    "pericarditis",
+    "panic_attack",
+)
+
+# Bands span the paper's own two columns -- patients with no prior
+# cardiopulmonary disease against all patients -- rather than being widened
+# by judgement.
+_PIOPED_NO_PE: dict[str, tuple[float, float, float]] = {
+    "recent_immobility": (0.19, 0.16, 0.19),
+    "calf_tenderness": (0.23, 0.21, 0.23),
+}
+
+for _concept, (_value, _low, _high) in _PIOPED_NO_PE.items():
+    for _label in _NON_PE_DISEASES:
+        _FROM_LITERATURE[(_label, _concept)] = measured(
+            _value, _PIOPED_NO_PE_CITATION, low=_low, high=_high
+        )
+
+
+def _seed_pioped_cells(kb: InMemoryKnowledgeBase) -> None:
+    """Put the cells in place so ``_apply_sources`` can source them.
+
+    ``_apply_sources`` refuses to write a concept an entry does not already
+    carry, which is the check that stops a typo silently sourcing nothing.
+    These fourteen cells are new rather than corrections, so they are seeded
+    with the value that is about to overwrite them.
+    """
+    for label in _NON_PE_DISEASES:
+        entry = kb.entries[label]
+        features = dict(entry.features)
+        for concept, (value, _, _) in _PIOPED_NO_PE.items():
+            features.setdefault(concept, value)
+        kb.entries[label] = dataclasses.replace(entry, features=features)
+    kb._marginals.clear()
+
+
 # Precedence, weakest first: a converted phrase from a reference text, then a
 # frequency counted in the simulator, then a frequency counted in real
 # patients. Each later dict overwrites the earlier ones on a shared key, so
@@ -636,21 +717,17 @@ _complete("leg_swelling", {
 })
 
 # -- risk factors: base rates, deliberately NOT low -------------------------
-# The trap this whole block exists to avoid. Immobility and smoking are not
-# caused by any of these diseases, so their rate in each disease's population
-# is roughly the population's own -- higher where the disease selects for an
-# older, sicker, more sedentary group, and lower in panic attack, which
-# selects for the young.
-_complete("recent_immobility", {
-    "acute_pulmonary_oedema": 0.20, "community_acquired_pneumonia": 0.18,
-    "copd_exacerbation": 0.18, "acute_coronary_syndrome": 0.12,
-    "pericarditis": 0.10, "asthma_exacerbation": 0.08, "panic_attack": 0.05,
-})
-_complete("calf_tenderness", {
-    "acute_pulmonary_oedema": 0.10, "copd_exacerbation": 0.06,
-    "community_acquired_pneumonia": 0.05, "acute_coronary_syndrome": 0.05,
-    "pericarditis": 0.05, "asthma_exacerbation": 0.04, "panic_attack": 0.03,
-})
+# The trap this whole block exists to avoid. Smoking is not caused by any of
+# these diseases, so its rate in each disease's population is roughly the
+# population's own.
+#
+# Immobility and the signs of a DVT used to be chosen here too, on the same
+# argument. They are now measured instead, from PIOPED II's arm of patients
+# investigated for pulmonary embolism who turned out not to have one -- see
+# _PIOPED_NO_PE above. The values written here by judgement were 0.03-0.10
+# for DVT signs against a measured 0.23, so the guess was wrong by two to
+# eight times, which is the argument for sourcing over completing wherever a
+# source exists.
 _complete("smoking_history", {
     "acute_pulmonary_oedema": 0.45, "community_acquired_pneumonia": 0.35,
     "pulmonary_embolism": 0.30, "pericarditis": 0.25, "panic_attack": 0.25,
@@ -1010,6 +1087,7 @@ def build_knowledge_base(
             citations=_cite("FIXTURE-KB", "panic", "synthetic entry, not sourced"),
         )
     )
+    _seed_pioped_cells(kb)
     if complete_grid:
         _complete_uncharacterised(kb)
     _apply_sources(kb)

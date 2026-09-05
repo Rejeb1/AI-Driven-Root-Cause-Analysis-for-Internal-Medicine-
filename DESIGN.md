@@ -249,11 +249,23 @@ assumption.
 
 ## What sourcing changed, and one conclusion it took back
 
-Likelihoods were sourced in four passes: 17 from DDXPlus co-occurrence, 4 from
+Likelihoods were sourced in five passes: 17 from DDXPlus co-occurrence, 4 from
 a published cohort of 360 real pulmonary embolism patients (Miniati et al.,
 PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
-text through the fixed rubric, and 1 by targeted search. Coverage is 27%,
-and the remaining 102 are still invented.
+text through the fixed rubric, 3 by targeted search, and 14 from PIOPED II's
+arm of patients investigated for embolism who turned out not to have one
+(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 33%, and the
+remaining 102 are still invented.
+
+That last pass is the one worth copying. The other four asked what a disease
+looks like. It asked what the *rivals* look like, which is the half of a
+likelihood ratio this project had been guessing at throughout: a study that
+enrols everyone suspected of a condition and reports the arm that turned out
+not to have it is measuring exactly the population a differential reasons
+over. Immobility and calf tenderness in the seven non-PE diseases had been
+carrying invented values of 0.61 and 0.40; PIOPED II measures 0.19 and 0.23.
+The guess was wrong by two to three times in the direction that flattered the
+model, and taking it back cost a claim — see below.
 
     knowledge base            plain   +corr   +decisive   +both
     invented                   8/10    8/10        8/10    8/10
@@ -628,32 +640,34 @@ for every disease that is not pericarditis.
 **The backoff was never "no claim".** The reasoner used a number either way.
 The only question was whether anyone had chosen it, and nobody had.
 
-`_COMPLETIONS` chooses all 77. Not by one rule: blanket-low was already
+`_COMPLETIONS` chooses the rest. Not by one rule: blanket-low was already
 measured and rejected above, and the reason it failed is the split the
 completions turn on. A finding can be missing from a profile because the
 pathology does not produce it — a friction rub needs an inflamed pericardium,
 a filling defect needs clot — or because it is a *risk factor the disease
 does not cause at all*. A pneumonia patient can perfectly well have been
 immobile for three days or smoked for forty years, so those cells get base
-rates, not floors. That is the same trap that nearly produced an invented
+rates, not floors. Two of those three risk factors have since been measured
+rather than reasoned about, which took the block from 77 cells to 63 and
+showed the reasoning had been right in kind and wrong in size: the base rates
+chosen here for immobility and calf tenderness were 0.03 to 0.10, against
+PIOPED II's measured 0.19 and 0.23. That is the same trap that nearly produced an invented
 0.05 for troponin in COPD before the literature said 32%.
 
     config                fixtures  no-workup arm  real correct  wrong  rank
-    marginal (shipped)      10/10          10/10           3/8      0   2.38
-    complete_grid           10/10           9/10           4/8      1   2.00
+    marginal (shipped)      10/10           8/10           3/8      0   2.50
+    complete_grid           10/10           8/10           4/8      1   1.88
 
 It buys real ground: the confirmed NSTEMI climbs from fourth to second and
 escalates there rather than committing wrongly, mean rank matches the
 rejected blanket policy without its three wrong commits, and the shipped
 configuration still gets every fixture case.
 
-It is off anyway, and the reasons are worth being explicit about. It is 77
+It is off anyway, and the reasons are worth being explicit about. It is 63
 invented numbers from one non-clinician in a single sitting. It takes the
-sourced fraction from 27% to 17% — not a regression, but the count finally
-including claims the model was already making. It costs a fixture case on
-the no-workup arm and moves that arm's failure from fx-001 to fx-009. And it
-turns one abstention into a wrong commit: acute coronary syndrome at 82% on
-a true pericarditis.
+sourced fraction from 33% to 24% — not a regression, but the count finally
+including claims the model was already making. And it turns one abstention
+into a wrong commit: acute coronary syndrome at 82% on a true pericarditis.
 
 That last one is the closest call in this document. The error runs *toward*
 the time-critical diagnosis, which is the direction section 2 of
@@ -788,6 +802,13 @@ Two configurations, both measured, both defensible on their own terms:
     marginal backoff (shipped)      0   0.103     +0.020       3/8   2.38    102/139
     completed grid + damping        1   0.171     +0.156       4/8   2.00    179/216
 
+Those figures are as measured on the day of the decision and are left as
+recorded. The knowledge base has since taken the PIOPED II pass and lost the
+damping groups, so the current numbers are 102/153 invented, mean rank 2.50
+shipped against 1.88 with the grid on, and the wrong-commit count on each arm
+is unchanged. The decision below is unaffected by the move; the argument
+never turned on the size of the ranking gain.
+
 The completed grid wins on ranking and on one more correct commit. It is not
 adopted, and the reasoning is worth stating because the losing column is the
 one that looks better at a glance.
@@ -814,10 +835,11 @@ real patients survives the correlation damping and is not accounted for by
 anything measured here. A change whose principal harm cannot be explained
 does not belong on the default path.
 
-What that leaves standing is a real defect, stated rather than fixed: 73
+What that leaves standing is a real defect, stated rather than fixed: 63
 cells still answer from the marginal, so the model asserts a pericardial
-friction rub at 0.60 in panic attack and hands Wells criteria to every
-disease at pulmonary embolism's own rates. Those are indefensible values,
+friction rub at 0.60 in panic attack. The Wells half of that complaint has
+since been answered by measurement rather than by this flag — see the
+entry below. Those are indefensible values,
 they are documented here, and the completions that would replace them sit
 behind `complete_grid` fully measured, for a clinician to adopt rather than
 an engineer to assume.
@@ -826,3 +848,64 @@ The four correlation groups added to damp the completions went with them.
 They help only when the grid is complete: with it off they cost two fixture
 cases (10/10 to 8/10), which is the clearest possible evidence that they
 were compensating for the completions rather than correcting the model.
+
+
+## Sourcing the rivals: PIOPED II, and a repair that was resting on a bad number
+
+Every entry above this one asks the same question of a source: what does this
+disease look like? The likelihood ratio needs the other half too — what do
+the *rivals* look like — and this project had been answering that half by
+judgement throughout, including in the two values it complained loudest
+about. Recent immobility sat at 0.61 and calf tenderness at 0.40 for the
+seven non-PE diseases, both inherited from pulmonary embolism's own marginal,
+which amounts to asserting that a pneumonia patient usually has a swollen
+calf.
+
+PIOPED II (Stein PD et al., Am J Med 2007;120(10):871-9) answers it directly,
+because of how it was built: it enrolled patients *investigated* for
+pulmonary embolism and reports the arm that turned out not to have one. That
+arm is the population a differential actually reasons over. Table 3 gives
+immobilisation in 121 of 632 without PE (19%); Table 6 gives calf or thigh
+signs of DVT in 146 of 632 (23%). Fourteen cells, two findings across seven
+diseases, invented to measured:
+
+    finding             invented   PIOPED II (no-PE arm)
+    recent_immobility       0.61                    0.19
+    calf_tenderness         0.40                    0.23
+
+Coverage goes 27% to 33%; the completions block shrinks from 77 cells to 63.
+
+**And it cost a claim, which is the part worth recording.** This document
+previously stated that correlation weighting plus Merck sourcing together
+repaired fx-009 — a pulmonary embolism reading as pneumonia — and a test
+asserted that the correlated proposer put PE top of that evidence set. Both
+were true. Part of the reason was not defensible: the rivals were being
+penalised for the *absence* of venous-thromboembolism findings at 0.61 and
+0.40, so a large share of PE's winning margin came from a number nobody had
+chosen. With the measured values the penalty is small, and on that frozen
+evidence set the correlated proposer now returns COPD.
+
+What survives is the mechanism, which was always the point:
+
+    fx-009 evidence set        PE rank   PE probability
+    without correlation              4            0.039
+    with correlation                 2            0.276
+
+Four correlated negatives are still not four independent penalties, and
+weighting them is still worth a seven-fold lift on identical evidence. The
+case itself is still answered: fx-009 is a case rather than a snapshot, and
+the shipped loop gathers the evidence this set freezes out and commits to
+pulmonary embolism correctly. The test was narrowed to assert exactly that
+and no more.
+
+The weakened arm — no workup floor, no decisive-test rule, no correlation
+weighting — went from one failure to two, fx-001 and fx-009. That is the
+same effect seen from the other side, and it is not a regression in the
+model: the prop was removed, and the arm that had been leaning on it now
+reports what it was always worth. Correlation weighting alone carries both
+cases back. The shipped configuration gets all ten throughout.
+
+The general lesson is the one this project keeps relearning in different
+forms. An invented number does not announce itself by making results worse.
+This one made a result better, held up a documented claim, and was wrong by
+two to three times.
