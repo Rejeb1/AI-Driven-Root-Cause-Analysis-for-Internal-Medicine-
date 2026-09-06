@@ -1487,3 +1487,108 @@ chart review, or the physician-curated cases the brief intended.
 Three rejected against two accepted also says the accepted ones were not
 cherry-picked for kindness: both are hard, and both were kept because their
 labels are unambiguous, not because the model does well on them. It does not.
+
+
+## A faithfully transcribed number that was still wrong, and what fixing it cost
+
+Found by reading a demo transcript after the evidence-panel fix, not by a
+failing test. The transcript showed, under the supporting evidence for
+pneumonia:
+
+    dyspnoea_at_rest absent; P(dyspnoea_at_rest |
+    community_acquired_pneumonia) = 0.05; likelihood ratio 1.79
+
+A pneumonia patient breathless at rest only 5% of the time is clinically
+absurd in an emergency department, and 0.05 was the lowest value in that
+column — below pericarditis at 0.30 and panic attack at 0.60.
+
+The transcription was correct. The Merck chapter says dyspnoea in pneumonia
+"usually is mild and exertional and is rarely present at rest", and the fixed
+rubric maps "rare" to 0.05. **The error was the population.** That chapter
+describes pneumonia at every severity, most of it managed at home. This
+knowledge base's population is people who came to an emergency department
+*because* they were breathless, and inside that population a pneumonia patient
+is breathless at rest most of the time.
+
+This is a different failure mode from the two the project already documents. A
+mis-transcription (the pericarditis troponin, "almost always" read for
+"often") is caught by re-reading the source. A population mismatch survives
+re-reading the source, because the source says exactly what it was recorded as
+saying.
+
+The cost was not hypothetical. On pmc-4775775, a real 85-year-old with a
+confirmed pneumonia, the single strongest argument the model made *against*
+the correct diagnosis was that she was breathless at rest — and it ranked
+pneumonia fifth of eight on a patient with a productive cough and a basal
+infiltrate. A sourced number attracts less scrutiny than an invented one,
+which is how a value thirteen times too small survived several audits with a
+citation attached. That is the second time this week the same mechanism has
+hidden a bad number, the first being DDXPlus's leg swelling at 0.999.
+
+Replaced from a population-matched cohort: 954 acutely admitted patients, 265
+with expert-panel-confirmed CAP, dyspnoea in 171 of them — 0.67. The rule was
+fixed before looking: take whatever a population-matched source reports. One
+definitional gap remains and is stated in the source comment — the study
+records "dyspnoea", not "dyspnoea at rest" — and it is far smaller than the
+thirteenfold gap it replaces.
+
+### What it moved
+
+    arm                     before                      after
+    fixtures (top-1)        10/10, 7 commits, 0 wrong   10/10, 5 commits, 0 wrong
+    hard cases              4/5,   2 commits, 1 WRONG   5/5,   3 commits, 0 wrong
+    real cases (n=10)       3 correct, 0 wrong          3 correct, 0 wrong
+    mean real rank          3.00                        3.10
+    ECE / Brier             0.345 / 0.129               0.337 / 0.120
+    overconfidence          +0.083                      +0.166
+    pmc-4775775 rank        7th of 8                    3rd of 8
+
+**The wrong commit is gone.** fx-h04, the pneumonia in a COPD patient
+committed as a COPD exacerbation at 70%, is now answered correctly. It was the
+only wrong commit anywhere in this project's test sets.
+
+**And fx-009 stopped committing.** The pulmonary embolism that presents as a
+pneumonia now escalates at 52% instead of committing at 65%. The loop still
+ranks it first. That is the correct direction: fx-009's patient genuinely
+looks like a pneumonia, and a knowledge base that says so is more accurate
+than one that did not. The case moved from a confident right answer to an
+uncertain right answer.
+
+Net on the property this project actually claims: **one wrong commit removed,
+zero introduced, on every set.** Correct commits fell, which is the trade
+calibrated abstention is supposed to make.
+
+The overconfidence figure moved the wrong way, +0.083 to +0.166, and that is
+not explained by anything measured here. It is the same unexplained residual
+recorded when the completed grid was rejected, and it belongs on the list of
+things this project cannot account for rather than in a footnote.
+
+### Five test claims moved, and one mechanism argument collapsed
+
+- **The hard-case test now pins zero wrong commits** instead of one. The
+  instrument found a defect and then priced its repair, which is what it was
+  built for.
+- **The evidence-fit claim reversed a fourth time**, and back to its original
+  form. With no failing case left under the shipped configuration it is
+  measured on a weakened arm again, where fx-009 fits at 0.554 inside a
+  correct range of 0.124 to 0.601. No threshold separates them.
+- **SCOPE.md's table lost a claim.** It said rest dyspnoea lowers pneumonia;
+  the sourced value gives a likelihood ratio of 1.14, which discriminates in
+  neither direction, so the claim is dropped rather than reversed.
+- **fx-009 through the shipped loop escalates**, asserted precisely rather
+  than deleted.
+- **And the correlation argument inverted.** Fifth measurement, fifth answer:
+
+        arm                      fixtures  mean cost
+        plain                       9/10        15.6
+        + correlation               9/10        20.7
+        + decisive tests           10/10        20.1
+        + both                     10/10        23.3
+
+  Correlation weighting now buys nothing on this arm and costs a third more
+  budget; the decisive-test rule is what repairs fx-009. This project spent
+  more effort defending correlation weighting than any other mechanism, on
+  the strength of measurements that have now reversed twice more since. The
+  durable claim is the one the docstring has carried since the second
+  reversal: a mechanism's value is a property of the numbers underneath it,
+  and there is no answer to "does correlation help" independent of them.

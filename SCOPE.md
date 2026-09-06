@@ -65,7 +65,7 @@ The evidence that most moves each diagnosis, as currently encoded:
 | Cause | Raises it | Lowers it |
 |---|---|---|
 | Pulmonary embolism | CTPA filling defect, raised D-dimer, sudden onset, rest dyspnoea, hypoxia | orthopnoea, pulmonary oedema on CXR, consolidation on CXR |
-| Pneumonia | consolidation on CXR, fever, raised WCC, productive cough, crackles | rest dyspnoea, CTPA filling defect, leg swelling |
+| Pneumonia | consolidation on CXR, fever, raised WCC, productive cough, crackles | CTPA filling defect, leg swelling |
 | Acute coronary syndrome | raised troponin, sudden onset | productive cough, consolidation on CXR, fever |
 | Acute pulmonary oedema | pulmonary oedema on CXR, raised BNP, orthopnoea, leg swelling, raised JVP | fever, raised WCC, consolidation on CXR |
 | COPD exacerbation | productive cough, rest dyspnoea, smoking history, hypoxia | pulmonary oedema on CXR, sudden onset, raised JVP |
@@ -100,6 +100,17 @@ contradicted, all four for that reason:
   which lands on the knowledge base's marginal almost exactly. The rubric is
   deliberately coarse and is not re-tuned to produce a preferred answer, so
   this is recorded rather than adjusted.
+- **Rest dyspnoea no longer lowers pneumonia**, and the reason is a sourcing
+  error rather than a surprise about medicine. The Merck chapter says
+  dyspnoea in pneumonia "usually is mild and exertional and is rarely present
+  at rest", the rubric mapped "rare" to 0.05, and the transcription was
+  faithful — but that chapter describes pneumonia at every severity, most
+  of it managed at home, while this document's population is people who came
+  to an emergency department *because* they were breathless. A cohort of 954
+  acutely admitted patients records dyspnoea in 171 of the 265 with confirmed
+  pneumonia, so the value is 0.67 and not 0.05. The old number was arguing
+  against the correct diagnosis in real patients; see DESIGN.md for what
+  correcting it cost.
 
 **Most of these numbers are still invented, and which ones are not is
 recorded.** 37% of the 153 likelihoods carry a citation — 13 from DDXPlus, 14

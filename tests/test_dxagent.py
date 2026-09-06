@@ -352,38 +352,35 @@ def _superseded_test_evidence_fit_does_not_separate_masquerade_errors(kb, cases)
 
 
 def test_evidence_fit_does_not_separate_the_masquerade_failure():
-    """Three reversals, and then a test bed that can actually hold the claim.
+    """Four reversals, and the original claim standing after all of them.
 
-    The original claim was that evidence fit cannot tell the loop's failures
-    from its successes, because a masquerade failure is one where the *wrong*
-    diagnosis explains the evidence well. Nine sourced likelihoods appeared to
-    repair that; five more from the same source undid the repair; the Wang
-    inversions repaired it again. Three reversals on the same ten cases.
+    The claim is that evidence fit cannot tell the loop's failures from its
+    successes, because a masquerade is a case where the *wrong* diagnosis
+    explains the evidence well. This test has recorded, in order: no
+    separation, separation, no separation, separation, and now no separation
+    again. Every intermediate reversal was measured on an arm carrying
+    exactly one failure, where a "separation" is a property of that one case.
 
-    Every one of those measurements was taken on a deliberately weakened arm
-    carrying a single failure, and a separation demonstrated over one failure
-    is a property of that failure rather than of evidence fit. The previous
-    version of this test said so in its own docstring and then went on
-    asserting the separation anyway, which is why it kept flipping.
+    The measurement moved again when pneumonia's rest-dyspnoea likelihood was
+    corrected, which repaired the hard-case wrong commit and left the shipped
+    configuration with no failing case at all to measure. So it is back on a
+    weakened arm -- no workup floor, no decisive-test rule -- which is the
+    only place a failure now exists, and that is stated rather than hidden.
 
-    It is now measured where a real failure exists under the *shipped*
-    configuration: fx-h04 in the hard case set, a pneumonia in a COPD patient
-    committed wrongly at 70%. And the result is stronger than the original
-    claim rather than merely consistent with it. The failure does not just
-    score inside the range of the successes; it scores **above all of them**
-    -- 0.28 against a best correct case of 0.25. The wrong diagnosis explains
-    this evidence better than the right diagnosis explains any of the others,
-    which is exactly what a masquerade is and exactly why no threshold on
-    evidence fit can be used as a safety check.
+    On that arm fx-009 fits at 0.554 against correct cases spanning 0.124 to
+    0.601. It sits inside the range, not below it. No threshold separates
+    them, which is the durable version of the claim and the one that has
+    survived every knowledge base this project has had.
     """
     kb = build_knowledge_base(correlated=True)
-    agent = DiagnosticAgent(kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb))
+    agent = DiagnosticAgent(
+        kb=kb,
+        limits=LoopLimits(require_decisive_tests=False, require_workup=False),
+    )
     proposer = BayesianProposer(kb)
-
-    from dxagent.datasets.fixtures import build_hard_cases
-
     correct, wrong = [], []
-    for case in build_hard_cases():
+
+    for case in build_cases():
         outcome = agent.run(case)
         findings = case.initial() + [f for s in outcome.steps for f in s.findings]
         proposer.propose(findings)
@@ -391,12 +388,8 @@ def test_evidence_fit_does_not_separate_the_masquerade_failure():
         hit = outcome.differential.top.label == case.diagnosis
         (correct if hit else wrong).append(fit)
 
-    assert wrong, "hard case set no longer contains a failing case"
-    # Not merely unseparated: the masquerade is the best-explained case in
-    # the set. A threshold placed anywhere would reject successes first.
-    assert max(wrong) > max(correct), (
-        f"masquerade fit {max(wrong):.4f} no longer tops correct {max(correct):.4f}"
-    )
+    assert wrong, "no failing case left to measure evidence fit against"
+    assert min(correct) < max(wrong)
 
 
 def test_gate_escalates_unexplained_evidence_however_confident(kb):
@@ -778,17 +771,34 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
     # shipped configuration gets all ten; see the docstring.
     assert wrong == ["fx-009"], f"unexpected failures: {wrong}"
 
-    # Correlation weighting alone -- still no workup floor, still no
-    # decisive-test rule -- carries both of them. That is the measurement
-    # behind calling it the load-bearing piece of this arm.
+    # Correlation weighting alone no longer rescues it. It used to, and the
+    # sentence that used to sit here called correlation the load-bearing
+    # piece of this arm. Correcting pneumonia's rest-dyspnoea likelihood from
+    # a population-mismatched 0.05 to a measured 0.67 made pneumonia a
+    # genuinely better explanation of fx-009's evidence, which is correct --
+    # that patient does look like a pneumonia -- and left correlation unable
+    # to carry it.
     aware = DiagnosticAgent(
         kb=build_knowledge_base(correlated=True),
         limits=LoopLimits(require_decisive_tests=False, require_workup=False),
     )
-    assert not [
+    assert [
         case.case_id
         for case in cases
         if aware.run(case).differential.top.label != case.diagnosis
+    ] == ["fx-009"]
+
+    # What does carry it is the decisive-test rule, which is the fifth
+    # answer this project has measured to "which mechanism helps" and the
+    # opposite of the fourth. See the correlation test below.
+    decisive = DiagnosticAgent(
+        kb=build_knowledge_base(correlated=True),
+        limits=LoopLimits(require_decisive_tests=True, require_workup=False),
+    )
+    assert not [
+        case.case_id
+        for case in cases
+        if decisive.run(case).differential.top.label != case.diagnosis
     ]
 
 
@@ -839,9 +849,29 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     # correct about a different knowledge base. The durable lesson is that a
     # mechanism's value is a property of the numbers underneath it, so
     # "does correlation weighting help" has no answer independent of them.
-    assert correlated == len(cases), "correlation now gets every fixture case"
-    assert plain < correlated, "and the plain loop gives one back"
-    assert both <= correlated, "decisive tests still do not improve on the best arm"
+    # Fifth reversal, and this one inverts the fourth completely. Correcting
+    # pneumonia's rest-dyspnoea likelihood -- 0.05 from a Merck chapter
+    # covering pneumonia at every severity, against 0.67 in a cohort of
+    # acutely admitted patients -- made pneumonia a better explanation of
+    # fx-009's evidence. Correlation can no longer carry that case and the
+    # decisive-test rule now can:
+    #
+    #     arm                      fixtures  mean cost
+    #     plain                       9/10        15.6
+    #     + correlation               9/10        20.7
+    #     + decisive tests           10/10        20.1
+    #     + both                     10/10        23.3
+    #
+    # Correlation now buys nothing on this arm and costs a third more budget.
+    # Five measurements, five answers, and the durable claim is the one this
+    # docstring has made since the second: a mechanism's value is a property
+    # of the numbers underneath it, and "does correlation weighting help" has
+    # no answer independent of them. It is worth noticing that this project
+    # spent more effort defending correlation weighting than any other
+    # mechanism, on the strength of measurements that have now reversed.
+    assert plain == correlated, "correlation no longer changes the fixture count"
+    assert both > correlated, "the decisive-test rule is what repairs fx-009 now"
+    assert correlated_cost > plain_cost, "and correlation still costs budget"
 
 
 def _superseded_test_decisive_tests_do_not_repair(kb, cases):
@@ -1696,15 +1726,30 @@ def test_correlation_survives_the_sourcing_that_removed_its_prop():
     # than quietly celebrated: on this evidence set alone it is still second.
     assert plain_p < 0.10 < aware_p < 0.50
 
-    # And the case, run properly, is still answered. Correlated is the
-    # shipped configuration -- every entry point in scripts/ builds it that
-    # way -- so this is the arm whose result describes the system.
+    # The case, run properly, is no longer committed -- and the precise shape
+    # of that matters more than the headline.
+    #
+    # Correcting P(dyspnoea_at_rest | pneumonia) from a population-mismatched
+    # 0.05 to a measured 0.67 made pneumonia a materially better explanation
+    # of this evidence. That is correct: fx-009 is a pulmonary embolism that
+    # presents as a pneumonia, and the patient really does look like one. The
+    # loop still ranks pulmonary embolism first, and now declines to commit
+    # at 52% rather than committing at 65%.
+    #
+    # So the case was not lost, it was moved from a confident right answer to
+    # an uncertain right answer, on a knowledge base that is more accurate
+    # than the one that produced the confidence. That is the behaviour the
+    # abstention gate exists for, and it is asserted here rather than
+    # mourned.
     case = next(c for c in build_cases() if c.case_id == "fx-009")
     kb = build_knowledge_base(correlated=True)
     outcome = DiagnosticAgent(
         kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb)
     ).run(case)
-    assert outcome.prediction == case.diagnosis == "pulmonary_embolism"
+    assert outcome.differential.top.label == case.diagnosis == "pulmonary_embolism"
+    assert outcome.verdict is Verdict.ESCALATED
+    assert outcome.prediction is None
+    assert 0.45 < outcome.differential.top.probability < 0.65
 
 
 # --------------------------------------------------------------------------
@@ -1858,26 +1903,27 @@ def test_ontology_dot_marks_invented_edges_dashed(kb):
     assert "pericarditis" in dot
 
 
-def test_the_hard_cases_still_break_the_model_in_exactly_one_place():
-    """The replacement instrument, pinned to what it currently measures.
+def test_the_hard_cases_are_all_answered_after_the_dyspnoea_correction():
+    """The instrument found a wrong commit, and then priced its repair.
 
-    The ten development fixtures are saturated: the shipped configuration
-    ranks all ten correctly, commits nothing wrongly, and the gate's measured
-    value on them is +0.0% accuracy gained. They cannot tell a good change
-    from a bad one any more. ``build_hard_cases`` is five named diagnostic
-    traps written to replace them, and its docstring records that the traps
-    were fixed on clinical grounds before the model saw any of them.
+    ``build_hard_cases`` was written because the ten development fixtures
+    were saturated and could no longer separate a good change from a bad one.
+    On its first run it committed wrongly on fx-h04 -- a pneumonia in a COPD
+    patient, read as a COPD exacerbation at 70% -- which was the first wrong
+    commit on any fixture set in this project.
 
-    What it found on the first run, which is the argument for building it:
-    **fx-h04 is a wrong commit at 70% confidence** -- a pneumonia in a COPD
-    patient, read as a COPD exacerbation, with consolidation visible on the
-    chest radiograph. That is the first wrong commit on any fixture set in
-    this project, and the ten cases could never have surfaced it.
+    That commit is now gone, and not by tuning. Reading a demo transcript
+    showed P(dyspnoea_at_rest | pneumonia) at 0.05, faithfully converted from
+    a Merck sentence describing pneumonia at every severity, most of it
+    managed at home. This knowledge base's population is people who came to
+    an emergency department because they were breathless, where the rate is
+    0.67. Correcting it repaired fx-h04 as a side effect.
 
-    Pinned rather than fixed, and pinned as a failure rather than deleted,
-    for the same reason the masquerade test is: a number that moves should be
-    noticed rather than discovered. If a later change fixes fx-h04, this test
-    fails and the fix gets written down.
+    The repair was not free, and the costs are asserted elsewhere: fx-009
+    stopped committing through the shipped loop, and the fixture arm lost two
+    commits. What this test pins is the property that matters -- the hard
+    cases now carry no wrong commit -- and it will fail if a later change
+    reintroduces one, which is the whole reason the set exists.
     """
     from dxagent.datasets.fixtures import build_hard_cases
 
@@ -1892,20 +1938,8 @@ def test_the_hard_cases_still_break_the_model_in_exactly_one_place():
         if outcome.verdict is Verdict.COMMITTED and outcome.prediction != case.diagnosis:
             wrong.append((case.case_id, outcome.prediction))
 
-    assert len(top1) == 4, f"true diagnosis ranked first in {top1}"
-    assert wrong == [("fx-h04", "copd_exacerbation")], f"wrong commits: {wrong}"
-
-    # The instrument has to stay harder than the set it replaces, or it is not
-    # an instrument. The ten commit nothing wrongly; these five commit one.
-    plain = DiagnosticAgent(
-        kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb)
-    )
-    assert not [
-        case.case_id
-        for case in build_cases()
-        if plain.run(case).verdict is Verdict.COMMITTED
-        and plain.run(case).prediction != case.diagnosis
-    ]
+    assert wrong == [], f"a wrong commit is back: {wrong}"
+    assert len(top1) == 5, f"true diagnosis ranked first in {top1}"
 
 
 def test_documented_coverage_figures_match_the_knowledge_base(kb):

@@ -80,7 +80,11 @@ CLAIMS: tuple[tuple[str, str, str], ...] = (
     ("community_acquired_pneumonia", "lab:raised_wcc", "raises"),
     ("community_acquired_pneumonia", "productive_cough", "raises"),
     ("community_acquired_pneumonia", "exam:crackles", "raises"),
-    ("community_acquired_pneumonia", "dyspnoea_at_rest", "lowers"),
+    # Was "lowers" while the Merck-derived 0.05 stood. That value came
+    # from a chapter describing pneumonia at every severity, most of it
+    # managed at home; in a cohort of acutely admitted patients the rate
+    # is 0.67, and the claim is dropped rather than reversed because an
+    # LR of 1.14 is not a discriminating finding in either direction.
     ("community_acquired_pneumonia", "imaging:ctpa_filling_defect", "lowers"),
     ("community_acquired_pneumonia", "leg_swelling", "lowers"),
     ("acute_coronary_syndrome", "lab:raised_troponin", "raises"),

@@ -399,8 +399,8 @@ Eight patients hand-extracted from open-access PMC case reports: real, never
 seen by the knowledge base, no clinician review of the extraction.
 
 - **3 committed and correct, 0 committed and wrong**, 7 escalated.
-- Mean rank of the true diagnosis: 3.00 of 8.
-- ECE 0.345, Brier 0.129, overconfidence +0.083.
+- Mean rank of the true diagnosis: 3.10 of 8.
+- ECE 0.337, Brier 0.120, overconfidence +0.166.
 
 The set grew from eight to ten after the sourcing work, under a rule fixed
 before anything was run: second cases go to the commonest emergency causes,
@@ -421,7 +421,35 @@ The sampling frame is selected for exactly the property that makes a gold
 label hard to assign, which caps how far this set can grow without a registry,
 a chart review, or the physician-curated cases the brief intended.
 
-One of them says something specific. The afebrile pneumonia ranks seventh of
+One of them said something specific, and following it up found the worst
+number in the knowledge base. The afebrile pneumonia ranked *seventh of
+eight*, and the single strongest argument the model made against the correct
+diagnosis was that she was **breathless at rest** — because the knowledge
+base put P(rest dyspnoea | pneumonia) at **0.05**.
+
+That value was transcribed correctly. The Merck chapter says dyspnoea in
+pneumonia "is rarely present at rest", and the rubric maps "rare" to 0.05.
+**The error was the population**: that chapter covers pneumonia at every
+severity, most of it treated at home, while this system's population is people
+who came to an emergency department *because* they were breathless. A cohort
+of 954 acutely admitted patients records dyspnoea in 171 of the 265 with
+confirmed pneumonia — 0.67, thirteen times higher.
+
+This is a third failure mode, distinct from the two already documented. A
+mis-transcription is caught by re-reading the source; a population mismatch
+survives re-reading, because the source says exactly what it was recorded as
+saying. And a sourced number attracts less scrutiny than an invented one,
+which is how it survived several audits with a citation attached.
+
+Correcting it **removed the only wrong commit in any of this project's test
+sets** (fx-h04, a pneumonia read as COPD at 70%) and moved that real patient
+from seventh to third. It also cost two fixture commits and turned fx-009 from
+a confident right answer into an uncertain one — it now escalates at 52%
+with pulmonary embolism still ranked first. Net on the property this project
+claims: one wrong commit removed, none introduced. That is the trade
+calibrated abstention is supposed to make.
+
+The old point still stands too. The afebrile pneumonia ranks seventh of
 eight, largely because her white count is normal and this knowledge base gives
 pneumonia 0.80 for a raised one — a value in the single column where all
 eight cells are invented and no diagnostic-accuracy literature exists, because

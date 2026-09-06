@@ -544,6 +544,45 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         low=0.89,
         high=0.96,
     ),
+    # A faithfully transcribed number that was wrong anyway, because the
+    # source describes a different population from the one this model reasons
+    # over. Found by reading a demo transcript, not by a failing test.
+    #
+    # The Merck chapter on pneumonia says dyspnoea "usually is mild and
+    # exertional and is rarely present at rest", the rubric maps "rare" to
+    # 0.05, and the transcription is correct. But that chapter describes
+    # pneumonia at every severity, most of it managed at home, while this
+    # knowledge base's population is people who came to an emergency
+    # department *because* they were breathless. Inside that population a
+    # pneumonia patient is breathless at rest most of the time.
+    #
+    # The cost was not hypothetical. On pmc-4775775, a real 85-year-old with
+    # a confirmed pneumonia, the single strongest argument the model made
+    # *against* the correct diagnosis was that she was breathless at rest --
+    # and it ranked pneumonia fifth of eight on a patient with a productive
+    # cough and a basal infiltrate. A sourced number attracts less scrutiny
+    # than an invented one, which is how a value thirteen times too small
+    # survived several audits with a citation attached.
+    #
+    # Replaced from a population-matched cohort: 954 acutely admitted
+    # patients, 265 with expert-panel-confirmed CAP. One definitional gap
+    # remains and is stated rather than hidden -- the study records
+    # "dyspnoea", not "dyspnoea at rest" specifically, so this value may run
+    # slightly high. That gap is far smaller than the thirteenfold one it
+    # replaces, and the direction of the previous error was to argue against
+    # the right answer.
+    ("community_acquired_pneumonia", "dyspnoea_at_rest"): measured(
+        0.67,
+        Citation(
+            "CAP-DIAGNOSTIC-MODEL-2024",
+            "Community-acquired pneumonia diagnostic model, PMC11141191, Table 1",
+            "dyspnoea recorded in 171 of 265 patients with expert-panel "
+            "confirmed community-acquired pneumonia among 954 acutely "
+            "admitted patients (67.3%)",
+        ),
+        low=0.61,
+        high=0.73,
+    ),
     # A column this project declared blocked, and the one cell in it that
     # turns out not to be. The distinction is worth keeping straight because
     # the earlier claim was too broad.
