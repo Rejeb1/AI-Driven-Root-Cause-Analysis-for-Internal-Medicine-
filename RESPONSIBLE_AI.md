@@ -156,7 +156,7 @@ marketing:
 
 ### The dominant risk is the knowledge base, and it is measured
 
-97 of 153 likelihoods are invented. The eight disease priors are no longer
+96 of 153 likelihoods are invented. The eight disease priors are no longer
 among them — they are derived from published presentation-conditional
 aetiology, with bands wide enough to span the disagreement between the two
 sources.

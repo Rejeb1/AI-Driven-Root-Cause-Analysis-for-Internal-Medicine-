@@ -544,6 +544,37 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         low=0.89,
         high=0.96,
     ),
+    # A column this project declared blocked, and the one cell in it that
+    # turns out not to be. The distinction is worth keeping straight because
+    # the earlier claim was too broad.
+    #
+    # The objection to natriuretic peptide was never that no figure exists.
+    # It was that assembling a *column* means pairing a heart-failure value
+    # measured on BNP > 100 pg/mL with a COPD value measured on an
+    # age-specific NT-proBNP threshold, which are different analytes on
+    # different scales, and the resulting column would state a comparison its
+    # sources do not support. That objection still holds for the other five
+    # cells and they stay invented.
+    #
+    # It does not apply to a single cell taken from a single study at a
+    # single stated cutoff. Wang's review reports BNP at a 100 pg/mL
+    # threshold with sensitivity 93.5% and specificity 52.9%, and those two
+    # cross-check against the negative likelihood ratio of 0.11 quoted in the
+    # same review: (1 - 0.935) / 0.529 = 0.123, which recovers it. An
+    # independent figure from the Breathing Not Properly cohort at the same
+    # cutoff gives 90% and 76%, so the band spans the two.
+    ("acute_pulmonary_oedema", "lab:raised_bnp"): measured(
+        0.93,
+        Citation(
+            "WANG-2005",
+            "Wang CS et al., JAMA 2005;294(15):1944-56, BNP at 100 pg/mL",
+            "sensitivity 93.5% and specificity 52.9% for heart failure in "
+            "dyspnoeic emergency patients at a BNP cutoff of 100 pg/mL, "
+            "consistent with the same review's negative LR of 0.11",
+        ),
+        low=0.90,
+        high=0.94,
+    ),
     # Same review, same inversion, two more findings that carry matched
     # ratios. The chest radiograph one is worth noticing on its own account:
     # a sensitivity of 0.54 says the film is normal in nearly half of acute

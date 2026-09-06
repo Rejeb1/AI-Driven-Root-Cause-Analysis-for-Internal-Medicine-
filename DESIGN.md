@@ -255,7 +255,7 @@ PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
 text through the fixed rubric, 3 by targeted search, and 14 from PIOPED II's
 arm of patients investigated for embolism who turned out not to have one
 (Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 37%, and the
-remaining 97 are still invented.
+remaining 96 are still invented.
 
 That last pass is the one worth copying. The other four asked what a disease
 looks like. It asked what the *rivals* look like, which is the half of a
@@ -1429,3 +1429,61 @@ It is stated as a hypothesis rather than acted on. Lowering pneumonia's white
 count likelihood because one real case would benefit is precisely the tuning
 this project refuses; the honest form is that the column is unsourceable, it
 is doing real work, and one real patient now shows what that costs.
+
+
+### Narrowing a claim: the BNP column is blocked, the BNP cell is not
+
+An earlier entry recorded natriuretic peptide as unsourceable and moved on.
+That was stated too broadly, and the correction is worth making precisely
+because the original reasoning was right.
+
+The objection was never that no figure exists. It was that assembling a
+*column* means pairing a heart-failure value measured on BNP > 100 pg/mL with
+a COPD value measured on an age-specific NT-proBNP threshold — different
+analytes on different scales — so the column would state a comparison its
+sources do not support. That still holds, and the other five cells stay
+invented.
+
+It does not apply to one cell from one study at one stated cutoff. Wang's
+review gives BNP at 100 pg/mL a sensitivity of 93.5% and specificity of 52.9%,
+and those cross-check against the negative likelihood ratio of 0.11 quoted in
+the same review: (1 − 0.935) / 0.529 = 0.123 recovers it. The Breathing Not
+Properly cohort gives 90% and 76% at the same cutoff independently, so the
+band spans both.
+
+`("acute_pulmonary_oedema", "lab:raised_bnp")` is now measured at 0.93.
+Invented 97 to 96; coverage stays at 37%; behaviour unchanged on every arm.
+
+The general lesson is about how a negative result gets recorded. "This source
+is unusable" and "this column cannot be assembled" are different claims, and
+writing the stronger one closed a door that was only partly shut. This is the
+second time in two days that re-examining a recorded negative has produced
+cells — the first being the likelihood-ratio inversion, dismissed because the
+series reports ratios rather than frequencies.
+
+### Real cases are a biased sampling frame, and the rejection rate shows it
+
+The real-case set went from eight to ten. Getting there meant looking at five
+candidates and rejecting three, which is worth recording because the reasons
+are structural rather than bad luck:
+
+    PMC10332670   inferior STEMI whose confirmed cause is coronary vasospasm
+                  rather than atherosclerotic ACS, and only four findings
+                  documented in this vocabulary
+    PMC4495460    a clinicopathological case spanning years, whose final
+                  pathology is decompensated hypertensive heart disease *and*
+                  terminal bronchopneumonia -- two labels, not one
+    PMC3841695    unilateral pulmonary oedema masquerading as pneumonia,
+                  full text behind a verification page
+
+Two of the three failed on the same thing: **a case report is published
+because it is unusual**, and unusual frequently means the diagnosis is
+atypical, dual, or outside the modelled eight. The sampling frame is selected
+for exactly the property that makes a gold label hard to assign. That is a
+limitation of using case reports as a real-patient substitute at all, and it
+caps how far this set can grow without a different source — a registry, a
+chart review, or the physician-curated cases the brief intended.
+
+Three rejected against two accepted also says the accepted ones were not
+cherry-picked for kindness: both are hard, and both were kept because their
+labels are unambiguous, not because the model does well on them. It does not.

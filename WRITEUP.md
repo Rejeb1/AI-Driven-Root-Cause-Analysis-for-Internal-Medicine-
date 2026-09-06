@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 97 of its 153 likelihoods are invented, no
+an unfinished feature — because 96 of its 153 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -129,10 +129,10 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**97 of 153 likelihoods are invented.** That is the number, stated on its own
+**96 of 153 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project.
 
-The remaining 56 carry a citation: 13 counted from the DDXPlus simulator, 29
+The remaining 57 carry a citation: 13 counted from the DDXPlus simulator, 30
 from published cohorts, and 14 converted from Merck Manual narrative phrases.
 The eight disease priors are separately sourced, 8 of 8, and reported on their
 own line rather than folded in — merging them would let a sourced likelihood
@@ -412,6 +412,15 @@ matters did not move: still zero wrong commits, with both new cases
 escalating rather than guessing. The earlier 2.50 was partly a property of the
 smaller set.
 
+Getting from eight to ten meant looking at five candidates and rejecting
+three, and the reasons are structural. Two failed because **a case report is
+published because it is unusual** — one was an infarct caused by coronary
+vasospasm rather than atherosclerosis, another a years-long case whose final
+pathology was decompensated heart disease *and* terminal bronchopneumonia.
+The sampling frame is selected for exactly the property that makes a gold
+label hard to assign, which caps how far this set can grow without a registry,
+a chart review, or the physician-curated cases the brief intended.
+
 One of them says something specific. The afebrile pneumonia ranks seventh of
 eight, largely because her white count is normal and this knowledge base gives
 pneumonia 0.80 for a raised one — a value in the single column where all
@@ -479,8 +488,8 @@ them:
 | knowledge base | fixture cases correct |
 |---|---|
 | complete | 9/10 |
-| 97 invented deleted | **1/10** |
-| 56 sourced deleted, invented kept | 7/10 |
+| 96 invented deleted | **1/10** |
+| 57 sourced deleted, invented kept | 7/10 |
 
 (The 9/10 baseline rather than 10/10 is the same configuration inconsistency
 described just above: `sensitivity.py` also builds without correlation
@@ -590,7 +599,7 @@ empty row.
   agent in place of its own — not a configuration change, and not attempted.
 - **UMLS relations** — probed, found unusable, documented above.
 
-**Bounded by measurement rather than blocked:** the 97 remaining invented
+**Bounded by measurement rather than blocked:** the 96 remaining invented
 likelihoods. Both bulk routes are proven exhausted, and the PIOPED II pass
 demonstrates that individual cells can still be recovered when a study reports
 the right arm.
@@ -610,7 +619,12 @@ Natriuretic peptide was attempted and abandoned on the second row: a usable
 figure exists for COPD exacerbation (104 of 167, 62%) but rests on an
 age-specific NT-proBNP threshold, while a heart-failure figure would rest on
 BNP > 100 pg/mL. Pooling them would manufacture a comparison the sources do
-not support. Chest radiography was attempted and worked on the first row,
+not support. That claim was later narrowed, and the narrowing matters: the
+*column* cannot be assembled, but a single cell from a single study at a
+single cutoff can be, so the heart-failure cell is now measured at 0.93 and
+the other five stay invented. "This source is unusable" and "this column
+cannot be assembled" are different claims, and writing the stronger one had
+closed a door that was only partly shut. Chest radiography was attempted and worked on the first row,
 because consolidation is a binary observation that different studies define
 the same way — and it produced this project's first sourcing result that
 *confirmed* an invented value (0.20 held by judgement, 0.18 measured) rather
