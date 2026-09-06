@@ -670,6 +670,41 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         low=0.61,
         high=0.73,
     ),
+    # The ordering violation a mechanism audit of the grid turned up.
+    #
+    # This knowledge base had P(raised troponin | pulmonary embolism) at an
+    # invented 0.25, sitting *below* the sourced 0.32 for COPD exacerbation.
+    # That says a COPD exacerbation raises troponin more often than a
+    # pulmonary embolism does, and the mechanism says the opposite: acute
+    # embolism obstructs the pulmonary circulation and strains the right
+    # ventricle, which is what releases troponin. It is the same physiology
+    # that made the 0.20 natriuretic-peptide value wrong two entries above,
+    # and the two were found the same way -- by reading the grid for values
+    # that contradict what the diseases do, rather than by a failing test.
+    #
+    # In 220 consecutive patients admitted with acute pulmonary embolism,
+    # unselected by haemodynamic status, 116 had a positive troponin: 0.53.
+    #
+    # The band is wide for the reason the COPD troponin entry already
+    # records: assay generation, not disagreement about patients. This study
+    # used a high-sensitivity troponin T at 14 ng/L *and* a conventional
+    # troponin I at 0.5 ng/mL, and says itself that "the timing and
+    # indication, and the choice between 2 assays were not explained" -- a
+    # limitation quoted rather than smoothed over. A second cohort reports 90
+    # of 233 (0.39), and the review literature gives 30-50%, so the band
+    # spans the two counted figures.
+    ("pulmonary_embolism", "lab:raised_troponin"): measured(
+        0.53,
+        Citation(
+            "TROPONIN-APE-2019",
+            "Elevated cardiac troponin in acute pulmonary embolism, PMC6753431",
+            "116 of 220 consecutive patients admitted with acute pulmonary "
+            "embolism had a positive troponin (52.7%), using high-sensitivity "
+            "troponin T above 14 ng/L or troponin I above 0.5 ng/mL",
+        ),
+        low=0.39,
+        high=0.53,
+    ),
     # Two cells the PIOPED II pass should have written and did not.
     #
     # That pass took the *no-PE* arm of Tables 3 and 6 and used it for the

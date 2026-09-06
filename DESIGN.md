@@ -254,8 +254,8 @@ a published cohort of 360 real pulmonary embolism patients (Miniati et al.,
 PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
 text through the fixed rubric, 3 by targeted search, and 14 from PIOPED II's
 arm of patients investigated for embolism who turned out not to have one
-(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 39%, and the
-remaining 93 are still invented.
+(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 40%, and the
+remaining 92 are still invented.
 
 That last pass is the one worth copying. The other four asked what a disease
 looks like. It asked what the *rivals* look like, which is the half of a
@@ -665,7 +665,7 @@ configuration still gets every fixture case.
 
 It is off anyway, and the reasons are worth being explicit about. It is 63
 invented numbers from one non-clinician in a single sitting. It takes the
-sourced fraction from 39% to 24% — not a regression, but the count finally
+sourced fraction from 40% to 24% — not a regression, but the count finally
 including claims the model was already making. And it turns one abstention
 into a wrong commit: acute coronary syndrome at 82% on a true pericarditis.
 
@@ -1975,3 +1975,78 @@ rivals, and never asked whether the table it had open said anything about the
 disease in the middle of the differential. A sourcing pass aimed at one part
 of a table can leave the rest of it unread, and the resulting gap is invisible
 afterwards because the citation is present and correct.
+
+
+### The troponin ordering violation, and the fixture arms retired as evidence
+
+The same mechanism audit turned up a second ordering error. The grid had
+P(raised troponin | pulmonary embolism) at an invented 0.25, sitting *below*
+the sourced 0.32 for COPD exacerbation — asserting that a COPD exacerbation
+raises troponin more often than a pulmonary embolism does. The mechanism says
+the opposite, and it is the same one that made the natriuretic-peptide value
+wrong: acute embolism strains the right ventricle, and a strained ventricle
+releases both peptides and troponin.
+
+In 220 consecutive patients admitted with acute pulmonary embolism, unselected
+by haemodynamic status, 116 had a positive troponin. **0.53.** The band spans
+that and a second cohort at 90 of 233 (0.39). The source used two assays and
+admits that "the timing and indication, and the choice between 2 assays were
+not explained", which is quoted rather than smoothed over — the same
+assay-generation caveat the COPD troponin entry already carries.
+
+Coverage 39% to 40%, invented 93 to 92. Hard cases unchanged at 5 of 5 with 3
+commits and 0 wrong. Real cases held at 0 wrong commits and lost one
+commitment: pmc-4565285, a pulmonary embolism whose troponin is normal, falls
+from committing at 0.78 to escalating at 0.62 with the right diagnosis still
+ranked first. Three points under the threshold, on a patient who really does
+have a normal troponin — which 47 of every 100 pulmonary embolisms do. The
+gate declining there is the gate working.
+
+### The fixture arms are now retired as evidence
+
+The correlation test no longer asserts any of them:
+
+    plain            9/10   cost 13.7
+    + correlation    8/10   cost 17.9
+    + decisive       9/10   cost 18.3
+    + both           8/10   cost 21.5
+
+That measurement has returned a different answer eight times — worth one case,
+nothing, two, nothing, minus one, and now minus one with the decisive rule no
+longer recovering it. Every one was taken on the same ten cases, which the
+shipped configuration ranks eight to ten of whatever the mechanisms are set
+to. Pinning any of those counts pins noise, and pinning them is what kept this
+question open for weeks. They stay in the test as a comment.
+
+What the test asserts instead is the measurement that has held or widened
+through every sourcing pass:
+
+    correlated=False   real: 2 correct, 3 WRONG commits, Brier 0.234
+    correlated=True    real: 2 correct, 0 wrong commits,  Brier 0.116
+
+One of those two measurements is an instrument and the other is a coin, and it
+took this project far too long to say so.
+
+### Where the mechanism audit stands
+
+Three ordering or mechanism violations found by reading the grid against
+physiology rather than by any failing test, all three in the same disease:
+
+    P(raised BNP | PE)          0.20 invented  ->  0.62 measured
+    P(recent immobility | PE)   0.61 simulated ->  0.25 measured
+    P(raised troponin | PE)     0.25 invented  ->  0.53 measured
+
+Pulmonary embolism was the worst-described disease in a knowledge base built
+around not missing it. Every one of the three understated a consequence of
+right ventricular strain or overstated a risk factor, and each was invisible
+to the test suite because tests check outcomes and these were inputs.
+
+One suspect remains and could not be sourced. P(hypoxia | acute pulmonary
+oedema) is invented at 0.40, below COPD at 0.55 and pulmonary embolism at
+0.60, when alveolar flooding impairing gas exchange is the mechanism that
+defines the disease. Every cohort found for it enrols patients *by* an oxygen
+saturation threshold — SpO2 below 90% is the standard entry criterion for
+acute cardiogenic pulmonary oedema trials — so the literature measures the
+severity of selected patients rather than the prevalence of hypoxaemia among
+unselected ones. It is recorded here as a suspected violation that the
+available literature is structurally unable to settle.

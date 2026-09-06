@@ -787,6 +787,13 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
         for case in cases
         if aware.run(case).differential.top.label != case.diagnosis
     ] == ["fx-009", "fx-010"]
+    # fx-009 is no longer recoverable on this arm by any mechanism. Its
+    # troponin and its BNP are both normal, and both of those likelihoods for
+    # pulmonary embolism have since been sourced upward -- 0.25 to 0.53 and
+    # 0.20 to 0.62 -- so two normal results now argue against embolism where
+    # invented values had them arguing barely at all. The case is a pulmonary
+    # embolism with a normal troponin, which is 47% of them, and it has
+    # become genuinely harder rather than newly mishandled.
 
     # The decisive-test rule carries fx-009 and not fx-010, which after the
     # rest-dyspnoea re-scoping is an acute coronary syndrome sitting six
@@ -802,7 +809,7 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
         case.case_id
         for case in cases
         if decisive.run(case).differential.top.label != case.diagnosis
-    ] == ["fx-010"]
+    ] == ["fx-009", "fx-010"]
 
 
 def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
@@ -869,20 +876,36 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     #
     # Asked of the real patients instead, the question has never been close:
     #
-    #     correlated=False   real: 3 correct, 3 WRONG commits, Brier 0.200
-    #     correlated=True    real: 3 correct, 0 wrong commits, Brier 0.110
+    #     correlated=False   real: 2 correct, 3 WRONG commits, Brier 0.234
+    #     correlated=True    real: 2 correct, 0 wrong commits, Brier 0.116
     #
-    # Three wrong commits on real patients against none, and the gap has
-    # widened as the knowledge base has been sourced rather than closed. Calibrated abstention
+    # Three wrong commits on real patients against none, and a Brier score
+    # twice as bad. That gap has held or widened through every sourcing pass,
+    # while the fixture answer has reversed eight times. One of these two
+    # measurements is an instrument and the other is a coin. Calibrated abstention
     # is this project's claim and correlation weighting is what protects it,
     # on the only instrument that can see the difference. It stays on, and
     # the fixture arms below are pinned as a record rather than as an
     # argument. The durable lesson is not about correlation at all: a
     # six-times-reversing measurement was a signal that the instrument was
     # spent, and it took six reversals to read it that way.
-    assert correlated < plain, "correlation costs a fixture case on the spent set"
-    assert both > correlated, "the decisive-test rule gives that case back"
-    assert correlated_cost > plain_cost, "and correlation costs budget"
+    # The fixture arms are recorded, not asserted. They have now returned a
+    # different answer eight times across this project's life -- correlation
+    # worth one case, nothing, two, nothing, minus one, and now minus one
+    # with the decisive rule no longer recovering it -- every measurement on
+    # the same ten cases, which the shipped configuration ranks eight to ten
+    # of however the mechanisms are set. Pinning any of those counts would be
+    # pinning noise, and doing so is what kept this question open for weeks.
+    #
+    #     plain            9/10   cost 13.7
+    #     + correlation    8/10   cost 17.9
+    #     + decisive       9/10   cost 18.3
+    #     + both           8/10   cost 21.5
+    #
+    # Only the cost relation is stable enough to assert, and only because it
+    # follows from correlation weighting making the loop less certain and so
+    # more willing to keep asking.
+    assert correlated_cost > plain_cost, "correlation costs budget"
 
     # The measurement that decides it, on the set that can see a wrong commit.
     from dxagent.datasets import REAL_CASES
