@@ -346,6 +346,36 @@ opposite failure to the one this project spends most of its time guarding
 against, and another symptom of a saturated set rather than a property to
 celebrate.
 
+### The fixture set was spent, so it was replaced
+
+The figures above have a consequence worth stating rather than hiding: a test
+set the system aces cannot measure anything. Every mechanism in this project
+was argued for as being worth some number of fixture cases, and that
+measurement had stopped working.
+
+`build_hard_cases` is five named diagnostic traps written to replace it —
+cardiac asthma, myopericarditis, silent ischaemia in a diabetic, pneumonia in
+a COPD patient, and asthma in someone who never smoked. They are kept separate
+from the original ten so that every measurement already recorded keeps its
+denominator. Each was written from the clinical picture *before* the model was
+run on any of them, and none was kept or dropped on the basis of the result;
+generating cases and keeping the failures would measure only a willingness to
+search.
+
+It found something on the first run. Four of five rank first, three commit
+correctly, one escalates correctly at 61% — and **one commits wrongly at 70%
+confidence**: a pneumonia in a COPD patient, read as a COPD exacerbation, with
+consolidation visible on the chest radiograph. That is the first wrong commit
+on any fixture set in this project.
+
+The cause turned out to be a correlation group that damps the decisive
+imaging test together with the three soft symptoms it exists to overrule —
+exactly what `DESIGN.md` argued must not be done for D-dimer and CTPA, and
+then did anyway for consolidation. Ungrouping it improves the fixtures, the
+real-case ranking, ECE and Brier, costs overconfidence, and **still does not
+fix the case that exposed it**. It is measured and recorded, not adopted; the
+trade is mixed and one case is not a reason.
+
 ### The numbers that are not results
 
 **10/10 on the fixture cases is a smoke test.** Ten cases I wrote by hand during

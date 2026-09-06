@@ -1510,4 +1510,238 @@ def build_cases() -> list[Case]:
     ]
 
 
-__all__ = ["COSTS", "build_cases", "build_knowledge_base"]
+def build_hard_cases() -> list[Case]:
+    """Five diagnostic traps, kept separate from the ten development fixtures.
+
+    The ten cases in ``build_cases`` are saturated. The shipped configuration
+    ranks all ten correctly and the held-out split scores 7 of 7, so the set
+    can no longer separate a good change from a bad one -- and the abstention
+    gate, whose entire purpose is declining the cases the model gets wrong,
+    measures +0.0% accuracy gained on it, because there is nothing left to
+    decline. A test set the system aces is not evidence that the system is
+    finished; it is evidence that the test set is spent.
+
+    These five are an instrument to replace it, and they are **not** added to
+    ``build_cases``. Every measurement in DESIGN.md is stated against those
+    ten, and silently changing the denominator would invalidate the record
+    this project keeps deliberately.
+
+    **How they were chosen, because that is the part that could be abused.**
+    Each is a named diagnostic trap in this exact differential, written from
+    the clinical picture before the model was run on any of them, and none was
+    kept or discarded on the basis of whether the model got it right. The
+    obvious way to manufacture a discriminating test set is to generate many
+    cases, keep the failures, and report a set the system fails; that would
+    measure nothing but a willingness to search. This is the reverse: the
+    traps were fixed first and the score is whatever it turns out to be.
+
+    - **fx-h01, cardiac asthma.** Left ventricular failure produces bronchial
+      oedema and wheeze, and an ex-smoker who is wheezing reads as COPD. The
+      knowledge base states wheeze at 0.91 for COPD, so this aims at a value
+      the model holds strongly.
+    - **fx-h02, myopericarditis.** Pleuritic pain with a raised troponin and
+      ST changes is the acute-coronary signature; the friction rub is the only
+      thing separating them. Also probes the red-flag rule, which should
+      resist committing while acute coronary syndrome is still live.
+    - **fx-h03, silent ischaemia.** An elderly diabetic with breathlessness
+      and no chest pain at all. Removes the finding the model's ACS row leans
+      on, and exercises the presentation-triggered troponin and ECG.
+    - **fx-h04, pneumonia complicating COPD.** Both diagnoses are true and the
+      label is the acute actionable one. Every COPD feature is present, so
+      consolidation is the only discriminator -- which puts the weight on the
+      cell measured from the AECOPD imaging review at 0.18.
+    - **fx-h05, asthma without a smoking history.** SCOPE.md records that at
+      the default threshold asthma exacerbation has *no supporting edges at
+      all*: every finding it carries is claimed at least as hard by COPD.
+      This tests the model's structurally weakest row directly.
+    """
+    return [
+        Case(
+            case_id="fx-h01",
+            presenting_complaint=(
+                "woke at 3am fighting for breath, wheezing, has to sit upright"
+            ),
+            diagnosis="acute_pulmonary_oedema",
+            initial_findings=("dyspnoea_at_rest", "wheeze_subjective", "orthopnoea"),
+            features={
+                "dyspnoea_at_rest": True,
+                "orthopnoea": True,
+                "wheeze_subjective": True,
+                "exam:raised_jvp": True,
+                "lab:raised_bnp": True,
+                "imaging:cxr_pulmonary_oedema": True,
+                "leg_swelling": True,
+                "exam:crackles": True,
+                "smoking_history": True,
+                "sudden_onset": True,
+                "exam:tachycardia": True,
+                "exam:hypoxia": True,
+                "fever": False,
+                "productive_cough": False,
+                "imaging:cxr_consolidation": False,
+                "lab:raised_wcc": False,
+                "pleuritic_pain": False,
+                "exertional_chest_pain": False,
+                "lab:raised_troponin": False,
+                "exam:ecg_st_changes": False,
+                "exam:reduced_breath_sounds": False,
+                "calf_tenderness": False,
+                "recent_immobility": False,
+                "lab:raised_d_dimer": False,
+                "imaging:ctpa_filling_defect": False,
+                "palpitations": False,
+                "exam:friction_rub": False,
+            },
+        ),
+        Case(
+            case_id="fx-h02",
+            presenting_complaint=(
+                "sharp chest pain after a week of flu, worse flat, eased sitting forward"
+            ),
+            diagnosis="pericarditis",
+            initial_findings=("pleuritic_pain", "fever"),
+            features={
+                "pleuritic_pain": True,
+                "fever": True,
+                "exam:friction_rub": True,
+                "lab:raised_troponin": True,
+                "exam:ecg_st_changes": True,
+                "sudden_onset": True,
+                "exam:tachycardia": True,
+                "lab:raised_wcc": True,
+                "dyspnoea_at_rest": False,
+                "exertional_chest_pain": False,
+                "productive_cough": False,
+                "exam:crackles": False,
+                "imaging:cxr_consolidation": False,
+                "orthopnoea": False,
+                "leg_swelling": False,
+                "calf_tenderness": False,
+                "recent_immobility": False,
+                "lab:raised_d_dimer": False,
+                "imaging:ctpa_filling_defect": False,
+                "lab:raised_bnp": False,
+                "imaging:cxr_pulmonary_oedema": False,
+                "smoking_history": False,
+                "exam:hypoxia": False,
+                "wheeze_subjective": False,
+                "exam:raised_jvp": False,
+                "exam:reduced_breath_sounds": False,
+                "palpitations": False,
+            },
+        ),
+        Case(
+            case_id="fx-h03",
+            presenting_complaint=(
+                "77-year-old diabetic, sudden breathlessness this morning, no chest pain"
+            ),
+            diagnosis="acute_coronary_syndrome",
+            initial_findings=("dyspnoea_at_rest", "sudden_onset"),
+            features={
+                "dyspnoea_at_rest": True,
+                "sudden_onset": True,
+                "lab:raised_troponin": True,
+                "exam:ecg_st_changes": True,
+                "exam:tachycardia": True,
+                "smoking_history": True,
+                "exertional_chest_pain": False,
+                "pleuritic_pain": False,
+                "fever": False,
+                "productive_cough": False,
+                "exam:crackles": False,
+                "imaging:cxr_consolidation": False,
+                "imaging:cxr_pulmonary_oedema": False,
+                "lab:raised_bnp": False,
+                "orthopnoea": False,
+                "leg_swelling": False,
+                "calf_tenderness": False,
+                "recent_immobility": False,
+                "lab:raised_d_dimer": False,
+                "imaging:ctpa_filling_defect": False,
+                "lab:raised_wcc": False,
+                "wheeze_subjective": False,
+                "exam:hypoxia": False,
+                "palpitations": False,
+                "exam:friction_rub": False,
+                "exam:raised_jvp": False,
+                "exam:reduced_breath_sounds": False,
+            },
+        ),
+        Case(
+            case_id="fx-h04",
+            presenting_complaint=(
+                "lifelong smoker, four days of fever, green sputum and worsening wheeze"
+            ),
+            diagnosis="community_acquired_pneumonia",
+            initial_findings=("fever", "productive_cough", "wheeze_subjective"),
+            features={
+                "fever": True,
+                "productive_cough": True,
+                "imaging:cxr_consolidation": True,
+                "lab:raised_wcc": True,
+                "exam:crackles": True,
+                "smoking_history": True,
+                "wheeze_subjective": True,
+                "exam:reduced_breath_sounds": True,
+                "dyspnoea_at_rest": True,
+                "exam:hypoxia": True,
+                "pleuritic_pain": True,
+                "exam:tachycardia": True,
+                "sudden_onset": False,
+                "orthopnoea": False,
+                "leg_swelling": False,
+                "calf_tenderness": False,
+                "recent_immobility": False,
+                "lab:raised_d_dimer": False,
+                "imaging:ctpa_filling_defect": False,
+                "lab:raised_bnp": False,
+                "imaging:cxr_pulmonary_oedema": False,
+                "lab:raised_troponin": False,
+                "exam:ecg_st_changes": False,
+                "exertional_chest_pain": False,
+                "palpitations": False,
+                "exam:friction_rub": False,
+                "exam:raised_jvp": False,
+            },
+        ),
+        Case(
+            case_id="fx-h05",
+            presenting_complaint=(
+                "24-year-old, never smoked, sudden wheeze and breathlessness this evening"
+            ),
+            diagnosis="asthma_exacerbation",
+            initial_findings=("wheeze_subjective", "dyspnoea_at_rest"),
+            features={
+                "wheeze_subjective": True,
+                "dyspnoea_at_rest": True,
+                "sudden_onset": True,
+                "exam:reduced_breath_sounds": True,
+                "exam:tachycardia": True,
+                "exam:hypoxia": True,
+                "smoking_history": False,
+                "fever": False,
+                "productive_cough": False,
+                "exam:crackles": False,
+                "imaging:cxr_consolidation": False,
+                "lab:raised_wcc": False,
+                "orthopnoea": False,
+                "leg_swelling": False,
+                "lab:raised_bnp": False,
+                "imaging:cxr_pulmonary_oedema": False,
+                "exam:raised_jvp": False,
+                "lab:raised_troponin": False,
+                "exam:ecg_st_changes": False,
+                "pleuritic_pain": False,
+                "exertional_chest_pain": False,
+                "calf_tenderness": False,
+                "recent_immobility": False,
+                "lab:raised_d_dimer": False,
+                "imaging:ctpa_filling_defect": False,
+                "palpitations": False,
+                "exam:friction_rub": False,
+            },
+        ),
+    ]
+
+
+__all__ = ["COSTS", "build_cases", "build_hard_cases", "build_knowledge_base"]

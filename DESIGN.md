@@ -1020,3 +1020,83 @@ and SCOPE.md reports its results both ways, so that is a deliberate design.
 evidence table is built from likelihood ratios against the marginal and
 correlation weighting does not enter that computation. Only `run_eval.py` was
 wrong.
+
+
+## A replacement test set, and the wrong commit it found immediately
+
+Fixing `run_eval.py` left this project without a working instrument. The ten
+development fixtures are saturated: the shipped configuration ranks all ten
+correctly, commits none of them wrongly, and the gate's measured value on them
+is +0.0% accuracy gained at 0.0% abstention precision, because there is no
+error left to decline. Every mechanism argued for in this document was
+justified as being worth some number of fixture cases. That measurement no
+longer discriminates anything.
+
+`build_hard_cases` is five named diagnostic traps written to replace it, kept
+deliberately separate from `build_cases` so that every measurement already
+recorded here keeps its denominator.
+
+**How they were chosen matters more than what they contain.** Each is a
+recognised trap in this differential, written from the clinical picture before
+the model was run on any of them, and none was kept or dropped according to
+whether the model got it right. The easy way to manufacture a discriminating
+set is to generate cases, keep the failures, and report a set the system
+fails; that measures a willingness to search and nothing else.
+
+    fx-h01  cardiac asthma          LV failure wheezing, reads as COPD
+    fx-h02  myopericarditis         troponin + ST changes, reads as ACS
+    fx-h03  silent ischaemia        elderly diabetic, no chest pain at all
+    fx-h04  pneumonia in a COPD pt  every COPD feature present, both true
+    fx-h05  asthma, never smoked    the row with no supporting edges
+
+First run: four of five ranked first, three committed correctly, one escalated
+correctly (fx-h02 at 61%, just under the threshold), and **fx-h04 committed
+wrongly at 70% confidence** — a pneumonia read as a COPD exacerbation with
+consolidation visible on the radiograph. That is the first wrong commit on any
+fixture set in this project, and the ten cases were structurally incapable of
+producing it.
+
+### Why fx-h04 fails, and the fix that does not fix it
+
+The proposer without correlation weighting gets it right and confidently:
+pneumonia 0.929. With correlation weighting it flips to COPD 0.485 against
+pneumonia 0.470.
+
+The first hypothesis was uncharacterised cells. Pneumonia states no value at
+all for wheeze, smoking history or reduced breath sounds, so COPD claims all
+three unopposed at 0.91, 0.82 and 0.60 while pneumonia falls back to the
+marginal. That hypothesis is wrong: `complete_grid=True` fills exactly those
+cells and fx-h04 still commits to COPD.
+
+The real cause is a grouping this document already argued against, in another
+case, and then made anyway:
+
+    (0.75, ("fever", "productive_cough", "exam:crackles", "imaging:cxr_consolidation"))
+
+Consolidation on the radiograph is the decisive test that separates these two
+diagnoses — 0.95 against 0.18 — and it is damped together with the three soft
+symptoms it exists to overrule. The entry above on the damping groups states
+the principle explicitly for the other decisive test: "Correlating the
+decisive test with the picture it exists to overrule would be a fix that
+breaks the thing this knowledge base was most recently repaired to do." That
+is why D-dimer and CTPA were left ungrouped. The consolidation group does the
+thing that paragraph forbids.
+
+Removing `imaging:cxr_consolidation` from that group was measured across every
+set:
+
+    arm                 fixtures      hard        real cases          calibration
+    grouped (current)   10/10, 0 wrong  4/5, 1 wrong  3/8, rank 2.50  ECE .298 Brier .102 oc +.017
+    consolidation out   10/10, 0 wrong  4/5, 1 wrong  3/8, rank 2.38  ECE .274 Brier .091 oc +.059
+
+**It does not fix fx-h04 either**, which is the strongest evidence available
+that it is not tuning: it was reached from a stated principle, it fails to
+rescue the case that prompted looking at it, and it still improves the
+fixtures from seven commits to eight, real-case rank, ECE and Brier. Its one
+cost is overconfidence, +0.017 to +0.059.
+
+Not adopted. The trade is mixed and this document's own precedent, set when
+the completed grid was rejected, is that calibration outranks ranking; a
+change that improves Brier while tripling overconfidence needs a reason
+better than one case pointing at it. Recorded here so the next person has the
+measurement rather than the intuition.

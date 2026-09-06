@@ -144,6 +144,7 @@ instead of it, so their disagreement stays visible to the gate.
 
 | File | What it is for |
 |---|---|
+| `WRITEUP.md` | The project write-up: what was built, what was measured, what is not delivered |
 | `SCOPE.md` | Step 1 deliverable: presentation, causes, reasoning schema, and every constraint the project ran into |
 | `DESIGN.md` | The running record of what was measured, including the conclusions later measurements took back |
 | `RESPONSIBLE_AI.md` | Privacy, safety and risk, with the limitations stated as limitations |

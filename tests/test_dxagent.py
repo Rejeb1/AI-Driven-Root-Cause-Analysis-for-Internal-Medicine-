@@ -1787,6 +1787,56 @@ def test_ontology_dot_marks_invented_edges_dashed(kb):
     assert "pericarditis" in dot
 
 
+def test_the_hard_cases_still_break_the_model_in_exactly_one_place():
+    """The replacement instrument, pinned to what it currently measures.
+
+    The ten development fixtures are saturated: the shipped configuration
+    ranks all ten correctly, commits nothing wrongly, and the gate's measured
+    value on them is +0.0% accuracy gained. They cannot tell a good change
+    from a bad one any more. ``build_hard_cases`` is five named diagnostic
+    traps written to replace them, and its docstring records that the traps
+    were fixed on clinical grounds before the model saw any of them.
+
+    What it found on the first run, which is the argument for building it:
+    **fx-h04 is a wrong commit at 70% confidence** -- a pneumonia in a COPD
+    patient, read as a COPD exacerbation, with consolidation visible on the
+    chest radiograph. That is the first wrong commit on any fixture set in
+    this project, and the ten cases could never have surfaced it.
+
+    Pinned rather than fixed, and pinned as a failure rather than deleted,
+    for the same reason the masquerade test is: a number that moves should be
+    noticed rather than discovered. If a later change fixes fx-h04, this test
+    fails and the fix gets written down.
+    """
+    from dxagent.datasets.fixtures import build_hard_cases
+
+    kb = build_knowledge_base(correlated=True)
+    agent = DiagnosticAgent(kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb))
+
+    top1, wrong = [], []
+    for case in build_hard_cases():
+        outcome = agent.run(case)
+        if outcome.differential.hypotheses[0].label == case.diagnosis:
+            top1.append(case.case_id)
+        if outcome.verdict is Verdict.COMMITTED and outcome.prediction != case.diagnosis:
+            wrong.append((case.case_id, outcome.prediction))
+
+    assert len(top1) == 4, f"true diagnosis ranked first in {top1}"
+    assert wrong == [("fx-h04", "copd_exacerbation")], f"wrong commits: {wrong}"
+
+    # The instrument has to stay harder than the set it replaces, or it is not
+    # an instrument. The ten commit nothing wrongly; these five commit one.
+    plain = DiagnosticAgent(
+        kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb)
+    )
+    assert not [
+        case.case_id
+        for case in build_cases()
+        if plain.run(case).verdict is Verdict.COMMITTED
+        and plain.run(case).prediction != case.diagnosis
+    ]
+
+
 def test_documented_coverage_figures_match_the_knowledge_base(kb):
     """The documents quote counts; this fails when they go stale.
 
