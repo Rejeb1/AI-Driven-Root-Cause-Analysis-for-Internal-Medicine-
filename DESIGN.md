@@ -1365,3 +1365,67 @@ earlier taxonomy: a cohort of undifferentiated acute dyspnoea or chest pain
 reporting each finding *by final diagnosis*. Four separate searches have not
 found one. Until one exists, sourcing here is one cell per literature search,
 and the remaining cells are the ones no literature was written to answer.
+
+
+## Two more real patients, and the metrics they made worse
+
+The real-case set was eight, one per modelled diagnosis, and its own docstring
+called it too small to support any claim. It is now ten.
+
+The selection rule was fixed before anything was run: second cases go to the
+commonest emergency causes — pulmonary embolism and pneumonia — chosen on
+epidemiology rather than on where the model happens to struggle. That
+constraint matters more here than it does for sourcing, because a real-case
+set is exactly the kind of thing one could quietly curate into a flattering
+result, and nothing in the code would notice.
+
+    pmc-11753817  pulmonary embolism, presenting as pneumonia: fever 39.4C,
+                  productive cough, white count 11.2 -- and a NEGATIVE
+                  D-dimer at 0.39 mg/L FEU against a stated 0-0.49. The
+                  CTPA is what settles it.
+    pmc-4775775   pneumonia in an 85-year-old, afebrile at 36.2C with a
+                  white count of 5,000. Two of the findings this knowledge
+                  base leans on hardest for pneumonia are absent.
+
+Both turned out hard. That was not the criterion and is worth saying plainly.
+
+### What they did to the numbers
+
+    set          n    committed correct   wrong   mean rank   ECE     Brier
+    eight        8                    3       0        2.50   0.317   0.107
+    ten         10                    3       0        3.00   0.345   0.129
+
+Every metric except the one that matters got worse, and the one that matters
+did not move: **still zero wrong commits**. Both new cases escalate rather
+than guessing, which is the behaviour the gate exists for.
+
+The earlier mean rank of 2.50 was partly a property of the set. Adding two
+genuinely hard presentations moved it to 3.00, and that is a better estimate
+of the same quantity rather than a regression in the model — nothing about
+the system changed between those two rows.
+
+### The second case says something specific about an invented column
+
+pmc-4775775 ranks its true diagnosis **seventh of eight**. The model barely
+considers pneumonia in a patient who has a productive cough, hypoxia and a
+basal infiltrate on the radiograph.
+
+The likely reason is a finding recorded as explicitly *absent*: her white
+count is 5,000, so `lab:raised_wcc` is False, and this knowledge base gives
+pneumonia 0.80 for a raised white count. An absent finding that a disease
+claims at 0.80 is a heavy penalty, and `lab:raised_wcc` is one of the columns
+where **all eight cells are invented** — the column the sourcing survey
+identified as having no diagnostic-accuracy literature behind it at all,
+because the white count is used as a severity marker rather than as a test
+for pneumonia.
+
+So the entirely-invented column is not inert. It is load-bearing enough to
+push a real pneumonia to seventh place, on a value nobody has ever measured.
+That is a concrete instance of the general claim this project has been making
+about its invented numbers since the ablation study, and it is the first time
+a real patient has demonstrated it rather than a fixture.
+
+It is stated as a hypothesis rather than acted on. Lowering pneumonia's white
+count likelihood because one real case would benefit is precisely the tuning
+this project refuses; the honest form is that the column is unsourceable, it
+is doing real work, and one real patient now shows what that costs.

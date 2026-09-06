@@ -398,13 +398,32 @@ against 33% observed — the disagreement is reported rather than reconciled.
 Eight patients hand-extracted from open-access PMC case reports: real, never
 seen by the knowledge base, no clinician review of the extraction.
 
-- **3 committed and correct, 0 committed and wrong**, 5 escalated.
-- Mean rank of the true diagnosis: 2.50 of 8.
-- ECE 0.298, Brier 0.102, overconfidence +0.017.
+- **3 committed and correct, 0 committed and wrong**, 7 escalated.
+- Mean rank of the true diagnosis: 3.00 of 8.
+- ECE 0.345, Brier 0.129, overconfidence +0.083.
+
+The set grew from eight to ten after the sourcing work, under a rule fixed
+before anything was run: second cases go to the commonest emergency causes,
+chosen on epidemiology rather than on where the model struggles. Both new
+patients turned out hard — a pulmonary embolism presenting as pneumonia with
+a *negative* D-dimer, and an afebrile pneumonia in an 85-year-old with a
+normal white count. Every metric except one got worse, and the one that
+matters did not move: still zero wrong commits, with both new cases
+escalating rather than guessing. The earlier 2.50 was partly a property of the
+smaller set.
+
+One of them says something specific. The afebrile pneumonia ranks seventh of
+eight, largely because her white count is normal and this knowledge base gives
+pneumonia 0.80 for a raised one — a value in the single column where all
+eight cells are invented and no diagnostic-accuracy literature exists, because
+the white count is a severity marker rather than a test. The invented column
+is not inert; it is load-bearing enough to bury a real pneumonia. It is
+recorded rather than adjusted, since lowering it because one case would
+benefit is the tuning this project refuses.
 
 Zero wrong commits is the property that matters, because calibrated abstention
 is this project's actual thesis. Three of eight is not a good accuracy number
-and is not offered as one — n=8, hand-picked for clarity. It is reported this
+and is not offered as one — n=10, hand-picked for clarity. It is reported this
 small on purpose rather than not reported at all.
 
 Every remaining escalation now names what it sought and could not get, e.g.
