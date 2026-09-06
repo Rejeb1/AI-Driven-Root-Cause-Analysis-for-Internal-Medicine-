@@ -670,6 +670,58 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         low=0.61,
         high=0.73,
     ),
+    # The second cell in the column this project declared blocked, and the
+    # one that explains why an earlier correction backfired.
+    #
+    # Acute pulmonary embolism obstructs the pulmonary circulation and strains
+    # the right ventricle, and a strained ventricle releases natriuretic
+    # peptide. The knowledge base had P(raised BNP | pulmonary embolism) at an
+    # invented 0.20, which asserts the opposite of the mechanism. In 63
+    # consecutive emergency patients with acute pulmonary embolism -- with the
+    # haemodynamically unstable deliberately excluded, so if anything this
+    # understates -- 39 had NT-proBNP at or above 350 ng/l. That is 0.62.
+    #
+    # **The threshold equivalence is an assumption and is stated here rather
+    # than buried.** The acute pulmonary oedema cell in this column comes from
+    # a BNP > 100 pg/mL study; this one is NT-proBNP >= 350 ng/l. Those are
+    # different analytes. They are taken as answering the same question --
+    # "did the natriuretic peptide come back raised" -- because each is the
+    # standard clinical decision threshold for its own assay in acute
+    # dyspnoea. That is weaker than a same-assay comparison and a reader
+    # should know it.
+    #
+    # It is also narrower than the case this file refused earlier, and the
+    # distinction is the point rather than an excuse. The rejected COPD
+    # figure rested on an "age-specific NT-proBNP" threshold that varies per
+    # patient and was never stated numerically in its source; there was no
+    # scale to compare against. Here both thresholds are single fixed
+    # published numbers. That is the second time the blanket claim "this
+    # column cannot be assembled" has had to be narrowed, which suggests the
+    # original claim was reached too quickly.
+    #
+    # Why it matters beyond one cell. A correction to the D-dimer column --
+    # raising acute pulmonary oedema from an indefensible 0.30 -- was tried,
+    # measured, and reverted because it cost a real patient its answer:
+    # pmc-4565285, a pulmonary embolism with a raised pro-BNP of 11,479 and a
+    # positive CTPA, which flipped to acute pulmonary oedema. The reason was
+    # this cell. With BNP at 0.20 for embolism and 0.93 for oedema, a raised
+    # natriuretic peptide argued almost five to one for the wrong diagnosis,
+    # and the understated D-dimer values had been quietly cancelling that
+    # error. Two invented numbers wrong in opposite directions can look like
+    # a working model, and correcting either one alone makes it worse.
+    ("pulmonary_embolism", "lab:raised_bnp"): measured(
+        0.62,
+        Citation(
+            "NTPROBNP-APE-2012",
+            "NT-proBNP and RV overload in acute pulmonary embolism, PMC3422178",
+            "NT-proBNP was at or above 350 ng/l in 39 of 63 consecutive "
+            "emergency patients with acute pulmonary embolism (32 of 37 with "
+            "right ventricular dysfunction, 7 of 26 without); high-risk "
+            "haemodynamically unstable patients were excluded",
+        ),
+        low=0.50,
+        high=0.75,
+    ),
     # A column this project declared blocked, and the one cell in it that
     # turns out not to be. The distinction is worth keeping straight because
     # the earlier claim was too broad.

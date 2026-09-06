@@ -254,8 +254,8 @@ a published cohort of 360 real pulmonary embolism patients (Miniati et al.,
 PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
 text through the fixed rubric, 3 by targeted search, and 14 from PIOPED II's
 arm of patients investigated for embolism who turned out not to have one
-(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 38%, and the
-remaining 95 are still invented.
+(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 39%, and the
+remaining 94 are still invented.
 
 That last pass is the one worth copying. The other four asked what a disease
 looks like. It asked what the *rivals* look like, which is the half of a
@@ -665,7 +665,7 @@ configuration still gets every fixture case.
 
 It is off anyway, and the reasons are worth being explicit about. It is 63
 invented numbers from one non-clinician in a single sitting. It takes the
-sourced fraction from 38% to 24% — not a regression, but the count finally
+sourced fraction from 39% to 24% — not a regression, but the count finally
 including claims the model was already making. And it turns one abstention
 into a wrong commit: acute coronary syndrome at 82% on a true pericarditis.
 
@@ -1846,3 +1846,88 @@ evidence, and five of the seven cells in this column remain invented and
 remain wrong in the same direction. Fixing them needs sources that report
 counted proportions at the conventional threshold in this presentation, of
 which exactly one has been found.
+
+
+## Two invented numbers wrong in opposite directions, and why fixing either alone made things worse
+
+The entry above reverted a D-dimer correction because it cost a real patient
+its answer. That revert was right and the explanation given for it was
+incomplete. Pulling the thread found the actual defect, one column over.
+
+pmc-4565285 is a pulmonary embolism with a pro-BNP of 11,479 and a positive
+CTPA. Raising acute pulmonary oedema's D-dimer from an indefensible 0.30
+flipped it to oedema, and the reason was not the D-dimer at all:
+
+    P(raised BNP | acute pulmonary oedema)   0.93   measured (Wang 2005)
+    P(raised BNP | pulmonary embolism)       0.20   invented
+
+A raised natriuretic peptide argued nearly five to one for the wrong
+diagnosis. The understated D-dimer values had been quietly cancelling that,
+and correcting one of them exposed the other.
+
+**0.20 asserts the opposite of the mechanism.** Acute embolism obstructs the
+pulmonary circulation and strains the right ventricle; a strained ventricle
+releases natriuretic peptide. In 63 consecutive emergency patients with acute
+pulmonary embolism — with the haemodynamically unstable *excluded*, so if
+anything this understates — 39 had NT-proBNP at or above 350 ng/l. **0.62.**
+
+### The threshold assumption, stated rather than buried
+
+The oedema cell is BNP > 100 pg/mL; this one is NT-proBNP >= 350 ng/l.
+Different analytes. They are taken as answering the same question — did the
+natriuretic peptide come back raised — because each is the standard clinical
+decision threshold for its own assay in acute dyspnoea. That is weaker than a
+same-assay comparison and a reader should know it.
+
+It is narrower than the case this project refused earlier, and the distinction
+is the point rather than an excuse. The rejected COPD figure rested on an
+"age-specific NT-proBNP" threshold that varies per patient and was never
+stated numerically; there was no scale to compare against at all. Here both
+thresholds are single fixed published numbers.
+
+That is the **second** time the blanket claim "this column cannot be
+assembled" has had to be narrowed. The first narrowing produced the oedema
+cell, this one produced the embolism cell, and both times the original claim
+had been reached in one pass and written as though settled. A negative result
+recorded too confidently costs more than one recorded tentatively, because
+nobody re-opens it.
+
+### What it moved
+
+    arm                  before                      after
+    fixtures (top-1)      9/10, 5 commits, 0 wrong    8/10, 5 commits, 0 wrong
+    hard cases            5/5,  3 commits, 0 wrong    5/5,  3 commits, 0 wrong
+    real cases (n=10)     3 correct, 0 wrong          3 correct, 0 wrong
+    ECE / Brier          0.324 / 0.110               0.317 / 0.107
+    committed overconf   -0.300                      -0.275
+    coverage                38%                         39%
+
+Both trusted instruments improved or held; the saturated fixture set lost a
+case. That is the pattern this project now expects and reads the same way
+every time.
+
+**The case it lost is fx-009**, which is worth stating plainly because this
+project has spent more effort on fx-009 than on any other case. Pulmonary
+embolism there has fallen to third. The cause is a correct number: fx-009's
+BNP is *normal*, and with 62 of every 100 acute embolisms raising it, a normal
+result argues against embolism. The case was hand-written by this author with
+that finding absent, which is a perfectly realistic embolism — 38% of them —
+and now a harder one. The loop still declines to commit rather than committing
+to something wrong.
+
+### The general finding
+
+Two invented numbers, wrong in opposite directions, can look like a working
+model. The D-dimer column understated every rival; the BNP column understated
+pulmonary embolism. Each error partly hid the other, and the first correction
+attempted looked like a regression because it removed one side of a
+cancellation.
+
+That has a practical consequence for how the remaining invented numbers should
+be approached. A cell-by-cell sourcing pass measured against behaviour will
+reject correct changes whenever the cell it corrects is paired with an
+uncorrected error elsewhere. The only defence is what happened here: when a
+correction makes results worse, find the mechanism before reverting. The
+revert in the previous entry stands, but it was accepted one step too early,
+and the entry recorded a structural explanation — half-sourced columns — that
+was true in general and not the operative cause in that instance.

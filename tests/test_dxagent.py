@@ -1780,10 +1780,23 @@ def test_correlation_survives_the_sourcing_that_removed_its_prop():
     outcome = DiagnosticAgent(
         kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb)
     ).run(case)
-    assert outcome.differential.top.label == case.diagnosis == "pulmonary_embolism"
     assert outcome.verdict is Verdict.ESCALATED
     assert outcome.prediction is None
-    assert 0.45 < outcome.differential.top.probability < 0.65
+    # The loop no longer ranks it first either, and the reason is a corrected
+    # number rather than a lost capability. fx-009's BNP is normal, and
+    # P(raised BNP | pulmonary embolism) has moved from an invented 0.20 to a
+    # measured 0.62 -- so a normal result now argues against embolism, as it
+    # should, since 62 of every 100 acute embolisms raise it. The case was
+    # hand-written with that finding absent, which is a perfectly realistic
+    # embolism and now a harder one.
+    #
+    # What this test protects is the mechanism above, not this case's rank:
+    # correlation still lifts pulmonary embolism from fourth to second on the
+    # frozen evidence set, and the loop still declines to commit rather than
+    # committing to something wrong. Pinned at third so that a change moving
+    # it is noticed.
+    labels = [h.label for h in outcome.differential.hypotheses]
+    assert labels.index("pulmonary_embolism") + 1 == 3
 
 
 # --------------------------------------------------------------------------
@@ -2587,7 +2600,12 @@ def test_workup_is_a_floor_on_investigation_not_a_substitute(kb, cases):
 
     required = set(PE_WORKUP.required)
     assert required & set(asked), "the workup item must still be gathered"
-    assert outcome.differential.top.label == case.diagnosis
+    # This used to also assert that fx-009 comes out on top. That was a bonus
+    # rather than the property under test, and it no longer holds: sourcing
+    # P(raised BNP | pulmonary embolism) from an invented 0.20 to a measured
+    # 0.62 means fx-009's *normal* BNP now argues against embolism, which is
+    # correct reasoning on a correct number. The two assertions that remain
+    # are the ones this test was written for.
 
     # The property, asserted directly rather than by position. An earlier
     # version required the workup item not to be asked first, which held only
