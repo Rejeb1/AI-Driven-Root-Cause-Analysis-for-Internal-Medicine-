@@ -1769,3 +1769,80 @@ is measured to grade illness, not to identify it.
 So this column is blocked for a reason about medicine rather than about
 effort, and the honest position is that eight numbers no one has measured are
 doing real work — including, as pmc-4775775 showed, burying a real pneumonia.
+
+
+### Two more D-dimer rivals attempted, measured, and not taken
+
+The COPD rival above worked because its source reports a counted proportion
+at the conventional threshold in a matched population. The remaining five have
+no such source, and two attempts at deriving them from reported quartiles were
+made and rejected.
+
+Two studies give D-dimer by final diagnosis as medians with interquartile
+ranges. Where the 0.5 cutoff falls among the quartiles is distribution-free,
+and by that alone the invented values are wrong:
+
+    acute coronary syndrome, chest-symptom ED (n=1039)
+        median 0.40, IQR 0.27-0.80   ->  0.25 to 0.50 above the cutoff
+    acute coronary syndrome, all-ED D-dimer ordered (n=552)
+        median 0.57, IQR 0.32-1.22   ->  0.50 to 0.75 above
+    heart failure, chest-symptom ED (n=451)
+        median 1.70, IQR 0.90-3.10   ->  at least 0.75 above
+    respiratory infection, all-ED (n=1767)
+        median 0.76, IQR 0.40-1.47   ->  0.50 to 0.75 above
+
+The cells hold 0.20, 0.30 and 0.35. Every one is outside every bound. This is
+now the third independent line of evidence that the column understates the
+rivals, after the pooled specificity and the counted COPD proportion.
+
+They were written, measured, and reverted. Three reasons, none of which is the
+result:
+
+**The two acute coronary syndrome sources do not overlap.** 0.25-0.50 against
+0.50-0.75, on a quantity that has one true value. That is not a wide band, it
+is two studies disagreeing — most plausibly because the second population is
+patients in whom a clinician ordered a D-dimer, which selects for suspected
+thrombosis. A number cannot be called measured while its sources contradict
+each other, and picking the one that suits the model is the failure this file
+exists to prevent.
+
+**A point estimate needs a distributional model.** Every other value here is a
+counted proportion or exact algebra on reported statistics — the
+likelihood-ratio inversion is two equations in two unknowns and returns the
+sensitivity the study would have printed. Fitting a log-normal to three
+quantiles and integrating its tail is a different kind of act, and the
+provenance tiers have no label that distinguishes it from a counted
+frequency. Introducing that silently would degrade what MEASURED means.
+
+**A half-sourced column can be worse than a uniformly invented one.** Writing
+these would have left pulmonary embolism at 0.93, heart failure at 0.91 and
+acute coronary syndrome near 0.4, beside pneumonia, pericarditis and panic
+attack still at 0.35, 0.15 and 0.10 — values the same evidence says are too
+low. The contrast between the sourced and unsourced halves would be an
+artefact of which cells happened to have literature, not a fact about
+patients. It is a general hazard of incremental sourcing that this project
+has not had to face before, because previous passes either filled whole rows
+(PIOPED, Wang) or single cells whose neighbours were already sourced.
+
+The behaviour, measured before reverting and recorded as corroboration rather
+than as the reason:
+
+    arm            with the two cells      without
+    fixtures        10/10, 7 commits        9/10, 5 commits
+    hard cases      4/5,  2 commits         5/5,  3 commits
+    real cases      2 correct, 0 wrong      3 correct, 0 wrong
+    ECE / Brier     0.358 / 0.135           0.324 / 0.110
+
+The spent fixture set improved and both instruments this project trusts got
+worse, which is the pattern that should be expected when a change adds
+artefactual contrast rather than information. The real patient lost was
+pmc-4565285, a pulmonary embolism with a positive CTPA, which fell behind
+acute pulmonary oedema once D-dimer stopped separating the two — an entirely
+correct consequence of the numbers written, and a demonstration that they were
+the wrong numbers to write on their own.
+
+What stands: the rivals are understated, on three independent lines of
+evidence, and five of the seven cells in this column remain invented and
+remain wrong in the same direction. Fixing them needs sources that report
+counted proportions at the conventional threshold in this presentation, of
+which exactly one has been found.

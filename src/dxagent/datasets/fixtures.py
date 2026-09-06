@@ -504,6 +504,57 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         low=0.34,
         high=0.62,
     ),
+    # Two rivals attempted from quartiles and NOT taken. The attempt is
+    # recorded because the reasoning is the useful part.
+    #
+    # Two studies report D-dimer by final diagnosis as medians with
+    # interquartile ranges rather than as fractions above a threshold. Where
+    # the 0.5 cutoff falls among the quartiles is a distribution-free fact,
+    # and by that alone both invented values are wrong:
+    #
+    #     acute coronary syndrome, chest-symptom ED (n=1039)
+    #         median 0.40, IQR 0.27-0.80  ->  between 0.25 and 0.50 above
+    #     acute coronary syndrome, all-ED D-dimer ordered (n=552)
+    #         median 0.57, IQR 0.32-1.22  ->  between 0.50 and 0.75 above
+    #     heart failure, chest-symptom ED (n=451)
+    #         median 1.70, IQR 0.90-3.10  ->  at least 0.75 above
+    #
+    # The invented cells hold 0.20 and 0.30, outside every one of those
+    # ranges. That is a third independent confirmation that this column
+    # understates the rivals, and it is why the defect is recorded below
+    # rather than dismissed.
+    #
+    # They are still not written, for three reasons that hold regardless of
+    # what they would do to any score.
+    #
+    # The two acute coronary syndrome sources give bounds that **do not
+    # overlap**: 0.25-0.50 against 0.50-0.75. That is not a wide band, it is
+    # two studies disagreeing about the quantity, most likely because the
+    # second population is patients in whom someone ordered a D-dimer and is
+    # therefore selected for suspected thrombosis. A value cannot be called
+    # measured when the sources contradict each other.
+    #
+    # A point estimate inside the bounds needs a log-normal assumption for
+    # the analyte and a sigma fitted from the reported log IQR. Every other
+    # value in this file is a counted proportion or exact algebra on reported
+    # statistics; this would be the first to depend on a distributional
+    # model, and it is not labelled differently in the provenance tiers.
+    #
+    # And a half-sourced column is not obviously better than a uniformly
+    # invented one. Writing these two would leave pulmonary embolism at 0.93,
+    # heart failure at 0.91 and acute coronary syndrome near 0.4 beside
+    # pneumonia, pericarditis and panic attack still at 0.35, 0.15 and 0.10 --
+    # invented values the same evidence says are too low. The contrast
+    # between sourced and unsourced cells in one column is an artefact of the
+    # sourcing effort rather than a fact about patients, and here it is a
+    # large one.
+    #
+    # Measured before reverting, so the cost of not doing it is on the record:
+    # writing them took the fixture set from 9/10 to 10/10 and cost a real
+    # patient its correct answer, a hard case its ranking, and calibration
+    # 0.324 to 0.358 ECE. The instruments this project trusts moved the wrong
+    # way, which is corroboration rather than the reason.
+    #
     # One of the six understated rivals, measured directly.
     #
     # The entry below records that a D-dimer meta-analysis puts specificity at
