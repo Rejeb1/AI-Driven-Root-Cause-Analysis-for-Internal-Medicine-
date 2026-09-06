@@ -254,8 +254,8 @@ a published cohort of 360 real pulmonary embolism patients (Miniati et al.,
 PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
 text through the fixed rubric, 3 by targeted search, and 14 from PIOPED II's
 arm of patients investigated for embolism who turned out not to have one
-(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 37%, and the
-remaining 96 are still invented.
+(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 38%, and the
+remaining 95 are still invented.
 
 That last pass is the one worth copying. The other four asked what a disease
 looks like. It asked what the *rivals* look like, which is the half of a
@@ -665,7 +665,7 @@ configuration still gets every fixture case.
 
 It is off anyway, and the reasons are worth being explicit about. It is 63
 invented numbers from one non-clinician in a single sitting. It takes the
-sourced fraction from 37% to 24% — not a regression, but the count finally
+sourced fraction from 38% to 24% — not a regression, but the count finally
 including claims the model was already making. And it turns one abstention
 into a wrong commit: acute coronary syndrome at 82% on a true pericarditis.
 
@@ -1676,3 +1676,96 @@ fixture count.
 The durable lesson is not about correlation. A measurement that reverses six
 times is telling you the instrument is spent, and it took six reversals and a
 purpose-built replacement set before anyone read it that way.
+
+
+## Three open items, worked through: one was a measurement error, one is real, one stays open
+
+### The overconfidence was the metric, not the model
+
++0.158 on the real cases had been carried in this document for weeks as an
+unexplained residual, and reported twice as a cost of sourcing work. It was
+never decomposed. Doing that takes one pass:
+
+    subset             mean confidence   top-1 accuracy   overconfidence
+    committed (n=3)              0.715            1.000           -0.285
+    escalated (n=7)              0.348            0.000           +0.348
+    all (n=10)                   0.458            0.300           +0.158
+
+Every point of the headline figure comes from cases the gate **declined to
+answer**. On those the system says, in effect, "I am 35% sure and I am not
+committing" — and the metric scores that as overconfidence because the
+top-ranked hypothesis happened to be wrong. It penalises precisely the
+behaviour the abstention gate exists to produce.
+
+On the cases it actually answers the system is **under**confident by 0.285,
+which is the safe direction and the opposite of what the headline implied.
+
+`CalibrationMetrics` now carries `committed_n`, `committed_mean_confidence`
+and `committed_accuracy`, with a `committed_overconfidence` property. The
+full-coverage figure is kept rather than replaced, because it is a real
+quantity and suppressing it would be the more convenient kind of dishonesty,
+but the docstrings now say which to read first and why.
+
+This one is worth a note on process. The number was reported accurately every
+time and interpreted wrongly every time, because nobody asked what it was
+averaging over. A statistic that is correct and misleading is harder to catch
+than one that is wrong.
+
+### The D-dimer rivals really are understated, confirmed independently
+
+The entry above records the pooled defect: specificity of 51% means
+P(raised D-dimer | not pulmonary embolism) is 0.49 across the rivals, while
+this knowledge base gave them values averaging 0.22. It was left unfixed
+because a pooled figure cannot be apportioned across seven diseases.
+
+A per-disease figure has no such problem. In 148 patients admitted with an
+acute COPD exacerbation and investigated for pulmonary embolism, 92 had it
+excluded, and 53 of those still had a D-dimer above the conventional 0.5
+threshold — **0.58 against an invented 0.25**. Coverage 37% to 38%, ECE 0.329
+to 0.324, Brier 0.114 to 0.110, every arm otherwise unchanged.
+
+That is a second, independent confirmation of the twofold understatement,
+from a different study design than the pooled specificity. The remaining five
+rivals stay invented and stay wrong in the same direction; each needs its own
+population-matched study.
+
+One candidate was rejected on the way. A different AECOPD study reports 41 of
+93 non-PE patients above its threshold, but that threshold is 990 µg/L,
+optimised inside the study — not commensurable with the 190–500 range behind
+the pulmonary embolism cell, and mixing them would rebuild the exact problem
+that blocked the natriuretic-peptide column.
+
+And the source needs reading carefully rather than quoting. It says
+"fifty-three patients (36%) who did not have PE had higher than normal
+D-dimer levels", where 36% is 53 of the full 148 rather than of the 92 without
+embolism. The quantity this cell needs is the latter, 57.6%. The paper also
+prints its units as pg/mL where the values are plainly mg/L.
+
+### The white count stays unsourced, and the reason is now specific
+
+`lab:raised_wcc` is the last column with all eight cells invented. The earlier
+claim was that no diagnostic-accuracy literature treats the white count as a
+test for these diagnoses. That still holds, and it is now backed by a
+candidate examined and rejected rather than by assumption.
+
+The population-matched pneumonia cohort used for rest dyspnoea does report
+white counts, in two forms, and neither is this concept:
+
+    leucocytes <3.5 or >8.8 x10^9/L    CAP 214/265 (80.8%)   non-CAP 456/689 (66.2%)
+    neutrophils >7.5 x10^9/L           CAP 187/265 (71.1%)   non-CAP 362/689 (53.2%)
+
+The first is bidirectional — it counts leukopenia, a different finding and in
+sepsis a severity marker pointing the other way. The second is neutrophils
+rather than a total white count. Writing either into `lab:raised_wcc` is the
+same construct swap this file refused when it declined to map "any abnormal
+ECG" onto `exam:ecg_st_changes`, and refusing it in one place and allowing it
+in another would make the rule worthless.
+
+A further search for a unidirectional leukocytosis rate in a matched
+population returned prognostic studies and severity scores, which is the
+literature behaving exactly as the original claim predicted: the white count
+is measured to grade illness, not to identify it.
+
+So this column is blocked for a reason about medicine rather than about
+effort, and the honest position is that eight numbers no one has measured are
+doing real work — including, as pmc-4775775 showed, burying a real pneumonia.

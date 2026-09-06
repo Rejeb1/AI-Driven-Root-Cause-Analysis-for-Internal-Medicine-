@@ -22,7 +22,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from ..schemas import CaseOutcome
+from ..schemas import CaseOutcome, Verdict
 
 
 @dataclass(frozen=True)
@@ -41,11 +41,42 @@ class CalibrationMetrics:
     brier: float
     mean_confidence: float
     accuracy: float
+    committed_n: int = 0
+    committed_mean_confidence: float = 0.0
+    committed_accuracy: float = 0.0
 
     @property
     def overconfidence(self) -> float:
-        """Positive when the system claims more certainty than it earns."""
+        """Positive when the system claims more certainty than it earns.
+
+        Measured over *every* case, including the ones the gate declined to
+        answer, which makes it the wrong headline for a system whose whole
+        claim is calibrated abstention. On the ten real cases this reads
+        +0.158, and the decomposition says the number is an artefact:
+
+            committed (n=3)   mean confidence 0.715, accuracy 1.000  -0.285
+            escalated (n=7)   mean confidence 0.348, accuracy 0.000  +0.348
+
+        Every point of it comes from cases where the system said "I am 35%
+        sure and I am not answering" and was then scored as overconfident
+        because its top-ranked hypothesis was wrong. That penalises exactly
+        the behaviour the abstention gate exists to produce. Kept, because
+        full-coverage calibration is a real quantity and hiding it would be
+        worse, but read ``committed_overconfidence`` first.
+        """
         return self.mean_confidence - self.accuracy
+
+    @property
+    def committed_overconfidence(self) -> float:
+        """The same quantity over the cases the system actually answered.
+
+        This is the honest headline. A system that abstains is making no
+        claim about the cases it abstains on, so its calibration is the
+        calibration of its commitments. On the ten real cases this reads
+        -0.285: it is *under*confident on what it answers, which is the safe
+        direction and the opposite of what the full-coverage figure suggests.
+        """
+        return self.committed_mean_confidence - self.committed_accuracy
 
 
 @dataclass(frozen=True)
@@ -220,11 +251,14 @@ def calibration_metrics(
         return CalibrationMetrics(0, 0.0, 0.0, 0.0, 0.0)
 
     records = []
+    committed = []
     for outcome in outcomes:
         truth = truths[outcome.case_id]
         confidence = outcome.differential.top.probability
         correct = outcome.differential.top.label == truth
         records.append((confidence, correct))
+        if outcome.verdict is Verdict.COMMITTED:
+            committed.append((confidence, correct))
 
     n = len(records)
     accuracy = sum(1 for _, c in records if c) / n
@@ -250,6 +284,13 @@ def calibration_metrics(
         brier=brier,
         mean_confidence=mean_confidence,
         accuracy=accuracy,
+        committed_n=len(committed),
+        committed_mean_confidence=(
+            sum(p for p, _ in committed) / len(committed) if committed else 0.0
+        ),
+        committed_accuracy=(
+            sum(1 for _, c in committed if c) / len(committed) if committed else 0.0
+        ),
     )
 
 

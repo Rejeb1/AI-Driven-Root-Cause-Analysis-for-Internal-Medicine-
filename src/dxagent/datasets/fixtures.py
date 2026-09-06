@@ -504,6 +504,42 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         low=0.34,
         high=0.62,
     ),
+    # One of the six understated rivals, measured directly.
+    #
+    # The entry below records that a D-dimer meta-analysis puts specificity at
+    # 51%, so P(raised D-dimer | not pulmonary embolism) is 0.49 pooled, while
+    # this knowledge base gave the seven rivals values averaging 0.22. That
+    # defect was left unfixed because 0.49 is pooled across a mix of diseases
+    # and writing it into all seven would assert a panic attack raises a
+    # D-dimer as often as a pneumonia does.
+    #
+    # A per-disease figure has no such problem. In 148 patients admitted with
+    # an acute COPD exacerbation and investigated for pulmonary embolism, 92
+    # had it excluded, and 53 of those still had a D-dimer above the
+    # conventional 0.5 threshold: 0.58 against an invented 0.25.
+    #
+    # Read carefully, because the paper's own phrasing invites an error. It
+    # says "fifty-three patients (36%) who did not have PE had higher than
+    # normal D-dimer levels", and 36% is 53 of the full 148 rather than of the
+    # 92 without embolism. The quantity this cell needs is the latter. The
+    # paper also writes its units as pg/mL where the values are plainly mg/L,
+    # which is recorded rather than silently corrected.
+    #
+    # This is the second, independent confirmation that the rivals were
+    # understated about twofold, and it arrives from a completely different
+    # study design than the pooled specificity did.
+    ("copd_exacerbation", "lab:raised_d_dimer"): measured(
+        0.58,
+        Citation(
+            "DDIMER-AECOPD-2013",
+            "D-dimer cut-off in AECOPD, PMC3755691, 148 patients",
+            "53 of the 92 patients with acute COPD exacerbation in whom "
+            "pulmonary embolism was excluded still had a D-dimer above the "
+            "conventional 0.5 threshold (57.6%)",
+        ),
+        low=0.47,
+        high=0.68,
+    ),
     # A confirming source, and a defect it exposes that is deliberately left
     # unfixed.
     #

@@ -855,10 +855,10 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     # Sixth measurement, and the one that finally explains the other five.
     #
     #     arm                      fixtures  mean cost
-    #     plain                       9/10        15.9
+    #     plain                       9/10        13.8
     #     + correlation               8/10        19.8
-    #     + decisive tests           10/10        20.6
-    #     + both                       9/10       21.8
+    #     + decisive tests            9/10        16.3
+    #     + both                      9/10        22.5
     #
     # On the fixture set correlation weighting now actively *costs* a case.
     # Every previous answer here -- worth one case, worth nothing, worth two,
@@ -869,10 +869,11 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     #
     # Asked of the real patients instead, the question has never been close:
     #
-    #     correlated=False   real: 3 correct, 2 WRONG commits, Brier 0.200
-    #     correlated=True    real: 3 correct, 0 wrong commits, Brier 0.114
+    #     correlated=False   real: 3 correct, 3 WRONG commits, Brier 0.200
+    #     correlated=True    real: 3 correct, 0 wrong commits, Brier 0.110
     #
-    # Two wrong commits on real patients against none. Calibrated abstention
+    # Three wrong commits on real patients against none, and the gap has
+    # widened as the knowledge base has been sourced rather than closed. Calibrated abstention
     # is this project's claim and correlation weighting is what protects it,
     # on the only instrument that can see the difference. It stays on, and
     # the fixture arms below are pinned as a record rather than as an
@@ -880,7 +881,7 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     # six-times-reversing measurement was a signal that the instrument was
     # spent, and it took six reversals to read it that way.
     assert correlated < plain, "correlation costs a fixture case on the spent set"
-    assert both > correlated, "the decisive-test rule repairs fx-009"
+    assert both > correlated, "the decisive-test rule gives that case back"
     assert correlated_cost > plain_cost, "and correlation costs budget"
 
     # The measurement that decides it, on the set that can see a wrong commit.
@@ -904,7 +905,7 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
         )
 
     assert wrong_commits(True) == 0
-    assert wrong_commits(False) == 2
+    assert wrong_commits(False) == 3
 
 
 def _superseded_test_decisive_tests_do_not_repair(kb, cases):

@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 96 of its 153 likelihoods are invented, no
+an unfinished feature — because 95 of its 153 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -129,10 +129,10 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**96 of 153 likelihoods are invented.** That is the number, stated on its own
+**95 of 153 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project.
 
-The remaining 57 carry a citation: 13 counted from the DDXPlus simulator, 30
+The remaining 58 carry a citation: 13 counted from the DDXPlus simulator, 32
 from published cohorts, and 14 converted from Merck Manual narrative phrases.
 The eight disease priors are separately sourced, 8 of 8, and reported on their
 own line rather than folded in — merging them would let a sourced likelihood
@@ -400,7 +400,25 @@ seen by the knowledge base, no clinician review of the extraction.
 
 - **3 committed and correct, 0 committed and wrong**, 7 escalated.
 - Mean rank of the true diagnosis: 3.10 of 8.
-- ECE 0.329, Brier 0.114, overconfidence +0.158.
+- ECE 0.324, Brier 0.110.
+- **Overconfidence −0.285 on the cases it answers**; +0.144 counting the ones
+  it declined.
+
+That last line needs its decomposition, because the headline figure is
+misleading and this project reported it for weeks without noticing:
+
+| subset | mean confidence | top-1 accuracy | overconfidence |
+|---|---|---|---|
+| committed (n=3) | 0.715 | 1.000 | **−0.285** |
+| escalated (n=7) | 0.348 | 0.000 | +0.348 |
+
+Every point of the positive figure comes from cases the gate **declined to
+answer**, where the system says "I am 35% sure and I am not committing" and
+is then scored as overconfident because its top-ranked hypothesis was wrong.
+It penalises exactly the behaviour the gate exists to produce. On what it
+actually answers, the system is *under*confident — the safe direction. A
+statistic that is correct and misleading is harder to catch than one that is
+wrong.
 
 **Correlation weighting is what keeps the second line at zero.** Turned off,
 the same ten patients produce **two wrong commits**, Brier 0.200 and
@@ -525,8 +543,8 @@ them:
 | knowledge base | fixture cases correct |
 |---|---|
 | complete | 9/10 |
-| 96 invented deleted | **1/10** |
-| 57 sourced deleted, invented kept | 7/10 |
+| 95 invented deleted | **1/10** |
+| 58 sourced deleted, invented kept | 7/10 |
 
 (The 9/10 baseline rather than 10/10 is the same configuration inconsistency
 described just above: `sensitivity.py` also builds without correlation
@@ -636,7 +654,7 @@ empty row.
   agent in place of its own — not a configuration change, and not attempted.
 - **UMLS relations** — probed, found unusable, documented above.
 
-**Bounded by measurement rather than blocked:** the 96 remaining invented
+**Bounded by measurement rather than blocked:** the 95 remaining invented
 likelihoods. Both bulk routes are proven exhausted, and the PIOPED II pass
 demonstrates that individual cells can still be recovered when a study reports
 the right arm.
