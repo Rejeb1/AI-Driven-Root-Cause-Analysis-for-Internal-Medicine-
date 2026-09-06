@@ -400,7 +400,16 @@ seen by the knowledge base, no clinician review of the extraction.
 
 - **3 committed and correct, 0 committed and wrong**, 7 escalated.
 - Mean rank of the true diagnosis: 3.10 of 8.
-- ECE 0.337, Brier 0.120, overconfidence +0.166.
+- ECE 0.329, Brier 0.114, overconfidence +0.158.
+
+**Correlation weighting is what keeps the second line at zero.** Turned off,
+the same ten patients produce **two wrong commits**, Brier 0.200 and
+overconfidence +0.218. That measurement matters because the mechanism's value
+had been assessed six times on the ten development fixtures and reversed every
+time — worth one case, nothing, two, nothing, minus one. Those ten are
+saturated, so the count was a coin toss dressed as a measurement. A number
+that reverses six times is telling you the instrument is spent, and it took a
+purpose-built replacement set to read it that way.
 
 The set grew from eight to ten after the sourcing work, under a rule fixed
 before anything was run: second cases go to the commonest emergency causes,

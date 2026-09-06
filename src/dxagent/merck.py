@@ -77,13 +77,31 @@ class NarrativeQuote:
 QUOTES: tuple[NarrativeQuote, ...] = (
     NarrativeQuote(
         "acute_pulmonary_oedema",
+        # Re-scoped after a population audit of every quote in this file.
+        # This value used to come from Ch. 211's general "Symptoms and Signs"
+        # section, which describes heart failure as a chronic condition:
+        # "the most common symptoms are dyspnea ... and fatigue", mapped to
+        # "common" and 0.60. The disease modelled here is acute pulmonary
+        # oedema, the acute decompensation, and the same chapter has a
+        # section on exactly that -- already cited further down this file for
+        # frothy sputum. It lists severe dyspnoea first among the defining
+        # findings, and reserves "sometimes" for the sputum in the same
+        # sentence, so the unmarked items read as characteristic rather than
+        # merely common.
+        #
+        # The audit was prompted by the same error in pneumonia, where a
+        # chapter covering every severity put rest dyspnoea at 0.05 against a
+        # measured 0.67 in acutely admitted patients. A faithful
+        # transcription of the wrong section is still a wrong number, and it
+        # is harder to catch than a misreading because re-reading the source
+        # confirms it.
         "dyspnoea_at_rest",
-        "common",
+        "characteristic",
         Citation(
             "MSD-19E",
-            "Ch. 211 Heart Failure, Symptoms and Signs",
-            "the most common symptoms are dyspnea, reflecting pulmonary "
-            "congestion, and fatigue",
+            "Ch. 211 Heart Failure, acute pulmonary edema",
+            "findings are severe dyspnea, diaphoresis, wheezing, and "
+            "sometimes blood-tinged frothy sputum",
         ),
     ),
     NarrativeQuote(

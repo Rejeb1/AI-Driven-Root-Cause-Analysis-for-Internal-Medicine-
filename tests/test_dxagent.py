@@ -786,20 +786,23 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
         case.case_id
         for case in cases
         if aware.run(case).differential.top.label != case.diagnosis
-    ] == ["fx-009"]
+    ] == ["fx-009", "fx-010"]
 
-    # What does carry it is the decisive-test rule, which is the fifth
-    # answer this project has measured to "which mechanism helps" and the
-    # opposite of the fourth. See the correlation test below.
+    # The decisive-test rule carries fx-009 and not fx-010, which after the
+    # rest-dyspnoea re-scoping is an acute coronary syndrome sitting six
+    # points behind an acute pulmonary oedema. Neither mechanism rescues it
+    # and the gate escalates rather than committing, so no wrong answer is
+    # produced. See the correlation test below for why the fixture count is
+    # the wrong thing to judge either mechanism on at all.
     decisive = DiagnosticAgent(
         kb=build_knowledge_base(correlated=True),
         limits=LoopLimits(require_decisive_tests=True, require_workup=False),
     )
-    assert not [
+    assert [
         case.case_id
         for case in cases
         if decisive.run(case).differential.top.label != case.diagnosis
-    ]
+    ] == ["fx-010"]
 
 
 def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
@@ -849,29 +852,59 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     # correct about a different knowledge base. The durable lesson is that a
     # mechanism's value is a property of the numbers underneath it, so
     # "does correlation weighting help" has no answer independent of them.
-    # Fifth reversal, and this one inverts the fourth completely. Correcting
-    # pneumonia's rest-dyspnoea likelihood -- 0.05 from a Merck chapter
-    # covering pneumonia at every severity, against 0.67 in a cohort of
-    # acutely admitted patients -- made pneumonia a better explanation of
-    # fx-009's evidence. Correlation can no longer carry that case and the
-    # decisive-test rule now can:
+    # Sixth measurement, and the one that finally explains the other five.
     #
     #     arm                      fixtures  mean cost
-    #     plain                       9/10        15.6
-    #     + correlation               9/10        20.7
-    #     + decisive tests           10/10        20.1
-    #     + both                     10/10        23.3
+    #     plain                       9/10        15.9
+    #     + correlation               8/10        19.8
+    #     + decisive tests           10/10        20.6
+    #     + both                       9/10       21.8
     #
-    # Correlation now buys nothing on this arm and costs a third more budget.
-    # Five measurements, five answers, and the durable claim is the one this
-    # docstring has made since the second: a mechanism's value is a property
-    # of the numbers underneath it, and "does correlation weighting help" has
-    # no answer independent of them. It is worth noticing that this project
-    # spent more effort defending correlation weighting than any other
-    # mechanism, on the strength of measurements that have now reversed.
-    assert plain == correlated, "correlation no longer changes the fixture count"
-    assert both > correlated, "the decisive-test rule is what repairs fx-009 now"
-    assert correlated_cost > plain_cost, "and correlation still costs budget"
+    # On the fixture set correlation weighting now actively *costs* a case.
+    # Every previous answer here -- worth one case, worth nothing, worth two,
+    # worth nothing again, and now worth minus one -- was measured on these
+    # same ten cases, and those ten are saturated: the shipped configuration
+    # ranks nine or ten of them however the mechanisms are set, so the count
+    # is a coin toss dressed as a measurement.
+    #
+    # Asked of the real patients instead, the question has never been close:
+    #
+    #     correlated=False   real: 3 correct, 2 WRONG commits, Brier 0.200
+    #     correlated=True    real: 3 correct, 0 wrong commits, Brier 0.114
+    #
+    # Two wrong commits on real patients against none. Calibrated abstention
+    # is this project's claim and correlation weighting is what protects it,
+    # on the only instrument that can see the difference. It stays on, and
+    # the fixture arms below are pinned as a record rather than as an
+    # argument. The durable lesson is not about correlation at all: a
+    # six-times-reversing measurement was a signal that the instrument was
+    # spent, and it took six reversals to read it that way.
+    assert correlated < plain, "correlation costs a fixture case on the spent set"
+    assert both > correlated, "the decisive-test rule repairs fx-009"
+    assert correlated_cost > plain_cost, "and correlation costs budget"
+
+    # The measurement that decides it, on the set that can see a wrong commit.
+    from dxagent.datasets import REAL_CASES
+
+    def wrong_commits(correlated: bool) -> int:
+        kb = build(correlated=correlated)
+        agent = DiagnosticAgent(
+            kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb),
+            limits=LoopLimits(
+                uninformative_turns_still_count=False,
+                unanswered_actions_still_cost=False,
+            ),
+        )
+        return sum(
+            1
+            for case in REAL_CASES
+            for outcome in [agent.run(case)]
+            if outcome.verdict is Verdict.COMMITTED
+            and outcome.prediction != case.diagnosis
+        )
+
+    assert wrong_commits(True) == 0
+    assert wrong_commits(False) == 2
 
 
 def _superseded_test_decisive_tests_do_not_repair(kb, cases):

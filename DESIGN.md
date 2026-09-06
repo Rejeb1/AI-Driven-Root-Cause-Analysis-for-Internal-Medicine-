@@ -1592,3 +1592,87 @@ things this project cannot account for rather than in a footnote.
   durable claim is the one the docstring has carried since the second
   reversal: a mechanism's value is a property of the numbers underneath it,
   and there is no answer to "does correlation help" independent of them.
+
+
+## Auditing every narrative value for the population error, and what it settled
+
+The pneumonia rest-dyspnoea defect was found by accident. Thirteen other
+values come from the same source by the same rubric, so the question was
+whether it had siblings. The check is cheap and repeatable: **does the cited
+chapter section describe patients as they present acutely to an emergency
+department, or the disease in general?**
+
+    result of the audit
+    -------------------
+    11 correctly scoped     acute PE, acute pericarditis, panic disorder,
+                            pneumonia diagnosis, acute pulmonary edema
+     1 clear mismatch       acute_pulmonary_oedema / dyspnoea_at_rest
+     2 milder, left alone   acute_pulmonary_oedema / exam:tachycardia
+                            copd_exacerbation / exam:reduced_breath_sounds
+
+One value I had suspected turned out fine on inspection: pericarditis'
+dyspnoea comes from "acute pericarditis tends to cause chest pain and a
+pericardial rub, sometimes with dyspnea" — right phrase, right population.
+
+**The clear mismatch had its own correction sitting in the same file.**
+`acute_pulmonary_oedema / dyspnoea_at_rest` was drawn from Ch. 211's general
+"Symptoms and Signs" section, which describes heart failure as a chronic
+condition: "the most common symptoms are dyspnea ... and fatigue", mapped to
+"common" and 0.60. The disease modelled here is the acute decompensation, and
+the same chapter's *acute pulmonary edema* section — already cited two entries
+away for frothy sputum — lists "severe dyspnea" first among the defining
+findings, reserving "sometimes" for the sputum in the same sentence. Re-scoped
+to "characteristic", 0.85.
+
+The two left alone are recorded rather than adjusted. Tachycardia in acute
+pulmonary oedema is probably higher than the chronic figure, and reduced
+breath sounds in a COPD exacerbation probably at least the stable-disease
+rate, but neither chapter offers a correctly scoped sentence and inventing one
+is what this file exists to prevent.
+
+### What the re-scoping moved
+
+    arm                  before                     after
+    fixtures (top-1)     10/10, 5 commits, 0 wrong   9/10, 5 commits, 0 wrong
+    hard cases            5/5,  3 commits, 0 wrong   5/5,  3 commits, 0 wrong
+    real cases (n=10)     3 correct, 0 wrong          3 correct, 0 wrong
+    ECE / Brier          0.337 / 0.120               0.329 / 0.114
+    overconfidence       +0.166                      +0.158
+
+Calibration improved on every measure. The cost is fx-010, an acute coronary
+syndrome that now sits six points behind an acute pulmonary oedema — 0.43
+against 0.49 — and escalates rather than committing. A near-tie the gate
+declines, on the set already documented as spent.
+
+### The six reversals were a property of the instrument, not the mechanism
+
+This is the part worth carrying forward. The fixture arms after the
+re-scoping:
+
+    arm                      fixtures  mean cost
+    plain                       9/10        15.9
+    + correlation               8/10        19.8
+    + decisive tests           10/10        20.6
+    + both                       9/10       21.8
+
+Correlation weighting now *costs* a fixture case. Across this project it has
+been measured as worth one case, worth nothing, worth two, worth nothing, and
+now worth minus one — six answers, every one of them taken on the same ten
+cases. Those ten are saturated: the shipped configuration ranks nine or ten of
+them whatever the mechanisms are set to, so the count was a coin toss dressed
+as a measurement, and DESIGN.md has been reasoning from it for weeks.
+
+Asked of the real patients instead, the question has never been close:
+
+    correlated=False   real: 3 correct, 2 WRONG commits, Brier 0.200, oc +0.218
+    correlated=True    real: 3 correct, 0 wrong commits,  Brier 0.114, oc +0.158
+
+**Two wrong commits on real patients against none.** Calibrated abstention is
+this project's claim, and correlation weighting is what protects it on the
+only instrument able to see the difference. It stays on by default, and this
+is the first time that default has had evidence behind it rather than a
+fixture count.
+
+The durable lesson is not about correlation. A measurement that reverses six
+times is telling you the instrument is spent, and it took six reversals and a
+purpose-built replacement set before anyone read it that way.
