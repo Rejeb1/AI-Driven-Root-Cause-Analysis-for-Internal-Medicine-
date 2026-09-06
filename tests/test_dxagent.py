@@ -351,36 +351,39 @@ def _superseded_test_evidence_fit_does_not_separate_masquerade_errors(kb, cases)
     assert min(correct) < max(wrong)
 
 
-def test_evidence_fit_does_not_separate_the_masquerade_failure(kb, cases):
-    """Twice reversed, and the second reversal restores the original claim.
+def test_evidence_fit_does_not_separate_the_masquerade_failure():
+    """Three reversals, and then a test bed that can actually hold the claim.
 
-    The first version of this test recorded that evidence fit could not tell
-    the loop's failures from its successes, because a masquerade failure is
-    one where the *wrong* diagnosis explains the evidence well. Nine sourced
-    likelihoods appeared to repair that. Five more, from the same source,
-    undid the repair: fx-009's fit now sits inside the range of the cases the
-    loop gets right, exactly as it originally did.
+    The original claim was that evidence fit cannot tell the loop's failures
+    from its successes, because a masquerade failure is one where the *wrong*
+    diagnosis explains the evidence well. Nine sourced likelihoods appeared to
+    repair that; five more from the same source undid the repair; the Wang
+    inversions repaired it again. Three reversals on the same ten cases.
 
-    The lesson is about the measurement, not the mechanism. A separation
-    demonstrated on ten cases and one failure is a property of that failure,
-    not of evidence fit, and it survived only until the numbers moved again.
-    The original conclusion was the durable one: evidence fit reads whether
-    the findings are explained by *something*, and in a masquerade they are.
+    Every one of those measurements was taken on a deliberately weakened arm
+    carrying a single failure, and a separation demonstrated over one failure
+    is a property of that failure rather than of evidence fit. The previous
+    version of this test said so in its own docstring and then went on
+    asserting the separation anyway, which is why it kept flipping.
 
-    Measured on the weakened arm, because sourcing the priors took the
-    shipped configuration to 10/10 and a claim about how failures score
-    needs a failure to score. That the claim is now untestable under the
-    defaults is a good problem, and worth not hiding by quietly deleting the
-    test.
+    It is now measured where a real failure exists under the *shipped*
+    configuration: fx-h04 in the hard case set, a pneumonia in a COPD patient
+    committed wrongly at 70%. And the result is stronger than the original
+    claim rather than merely consistent with it. The failure does not just
+    score inside the range of the successes; it scores **above all of them**
+    -- 0.28 against a best correct case of 0.25. The wrong diagnosis explains
+    this evidence better than the right diagnosis explains any of the others,
+    which is exactly what a masquerade is and exactly why no threshold on
+    evidence fit can be used as a safety check.
     """
-    agent = DiagnosticAgent(
-        kb=kb,
-        limits=LoopLimits(require_decisive_tests=False, require_workup=False),
-    )
+    kb = build_knowledge_base(correlated=True)
+    agent = DiagnosticAgent(kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb))
     proposer = BayesianProposer(kb)
-    correct, wrong = [], []
 
-    for case in cases:
+    from dxagent.datasets.fixtures import build_hard_cases
+
+    correct, wrong = [], []
+    for case in build_hard_cases():
         outcome = agent.run(case)
         findings = case.initial() + [f for s in outcome.steps for f in s.findings]
         proposer.propose(findings)
@@ -388,10 +391,12 @@ def test_evidence_fit_does_not_separate_the_masquerade_failure(kb, cases):
         hit = outcome.differential.top.label == case.diagnosis
         (correct if hit else wrong).append(fit)
 
-    assert wrong, "fixture set no longer contains a failing case"
-    # At least one correct case is explained no better than the worst
-    # failure, so no threshold on evidence fit separates them.
-    assert min(correct) < max(wrong)
+    assert wrong, "hard case set no longer contains a failing case"
+    # Not merely unseparated: the masquerade is the best-explained case in
+    # the set. A threshold placed anywhere would reject successes first.
+    assert max(wrong) > max(correct), (
+        f"masquerade fit {max(wrong):.4f} no longer tops correct {max(correct):.4f}"
+    )
 
 
 def test_gate_escalates_unexplained_evidence_however_confident(kb):
@@ -671,15 +676,17 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
 
     This arm switches off the workup floor, the decisive-test rule and
     correlation weighting -- everything that exists to catch a masquerade --
-    and two cases fail: fx-001, a pneumonia read as COPD, and fx-009, a
-    pulmonary embolism read as pneumonia. **The shipped configuration gets
-    all ten**, which is the number that describes the system; this one
-    describes what the safety machinery is carrying.
+    and one case fails: fx-009, a pulmonary embolism read as pneumonia. **The
+    shipped configuration gets all ten**, which is the number that describes
+    the system; this one describes what the safety machinery is carrying.
 
     The count here has moved every time the knowledge base has: two failures
     on invented numbers, none after the Merck likelihoods, one once the
-    priors were sourced, and two again now that immobility and the signs of a
-    DVT are measured from PIOPED II rather than guessed.
+    priors were sourced, two again after PIOPED II, and one now that five of
+    acute pulmonary oedema's likelihoods are recovered from the Wang review
+    instead of invented. fx-001, the pneumonia read as COPD, went with them:
+    it had been losing partly because pulmonary oedema claimed crackles at an
+    invented 0.75 against a measured 0.60.
 
     That last move is worth stating plainly, because it made a number go the
     wrong way for the right reason. fx-009 used to pass on this arm partly
@@ -705,7 +712,7 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
     # Sourcing brought these back on this deliberately weakened arm -- no
     # workup floor, no decisive-test rule, no correlation weighting. The
     # shipped configuration gets all ten; see the docstring.
-    assert wrong == ["fx-001", "fx-009"], f"unexpected failures: {wrong}"
+    assert wrong == ["fx-009"], f"unexpected failures: {wrong}"
 
     # Correlation weighting alone -- still no workup floor, still no
     # decisive-test rule -- carries both of them. That is the measurement

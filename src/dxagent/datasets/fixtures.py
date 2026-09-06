@@ -504,6 +504,48 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         low=0.34,
         high=0.62,
     ),
+    # Same review, same inversion, two more findings that carry matched
+    # ratios. The chest radiograph one is worth noticing on its own account:
+    # a sensitivity of 0.54 says the film is normal in nearly half of acute
+    # heart failure, which is the well-known insensitivity of radiography in
+    # this setting and precisely the sort of thing an invented 0.85 erases.
+    ("acute_pulmonary_oedema", "imaging:cxr_pulmonary_oedema"): measured(
+        0.54,
+        Citation(
+            "WANG-2005",
+            "Wang CS et al., JAMA 2005;294(15):1944-56, pulmonary venous congestion",
+            "positive LR 12 (95% CI 6.8-21.0) and negative LR 0.48 (0.28-0.83) "
+            "for heart failure in dyspnoeic emergency patients, which invert "
+            "to a sensitivity of 0.54",
+        ),
+        low=0.19,
+        high=0.73,
+    ),
+    # DDXPlus records leg swelling in 7202 of 7205 simulated acute pulmonary
+    # oedema patients. A likelihood of 0.999 for any clinical finding should
+    # have been suspicious on its face; the real figure is half that. This is
+    # the clearest instance yet of the caution this file keeps repeating
+    # about simulator-derived numbers, and it survived several passes because
+    # a *sourced* number attracts less scrutiny than an invented one.
+    ("acute_pulmonary_oedema", "leg_swelling"): measured(
+        0.50,
+        Citation(
+            "WANG-2005",
+            "Wang CS et al., JAMA 2005;294(15):1944-56, leg oedema",
+            "positive LR 2.3 (95% CI 1.5-3.7) and negative LR 0.64 (0.47-0.87) "
+            "for heart failure in dyspnoeic emergency patients, which invert "
+            "to a sensitivity of 0.50; DDXPlus's simulated rate is 0.999",
+        ),
+        low=0.31,
+        high=0.61,
+    ),
+    # Deliberately not taken from the same table, and recorded so the decision
+    # is visible rather than looking like an oversight: "any abnormal ECG"
+    # carries LR+ 2.2 and LR- 0.64, which invert to 0.51. The concept here is
+    # exam:ecg_st_changes, which is ST-segment change specifically, not any
+    # abnormality at all. Writing 0.51 into it would be the mis-mapping the
+    # DDXPlus mapping file warns about -- a confidently sourced wrong number,
+    # which is worse than the invented one it replaced.
     ("pericarditis", "exam:ecg_st_changes"): measured(
         0.50,
         Citation(

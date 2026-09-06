@@ -254,8 +254,8 @@ a published cohort of 360 real pulmonary embolism patients (Miniati et al.,
 PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
 text through the fixed rubric, 3 by targeted search, and 14 from PIOPED II's
 arm of patients investigated for embolism who turned out not to have one
-(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 35%, and the
-remaining 99 are still invented.
+(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 36%, and the
+remaining 98 are still invented.
 
 That last pass is the one worth copying. The other four asked what a disease
 looks like. It asked what the *rivals* look like, which is the half of a
@@ -665,7 +665,7 @@ configuration still gets every fixture case.
 
 It is off anyway, and the reasons are worth being explicit about. It is 63
 invented numbers from one non-clinician in a single sitting. It takes the
-sourced fraction from 35% to 24% — not a regression, but the count finally
+sourced fraction from 36% to 24% — not a regression, but the count finally
 including claims the model was already making. And it turns one abstention
 into a wrong commit: acute coronary syndrome at 82% on a true pericarditis.
 
@@ -1209,3 +1209,90 @@ document says it is for.
 It is also the first time the hard cases have priced a change. The ten
 development fixtures scored this as an improvement, seven commits to eight,
 and would have reported nothing else.
+
+
+### Two more inversions, and what five sourced cells did to one disease
+
+The same review carries matched ratios for two further findings in this
+vocabulary, and both corrections are large:
+
+    finding                   LR+   LR-   recovered   was
+    CXR venous congestion    12.0  0.48        0.54   0.85  invented
+    leg oedema                2.3  0.64        0.50   0.999 DDXPlus
+
+The radiograph figure is worth pausing on. A sensitivity of 0.54 says the film
+is normal in nearly half of acute heart failure, which is the well-known
+insensitivity of chest radiography in this setting — and precisely the sort of
+clinical fact an invented 0.85 erases.
+
+The leg oedema figure is worse than a bad guess. DDXPlus records leg swelling
+in 7202 of 7205 simulated pulmonary oedema patients. A likelihood of 0.999 for
+any clinical finding should have been suspicious on sight, and it survived
+several passes through this file specifically because it was *sourced* — a
+number with a citation attracts less scrutiny than one labelled invented,
+which is a failure mode this project should have anticipated given how much
+time it spends on the reverse case.
+
+One finding was deliberately not taken. The same table gives "any abnormal
+ECG" at LR+ 2.2 and LR- 0.64, inverting to 0.51. The concept here is
+`exam:ecg_st_changes` — ST-segment change specifically, not any abnormality at
+all. Writing 0.51 into it would be exactly the mis-mapping the DDXPlus mapping
+file warns about: a confidently sourced wrong number, worse than the invented
+one it replaced.
+
+### The trend across both passes, stated plainly
+
+    pass                     invented  coverage  ECE     Brier   overconf
+    before Wang                   101       34%  0.298   0.102    +0.017
+    three cells (JVP, crackles,
+      orthopnoea)                  99       35%  0.301   0.103    +0.014
+    five cells (+ CXR, oedema)     98       36%  0.316   0.107    -0.010
+
+Coverage improved and ECE got worse, monotonically, across both passes. That
+is the honest shape of it and it should not be smoothed over: replacing
+invented numbers with measured ones has made this model's real-case
+calibration slightly worse, not better. Two things argue for keeping it
+anyway. The overconfidence figure moved from +0.017 to -0.010, which is closer
+to calibrated in absolute terms and errs toward caution rather than away from
+it; and no wrong commit appeared anywhere, on any arm, through either pass.
+
+A construct note that belongs with these five. Wang's population is dyspnoeic
+emergency patients with *heart failure*, and this knowledge base's disease is
+*acute pulmonary oedema*, which SCOPE.md defines as the acute decompensation
+of heart failure. Those are close enough to map — the study population is an
+acute presentation to an emergency department with breathlessness, which is
+this project's presentation exactly — but the study arm includes decompensated
+patients less florid than frank pulmonary oedema, so these sensitivities are
+if anything conservative for the extreme end of the disease.
+
+### Three test claims moved, two of them for the better
+
+**The weakened arm lost fx-001.** It now fails only on fx-009, down from two.
+The pneumonia read as COPD had been losing partly because pulmonary oedema
+claimed crackles at an invented 0.75 against a measured 0.60.
+
+**The evidence-fit claim reversed for the third time, and then got a proper
+test bed.** That test has now recorded, in sequence, that evidence fit cannot
+separate failures from successes, that it can, that it cannot, and that it
+can. Every one of those measurements was taken on a deliberately weakened arm
+carrying exactly one failure, and a separation demonstrated over one failure
+is a property of that failure. The test's own docstring said so and then
+asserted the separation anyway, which is why it kept flipping.
+
+It is now measured where a real failure exists under the *shipped*
+configuration: fx-h04 in the hard case set. The result is stronger than the
+original claim rather than merely consistent with it —
+
+    fx-h01 0.2103   fx-h02 0.2493   fx-h03 0.1921   fx-h05 0.1480   (correct)
+    fx-h04 0.2832                                                    (WRONG)
+
+— the masquerade is the *best-explained case in the set*. A threshold on
+evidence fit placed anywhere would reject correct answers before it rejected
+this one. That is what a masquerade is, and it is why evidence fit cannot be
+used as a safety check.
+
+**And the hard cases priced this change too**, differently from the last one:
+committed-correct went one to two while the fixture arm went eight back to
+seven. The two sets disagree about whether this pass was an improvement, which
+is the first time that has happened and is a better problem than the one
+before it, when only one set could speak at all.
