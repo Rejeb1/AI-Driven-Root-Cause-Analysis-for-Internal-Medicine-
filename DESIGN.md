@@ -255,7 +255,7 @@ PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
 text through the fixed rubric, 3 by targeted search, and 14 from PIOPED II's
 arm of patients investigated for embolism who turned out not to have one
 (Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 39%, and the
-remaining 94 are still invented.
+remaining 93 are still invented.
 
 That last pass is the one worth copying. The other four asked what a disease
 looks like. It asked what the *rivals* look like, which is the half of a
@@ -1931,3 +1931,47 @@ correction makes results worse, find the mechanism before reverting. The
 revert in the previous entry stands, but it was accepted one step too early,
 and the entry recorded a structural explanation — half-sourced columns — that
 was true in general and not the operative cause in that instance.
+
+
+### The PIOPED pass read half its own table
+
+A mechanism audit of the remaining invented cells -- looking for values that
+assert the opposite of known physiology, the way P(raised BNP | pulmonary
+embolism) at 0.20 did -- turned up two that needed no new literature at all.
+
+The PIOPED II pass took the *no-PE* arm of Tables 3 and 6 and applied it to
+the seven rival diseases. That was the point of it: a study of patients
+investigated for embolism and found not to have one describes exactly this
+differential's other candidates. Both tables also report the PE arm. Those
+columns were read, quoted in this file's own citation snippet, and never
+applied to pulmonary embolism itself.
+
+    finding             was                   PIOPED II, PE arm
+    recent_immobility   0.61  DDXPlus         48 of 192   (0.25)
+    calf_tenderness     0.40  invented        90 of 192   (0.47)
+
+The immobility correction follows a precedent set twice already: a frequency
+counted in real patients outranks one counted in a simulator. DDXPlus
+generates immobility in 61% of its embolism patients against 25% observed in
+192 real ones -- the same gap as pleuritic pain at 71% against 33%, resolved
+the same way.
+
+Coverage holds at 39% and invented falls 94 to 93. Both trusted instruments
+are unchanged: real cases 3 correct with 0 wrong, hard cases 5 of 5 with 3
+commits and 0 wrong. Calibration moved slightly the wrong way, ECE 0.317 to
+0.325 and Brier 0.107 to 0.111.
+
+It did move fx-009's evidence set, and in the direction the original story
+predicts. Correlation now lifts pulmonary embolism from third to *first* on
+that frozen set, where before it went fourth to second. Absent
+venous-thromboembolism findings penalise embolism less once its own rates are
+real -- the exact mirror of the first PIOPED pass, which stopped the rivals
+being penalised for those same absences and left the disease the study is
+about untouched.
+
+**How it survived is the transferable part.** That pass was careful about
+which arm it was reading, wrote a long comment justifying the pooling across
+rivals, and never asked whether the table it had open said anything about the
+disease in the middle of the differential. A sourcing pass aimed at one part
+of a table can leave the rest of it unread, and the resulting gap is invisible
+afterwards because the citation is present and correct.

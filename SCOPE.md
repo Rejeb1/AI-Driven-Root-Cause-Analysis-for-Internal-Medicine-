@@ -113,8 +113,8 @@ contradicted, all four for that reason:
   correcting it cost.
 
 **Most of these numbers are still invented, and which ones are not is
-recorded.** 39% of the 153 likelihoods carry a citation — 13 from DDXPlus, 13
-from the Merck Manual's narrative text, 33 from published cohorts.
+recorded.** 39% of the 153 likelihoods carry a citation — 12 from DDXPlus, 13
+from the Merck Manual's narrative text, 35 from published cohorts.
 `scripts/sensitivity.py` reports the split and `dxagent.provenance` tracks it
 per number. See *Constraints*.
 
@@ -207,13 +207,13 @@ here holds symptoms, signs, laboratory results and imaging findings, and
 nothing in scope reasons about medication. That is a scope fact rather than a
 substitution.
 
-**The likelihood tables are still mostly invented — 94 of 153.** UMLS was
+**The likelihood tables are still mostly invented — 93 of 153.** UMLS was
 probed and found unusable for this purpose — mostly translations and billing
 crosswalks, and its one clinical relation mixes symptoms, risk factors and
 treatment complications without distinguishing them. HPO supplies concepts but
 no disease-to-finding edges outside rare Mendelian disease. Sourcing has
 therefore proceeded one number at a time, from three sources of descending
-strength: 33 frequencies from published cohorts (Miniati 2012, Zègre-Hemsey
+strength: 35 frequencies from published cohorts (Miniati 2012, Zègre-Hemsey
 2018, Noorain 2016, StatPearls), 13 counted in the DDXPlus simulator, and 14
 converted from
 Merck Manual narrative phrases through the fixed rubric in
@@ -233,7 +233,7 @@ base fall back to its own marginals, and the fixture set drops from 10/10 to
 load-bearing. Whatever else is said about this knowledge base, it cannot be
 said that most of it is padding.
 
-**Most of the remaining 94 are not sourceable from a reference text at all.**
+**Most of the remaining 93 are not sourceable from a reference text at all.**
 A textbook chapter describes what a disease presents with — five to eight
 notable findings. The knowledge base is a full grid of 8 diseases against every
 finding in the vocabulary, so it contains cells like P(raised BNP | asthma

@@ -1753,11 +1753,18 @@ def test_correlation_survives_the_sourcing_that_removed_its_prop():
     plain_rank, plain_p = look(False)
     aware_rank, aware_p = look(True)
 
-    assert (plain_rank, aware_rank) == (4, 2), "correlation still moves the rank"
-    assert aware_p > 5 * plain_p, f"a lift, not a nudge: {plain_p:.3f} -> {aware_p:.3f}"
+    # Correcting pulmonary embolism's *own* PIOPED values -- immobility from a
+    # simulated 0.61 to a measured 0.25, DVT signs from an invented 0.40 to a
+    # measured 0.47 -- moved this one further. Absent venous-thromboembolism
+    # findings now penalise embolism less, which is the mirror of the original
+    # story on this case: the first PIOPED pass stopped the *rivals* being
+    # penalised for the same absences, and left the disease the study is
+    # about on the numbers it had.
+    assert (plain_rank, aware_rank) == (3, 1), "correlation still moves the rank"
+    assert aware_p > 4 * plain_p, f"a lift, not a nudge: {plain_p:.3f} -> {aware_p:.3f}"
 
-    # Pinned so that a later change putting it back on top is noticed rather
-    # than quietly celebrated: on this evidence set alone it is still second.
+    # Pinned so a later move is noticed. On this evidence set correlation now
+    # carries it all the way to first, which it did not before.
     assert plain_p < 0.10 < aware_p < 0.50
 
     # The case, run properly, is no longer committed -- and the precise shape

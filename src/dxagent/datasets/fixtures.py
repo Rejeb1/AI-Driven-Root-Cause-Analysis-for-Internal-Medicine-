@@ -670,6 +670,57 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         low=0.61,
         high=0.73,
     ),
+    # Two cells the PIOPED II pass should have written and did not.
+    #
+    # That pass took the *no-PE* arm of Tables 3 and 6 and used it for the
+    # seven rival diseases, which was the whole point of it: a study of
+    # patients investigated for embolism and found not to have one describes
+    # exactly this differential's other candidates. The same two tables also
+    # report the PE arm, and those columns were read, quoted in this file's
+    # own citation snippet, and then not applied to pulmonary embolism
+    # itself. The disease the study is about was left on a simulator value
+    # and an invented one.
+    #
+    #     finding             was                    PIOPED II, PE arm
+    #     recent_immobility   0.61  DDXPlus          48 of 192   (0.25)
+    #     calf_tenderness     0.40  invented         90 of 192   (0.47)
+    #
+    # The immobility correction is the larger one and follows a precedent
+    # this project already set twice: a frequency counted in real patients
+    # outranks one counted in a simulator. DDXPlus generates immobility in
+    # 61% of its embolism patients; PIOPED II observed 25% in 192 real ones.
+    # That is the same simulator-against-cohort gap recorded for pleuritic
+    # pain, 71% against 33%, and resolved the same way.
+    #
+    # Worth noticing how it survived. The pass that introduced these numbers
+    # was careful about the arm it was reading, wrote a long comment
+    # justifying the pooling across rivals, and never asked whether the
+    # source it had open said anything about the disease in the middle of the
+    # differential. A sourcing pass aimed at one part of a table can leave
+    # the rest of that table unread.
+    ("pulmonary_embolism", "recent_immobility"): measured(
+        0.25,
+        Citation(
+            "PIOPED-II-2007",
+            "Stein PD et al., Am J Med 2007;120(10):871-9, Table 3",
+            "immobilization in 48 of 192 patients with confirmed pulmonary "
+            "embolism (25%), against 121 of 632 in whom it was excluded",
+        ),
+        low=0.20,
+        high=0.25,
+    ),
+    ("pulmonary_embolism", "calf_tenderness"): measured(
+        0.47,
+        Citation(
+            "PIOPED-II-2007",
+            "Stein PD et al., Am J Med 2007;120(10):871-9, Table 6",
+            "signs of deep venous thrombosis in the calf or thigh in 90 of "
+            "192 patients with confirmed pulmonary embolism (47%), against "
+            "146 of 632 in whom it was excluded",
+        ),
+        low=0.47,
+        high=0.47,
+    ),
     # The second cell in the column this project declared blocked, and the
     # one that explains why an earlier correction backfired.
     #
