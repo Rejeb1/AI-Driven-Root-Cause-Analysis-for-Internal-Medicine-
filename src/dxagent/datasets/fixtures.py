@@ -182,17 +182,9 @@ _FROM_DDXPLUS: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         0.723,
         Citation("DDXPLUS", "E_79", "5774 of 7982 acute_coronary_syndrome patients"),
     ),
-    ("acute_coronary_syndrome", "exertional_chest_pain"): measured(
-        0.360,
-        Citation("DDXPLUS", "E_218", "2873 of 7982 acute_coronary_syndrome patients"),
-    ),
     ("acute_pulmonary_oedema", "orthopnoea"): measured(
         0.759,
         Citation("DDXPLUS", "E_217", "2709 of 3569 acute_pulmonary_oedema patients"),
-    ),
-    ("acute_pulmonary_oedema", "exertional_chest_pain"): measured(
-        0.767,
-        Citation("DDXPLUS", "E_218", "2739 of 3569 acute_pulmonary_oedema patients"),
     ),
     ("acute_pulmonary_oedema", "leg_swelling"): measured(
         0.999,

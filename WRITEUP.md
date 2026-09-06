@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 87 of its 153 likelihoods are invented, no
+an unfinished feature — because 89 of its 153 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -129,10 +129,10 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**87 of 153 likelihoods are invented.** That is the number, stated on its own
+**89 of 153 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project.
 
-The remaining 66 carry a citation: 12 counted from the DDXPlus simulator, 41
+The remaining 64 carry a citation: 10 counted from the DDXPlus simulator, 41
 from published cohorts, and 14 converted from Merck Manual narrative phrases.
 The eight disease priors are separately sourced, 8 of 8, and reported on their
 own line rather than folded in — merging them would let a sourced likelihood
@@ -559,8 +559,8 @@ them:
 | knowledge base | fixture cases correct |
 |---|---|
 | complete | 9/10 |
-| 87 invented deleted | **1/10** |
-| 66 sourced deleted, invented kept | 7/10 |
+| 89 invented deleted | **1/10** |
+| 64 sourced deleted, invented kept | 7/10 |
 
 (The 9/10 baseline rather than 10/10 is the same configuration inconsistency
 described just above: `sensitivity.py` also builds without correlation
@@ -670,7 +670,7 @@ empty row.
   agent in place of its own — not a configuration change, and not attempted.
 - **UMLS relations** — probed, found unusable, documented above.
 
-**Bounded by measurement rather than blocked:** the 87 remaining invented
+**Bounded by measurement rather than blocked:** the 89 remaining invented
 likelihoods. Both bulk routes are proven exhausted, and the PIOPED II pass
 demonstrates that individual cells can still be recovered when a study reports
 the right arm.

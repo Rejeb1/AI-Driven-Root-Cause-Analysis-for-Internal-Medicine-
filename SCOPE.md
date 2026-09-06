@@ -88,10 +88,18 @@ contradicted, all four for that reason:
   at 33% in PE (Miniati 2012), while pericarditis reaches 69% and pneumonia 53%.
   It is a *pleuritic-pain* finding, not a PE finding, once the competitors are
   sourced too.
-- **Exertional chest pain no longer raises acute coronary syndrome**, because
-  DDXPlus scores it higher in acute pulmonary oedema (77%) than in ACS (36%).
-  That is a fact about DDXPlus's generating model as much as about medicine —
-  see the caution on simulator-derived numbers below.
+- **Exertional chest pain: a claim made here and since retracted.** This
+  document used to record that exertional chest pain no longer raises acute
+  coronary syndrome, because DDXPlus scored it at 77% in acute pulmonary
+  oedema against 36% in ACS, and presented that as something the sourced
+  numbers had revealed. It was a mapping error. The DDXPlus question behind
+  it, E_218, asks "Do you have symptoms that are increased with physical
+  exertion but alleviated with rest?" — *symptoms*, not chest pain, which is
+  why heart-failure patients answer yes. The mapping was withdrawn, the two
+  cells returned to the invented values it had displaced (0.80 for ACS and
+  0.20 for pulmonary oedema, the clinically sensible ordering), and coverage
+  fell from 43% to 42% as a result. A confidently sourced wrong number is
+  worse than an invented one, and this is what that looks like.
 - **Wheeze barely separates asthma from COPD** (87% against 91%), which is
   precisely what this document's own COPD row predicts when it calls
   distinguishing them "a real clinical task".
@@ -113,7 +121,7 @@ contradicted, all four for that reason:
   correcting it cost.
 
 **Most of these numbers are still invented, and which ones are not is
-recorded.** 43% of the 153 likelihoods carry a citation — 12 from DDXPlus, 13
+recorded.** 42% of the 153 likelihoods carry a citation — 10 from DDXPlus, 13
 from the Merck Manual's narrative text, 41 from published cohorts.
 `scripts/sensitivity.py` reports the split and `dxagent.provenance` tracks it
 per number. See *Constraints*.
@@ -207,14 +215,14 @@ here holds symptoms, signs, laboratory results and imaging findings, and
 nothing in scope reasons about medication. That is a scope fact rather than a
 substitution.
 
-**The likelihood tables are still mostly invented — 87 of 153.** UMLS was
+**The likelihood tables are still mostly invented — 89 of 153.** UMLS was
 probed and found unusable for this purpose — mostly translations and billing
 crosswalks, and its one clinical relation mixes symptoms, risk factors and
 treatment complications without distinguishing them. HPO supplies concepts but
 no disease-to-finding edges outside rare Mendelian disease. Sourcing has
 therefore proceeded one number at a time, from three sources of descending
 strength: 41 frequencies from published cohorts (Miniati 2012, Zègre-Hemsey
-2018, Noorain 2016, StatPearls), 13 counted in the DDXPlus simulator, and 14
+2018, Noorain 2016, StatPearls), 10 counted in the DDXPlus simulator, and 13
 converted from
 Merck Manual narrative phrases through the fixed rubric in
 `dxagent.provenance`.
@@ -233,7 +241,7 @@ base fall back to its own marginals, and the fixture set drops from 10/10 to
 load-bearing. Whatever else is said about this knowledge base, it cannot be
 said that most of it is padding.
 
-**Most of the remaining 87 are not sourceable from a reference text at all.**
+**Most of the remaining 89 are not sourceable from a reference text at all.**
 A textbook chapter describes what a disease presents with — five to eight
 notable findings. The knowledge base is a full grid of 8 diseases against every
 finding in the vocabulary, so it contains cells like P(raised BNP | asthma
@@ -250,7 +258,7 @@ be the misconduct this project's provenance tiers exist to prevent.
 **The disease priors are now derived from published aetiology, with wide
 bands.** They were invented for most of this project. Until recently they were also invisible to the audit —
 `dxagent.provenance` covered `P(finding | disease)` only, so a reader saw
-"43% sourced" with no hint that the priors were not part of that fraction at
+"42% sourced" with no hint that the priors were not part of that fraction at
 all. They now carry the same provenance tier as the likelihoods and are
 reported on their own line (`8 disease priors: 8 sourced, 0 invented`),
 counted separately rather than folded in, because merging them would let a

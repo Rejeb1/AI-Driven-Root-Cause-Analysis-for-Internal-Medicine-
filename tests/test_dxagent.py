@@ -769,7 +769,7 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
     # Sourcing brought these back on this deliberately weakened arm -- no
     # workup floor, no decisive-test rule, no correlation weighting. The
     # shipped configuration gets all ten; see the docstring.
-    assert wrong == ["fx-009"], f"unexpected failures: {wrong}"
+    assert wrong == ["fx-009", "fx-010"], f"unexpected failures: {wrong}"
 
     # Correlation weighting alone no longer rescues it. It used to, and the
     # sentence that used to sit here called correlation the load-bearing

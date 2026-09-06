@@ -254,8 +254,8 @@ a published cohort of 360 real pulmonary embolism patients (Miniati et al.,
 PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
 text through the fixed rubric, 3 by targeted search, and 14 from PIOPED II's
 arm of patients investigated for embolism who turned out not to have one
-(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 43%, and the
-remaining 87 are still invented.
+(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 42%, and the
+remaining 89 are still invented.
 
 That last pass is the one worth copying. The other four asked what a disease
 looks like. It asked what the *rivals* look like, which is the half of a
@@ -665,7 +665,7 @@ configuration still gets every fixture case.
 
 It is off anyway, and the reasons are worth being explicit about. It is 63
 invented numbers from one non-clinician in a single sitting. It takes the
-sourced fraction from 43% to 24% — not a regression, but the count finally
+sourced fraction from 42% to 24% — not a regression, but the count finally
 including claims the model was already making. And it turns one abstention
 into a wrong commit: acute coronary syndrome at 82% on a true pericarditis.
 
@@ -2108,3 +2108,83 @@ ago: **a paper cited for one thing may answer a second question nobody
 thought to ask it.** That pass read half a table; this one had been reading
 half a study. In both cases the citation was present and correct, which is
 precisely what makes the gap invisible on review.
+
+
+### A withdrawn mapping, and a "finding" that was a bug
+
+The ordering audit flagged one more column, and this time the fix lowered
+coverage rather than raising it.
+
+`exertional_chest_pain` read acute pulmonary oedema at 0.77 and acute coronary
+syndrome at 0.36 — both sourced from DDXPlus. Exertional chest pain is the
+cardinal ischaemic symptom, so an ordering that puts heart failure above acute
+coronary syndrome is not a subtle discrepancy.
+
+The DDXPlus question behind it is **E_218: "Do you have symptoms that are
+increased with physical exertion but alleviated with rest?"** *Symptoms*, not
+chest pain. Heart-failure patients answer yes because their breathlessness
+does exactly that. `ddxplus_mapping.py` filed the pairing under "confident:
+the two phrasings ask the same question", with the note "worse on exertion,
+relieved by rest" — which drops the word that matters.
+
+That file's own docstring, written before the mapping was made, states the
+failure precisely:
+
+> Get that wrong and the result is a *confidently sourced wrong number*, which
+> is worse than the invented one it replaced — an invented number is labelled
+> invented and nobody trusts it, while a mis-mapped one arrives with 1.3M
+> patients behind it.
+
+**And the project wrote the consequence up as a discovery.** SCOPE.md recorded
+that "exertional chest pain no longer raises acute coronary syndrome" as one
+of four claims the sourced numbers had contradicted, attributing it to
+DDXPlus's generating model. It was not a fact about the generating model. It
+was a fact about a mapping, and it sat in the scope document as evidence of
+the project's own rigour for weeks.
+
+The invented values it displaced were 0.80 for acute coronary syndrome and
+0.20 for acute pulmonary oedema — the clinically sensible ordering, which the
+mapping inverted.
+
+    coverage        43%  ->  42%     (two cells returned to invented)
+    ECE           0.246  ->  0.240
+    Brier         0.151  ->  0.147
+
+Every arm otherwise unchanged: fixtures 8 of 10 with 5 commits and 0 wrong,
+hard cases 5 of 5 with 3 commits and 0 wrong, real cases 2 correct with 0
+wrong. Removing a sourced number improved calibration slightly, which is the
+corroboration rather than the reason.
+
+### What the ordering audit is actually good for
+
+Three passes of reading the grid against physiology have now found five
+errors, none of them by a failing test:
+
+    P(raised BNP | PE)              0.20 invented   -> 0.62 measured
+    P(recent immobility | PE)       0.61 simulated  -> 0.25 measured
+    P(raised troponin | PE)         0.25 invented   -> 0.53 measured
+    P(defect | PE)                  0.95 invented   -> 0.83 measured
+    P(exertional pain | oedema/ACS) 0.77 / 0.36     -> withdrawn
+
+The technique is cheap and needs no literature: sort each column, ask whether
+the ordering matches what the diseases do, and look hardest where a sourced
+value sits below an invented one or a rival outranks the disease that owns the
+finding. It has a much better hit rate than searching for new sources, and
+every hit so far has been invisible to a test suite that checks outputs.
+
+Two candidates it raised and cleared on inspection are worth recording so
+nobody re-opens them. `leg_swelling` puts pulmonary embolism at 0.17 below
+COPD at 0.20, which looks wrong until the sources are read: Miniati counted
+*unilateral* limb swelling in 63 of 360 embolisms, while COPD's value is
+bilateral oedema from cor pulmonale. Different findings sharing one concept —
+a limitation of the vocabulary rather than an error in the numbers. And
+`raised_troponin` puts acute pulmonary oedema at 0.30, which may be low given
+how often acute heart failure raises troponin, but nothing available settles
+it.
+
+One suspect stands unresolved: P(hypoxia | acute pulmonary oedema) at 0.40,
+below COPD and pulmonary embolism, when alveolar flooding impairing gas
+exchange is the mechanism that defines the disease. Every cohort found for it
+enrols patients *by* an oxygen-saturation threshold, so the literature
+measures severity among selected patients rather than prevalence among
+unselected ones.

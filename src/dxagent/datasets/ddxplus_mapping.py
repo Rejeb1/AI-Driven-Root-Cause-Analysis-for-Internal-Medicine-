@@ -54,6 +54,30 @@ DISEASE_MAP: dict[str, tuple[str, ...]] = {
     "panic_attack": ("panic_attack",),
 }
 
+# A mapping withdrawn, kept as a worked example of the failure this file's
+# docstring predicts.
+#
+#   "exertional_chest_pain": "E_218"
+#
+# E_218 asks "Do you have symptoms that are increased with physical exertion
+# but alleviated with rest?" -- *symptoms*, not chest pain. It was filed under
+# "confident: the two phrasings ask the same question" with the note "worse on
+# exertion, relieved by rest", which quietly drops the word that matters.
+#
+# The consequence was visible in the numbers and was written up as a finding
+# rather than as a bug. DDXPlus scored the concept at 0.77 in acute pulmonary
+# oedema against 0.36 in acute coronary syndrome, and SCOPE.md recorded that
+# "exertional chest pain no longer raises acute coronary syndrome" as
+# something the sourced numbers had revealed. What the numbers had actually
+# revealed is that heart-failure patients answer yes to a question about
+# symptoms worsening on exertion, because their breathlessness does.
+#
+# The invented values it displaced were 0.80 for acute coronary syndrome and
+# 0.20 for acute pulmonary oedema -- the clinically sensible ordering, which
+# the mis-mapping inverted. A confidently sourced wrong number really is worse
+# than the invented one it replaced, and this file said so before making the
+# mistake.
+#
 # Fixture concept -> DDXPlus evidence code, or several codes counted as a
 # disjunction (the patient has the finding if any of them is recorded).
 #
@@ -76,7 +100,6 @@ CONCEPT_MAP: dict[str, str | tuple[str, ...]] = {
     "pleuritic_pain": "E_220",           # pain increased when breathing in deeply
     "orthopnoea": "E_217",               # worse lying down, better sitting up
     "smoking_history": "E_79",           # Do you smoke cigarettes?
-    "exertional_chest_pain": "E_218",    # worse on exertion, relieved by rest
     "palpitations": "E_155",             # heart racing / irregular / pounding
     "wheeze_subjective": "E_214",        # wheezing sound when you exhale
     "recent_immobility": "E_110",        # immobile 3+ days in the last 4 weeks
