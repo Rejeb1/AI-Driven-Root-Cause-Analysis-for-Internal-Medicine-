@@ -236,7 +236,7 @@ textarea:focus {
 .dx-ev { display: none; margin-top: 11px; padding-left: 11px; border-left: 2px solid var(--stroke); }
 .dx.open .dx-ev { display: block; animation: rise .3s var(--ease) both; }
 .ev-h { font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; font-weight: 800; margin: 8px 0 4px; }
-.ev-h.s { color: #6ee7b7; } .ev-h.a { color: #fda4af; }
+.ev-h.s { color: #6ee7b7; } .ev-h.a { color: #fda4af; } .ev-h.e { color: #7dd3fc; } .ev-h.p { color: #8b96a5; }
 .ev-i { font-size: 11.8px; color: var(--muted); margin: 3px 0; line-height: 1.45; }
 .ev-i code { color: var(--dim); font-size: 11px; }
 
@@ -454,10 +454,35 @@ function renderDx(container, hyps) {
 
     const ev = row.querySelector(".dx-ev");
     const cite = (c) => `<div class="ev-i"><code>[${c.source_id}]</code> ${c.snippet}</div>`;
-    ev.innerHTML =
-      (h.support?.length ? `<div class="ev-h s">Supporting</div>${h.support.slice(0, 4).map(cite).join("")}` : "") +
-      (h.against?.length ? `<div class="ev-h a">Against</div>${h.against.slice(0, 4).map(cite).join("")}`
-                         : `<div class="ev-h a">Against</div><div class="ev-i">Nothing in the knowledge base argues against this.</div>`);
+    const ruled = (c) => `<div class="ev-i"><code>[${c.source_id}]</code> against ${c.rival}: ${c.snippet}</div>`;
+
+    // Supporting shows only what this patient's findings say. The knowledge
+    // base entry's own citation lives in Provenance at the bottom: it reads
+    // "synthetic entry, not sourced" and used to sit at the top of this list,
+    // so an admission that a hypothesis has no source was displayed as a
+    // reason to believe it.
+    const support = h.support?.length
+      ? `<div class="ev-h s">Supporting</div>${h.support.slice(0, 4).map(cite).join("")}`
+      : `<div class="ev-h s">Supporting</div><div class="ev-i">No finding in this consultation argues for this.</div>`;
+
+    const against = h.against?.length
+      ? `<div class="ev-h a">Against</div>${h.against.slice(0, 4).map(cite).join("")}`
+      : `<div class="ev-h a">Against</div><div class="ev-i">Nothing recorded here argues against it &mdash; which is weaker than it sounds, since a diagnosis that claims few findings strongly is hard to argue against.</div>`;
+
+    // Probabilities normalise across the eight causes, so a diagnosis can
+    // rise because its rivals fell. Without this block a diagnosis reached by
+    // elimination shows a thin supporting list beside a confident number and
+    // looks unjustified, when the justification is simply somewhere else.
+    const thin = (h.support?.length || 0) < 2 && h.probability >= 0.4;
+    const elim = h.eliminated?.length
+      ? `<div class="ev-h e">${thin ? "Reached mainly by elimination &mdash; what ruled the rivals out" : "What argued against the alternatives"}</div>${h.eliminated.slice(0, 5).map(ruled).join("")}`
+      : "";
+
+    const prov = h.grounding?.length
+      ? `<div class="ev-h p">Provenance of the entry</div>${h.grounding.map(cite).join("")}`
+      : "";
+
+    ev.innerHTML = support + against + elim + prov;
     container.appendChild(row); // reorder to match ranking
   });
 

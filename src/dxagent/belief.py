@@ -79,22 +79,33 @@ class BayesianProposer:
         self.last_evidence_fit = self.evidence_fit(findings, log_scores)
 
         # The entry's own citation grounds the *existence* of the hypothesis;
-        # the per-finding ones ground the *evidence* for and against it. Both
-        # are kept, and the entry citation stays first so that a hypothesis
-        # nothing currently supports is still reported as grounded rather than
+        # the per-finding ones ground the *evidence* for and against it. They
+        # are kept in separate fields, which they were not originally: the
+        # entry citation used to be concatenated onto the front of support, so
+        # every hypothesis displayed a line under "supporting evidence" that
+        # read "synthetic entry, not sourced" -- a disclosure rendered as its
+        # own opposite. Grounding still satisfies the gate's requirement that
+        # a committed hypothesis be in the knowledge base at all, so a
+        # hypothesis nothing currently supports is still grounded rather than
         # escalating for missing provenance.
         support: dict[str, tuple] = {}
         against: dict[str, tuple] = {}
+        grounding: dict[str, tuple] = {}
         for entry in entries:
             supporting, contradicting = self.kb.evidence_split(entry.label, findings)
-            support[entry.label] = entry.citations + supporting
+            support[entry.label] = supporting
             against[entry.label] = contradicting
+            grounding[entry.label] = entry.citations
 
         rationales = {
             e.label: self._rationale(e.label, findings) for e in entries
         }
         return Differential.from_scores(
-            scores, support=support, rationales=rationales, against=against
+            scores,
+            support=support,
+            rationales=rationales,
+            against=against,
+            grounding=grounding,
         )
 
     def evidence_fit(
@@ -228,8 +239,8 @@ class LLMProposer:
             if self.fallback is None:
                 self.fallback = BayesianProposer(self.kb)
             return self.fallback.propose(findings, complaint)
-        support = {e.label: e.citations for e in self.kb.diseases()}
-        return Differential.from_scores(scores, support=support)
+        grounding = {e.label: e.citations for e in self.kb.diseases()}
+        return Differential.from_scores(scores, grounding=grounding)
 
     def _render(self, labels: list[str], findings: list[Finding], complaint: str) -> str:
         observed = "\n".join(

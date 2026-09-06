@@ -436,6 +436,20 @@ def test_hypotheses_carry_both_supporting_and_contradicting_citations(kb, cases)
     it, so every hypothesis reported an empty case against itself -- which
     reads as "nothing argues against this" rather than "this was never
     assessed".
+
+    This test used to assert that *every* hypothesis carries supporting
+    evidence, and it passed for the wrong reason: the knowledge base entry's
+    own citation was concatenated onto the front of ``support``, so every
+    hypothesis had at least one entry no matter what the patient's findings
+    said. For this fixture knowledge base that citation reads "synthetic
+    entry, not sourced", so the assertion was being satisfied by a line
+    admitting the entry has no source.
+
+    Grounding is now its own field and the two claims are asserted
+    separately: every hypothesis is *grounded*, which is what the gate
+    requires and what the old assertion was reaching for, and the evidence
+    lists are populated in both directions without every hypothesis being
+    guaranteed a supporting item it has not earned.
     """
     case = cases[0]
     findings = [
@@ -445,10 +459,60 @@ def test_hypotheses_carry_both_supporting_and_contradicting_citations(kb, cases)
     differential = BayesianProposer(kb).propose(findings, case.presenting_complaint)
 
     assert any(h.against for h in differential.hypotheses)
-    assert all(h.support for h in differential.hypotheses)
+    assert any(h.support for h in differential.hypotheses)
+    # Every hypothesis is in the knowledge base; not every hypothesis has
+    # something in this patient arguing for it, and the difference is the
+    # point of splitting the two fields.
+    assert all(h.is_grounded for h in differential.hypotheses)
+    assert all(h.grounding for h in differential.hypotheses)
 
-    cited = [c for h in differential.hypotheses for c in h.support + h.against]
+    cited = [
+        c
+        for h in differential.hypotheses
+        for c in h.support + h.against + h.grounding
+    ]
     assert all(c.source_id and c.locator for c in cited)
+
+
+def test_the_unsourced_disclosure_is_not_displayed_as_supporting_evidence(kb):
+    """Found by looking at the browser UI, not by a failing test.
+
+    A consultation committed to a COPD exacerbation at 68% and its evidence
+    panel listed two supporting items. The first was
+    ``[FIXTURE-KB] synthetic entry, not sourced`` -- the knowledge base
+    entry's own citation, which every one of the eight diseases carries and
+    which says the entry has no source. It was being concatenated onto the
+    front of ``support``, so a disclosure was rendered under a green heading
+    reading SUPPORTING, in the same style as real evidence, on every
+    hypothesis in every surface: the web UI, ``consult.py`` and ``demo.py``.
+
+    The text was honest and the placement inverted it. That is the automation
+    bias RESPONSIBLE_AI.md claims to guard against, produced by this
+    project's own interface.
+
+    Grounding now has its own field. The gate still requires it, so nothing
+    about which cases commit has changed -- this is a reporting fix, and the
+    fixture, hard and real-case results are identical either side of it.
+    """
+    findings = [Finding("productive_cough", Polarity.PRESENT)]
+    differential = BayesianProposer(kb).propose(findings)
+
+    for hypothesis in differential.hypotheses:
+        snippets = [c.snippet for c in hypothesis.support]
+        assert "synthetic entry, not sourced" not in snippets, (
+            f"{hypothesis.label} shows its unsourced disclosure as support"
+        )
+        # It has to still be reachable, and still satisfy the gate.
+        assert any(
+            c.snippet == "synthetic entry, not sourced" for c in hypothesis.grounding
+        )
+        assert hypothesis.is_grounded
+
+    # A hypothesis nothing argues for now says so, rather than borrowing the
+    # entry citation to look supported.
+    unsupported = [h for h in differential.hypotheses if not h.support]
+    assert unsupported, "expected at least one hypothesis with no evidence for it"
+    assert all(h.is_grounded for h in unsupported)
 
 
 def test_an_expected_finding_that_is_absent_counts_against(kb):

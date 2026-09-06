@@ -100,7 +100,10 @@ class WebOracle:
         with self.lock:
             findings = list(self.findings)
         differential = self.proposer.propose(findings, self.presenting_complaint)
-        return [_hypothesis(h, self.kb) for h in differential.hypotheses[:8]]
+        return [
+            _hypothesis(h, self.kb, differential)
+            for h in differential.hypotheses[:8]
+        ]
 
 
 @dataclass
@@ -130,20 +133,47 @@ def _citation(c: Citation) -> dict:
     return {"source_id": c.source_id, "snippet": c.snippet}
 
 
-def _hypothesis(h, kb) -> dict:
+def _hypothesis(h, kb, differential=None) -> dict:
     """One hypothesis, with its grounding, for the browser.
 
     The citations travel on every turn rather than only with the final
     result: the point of the grounding is that it is inspectable *while* the
     differential moves, not a justification assembled afterwards.
+
+    ``grounding`` is sent separately from ``support`` and rendered separately.
+    It says where the knowledge base entry came from, which for this project
+    is "synthetic entry, not sourced"; it used to arrive at the front of the
+    supporting list, so a disclosure that a hypothesis has no source was
+    displayed as a reason to believe it.
+
+    ``eliminated`` is what the panel was missing. Probabilities normalise
+    across the eight causes, so a diagnosis can climb because its rivals were
+    ruled out rather than because anything argued for it. A hypothesis with
+    one weak supporting finding and a high probability is not a contradiction;
+    it is a diagnosis reached by elimination, and until this field existed
+    the interface showed the thin support and hid the elimination.
     """
     entry = kb.get(h.label)
+    eliminated: list[dict] = []
+    if differential is not None:
+        seen: set[str] = set()
+        for other in differential.hypotheses:
+            if other.label == h.label:
+                continue
+            for c in other.against:
+                if c.snippet and c.snippet not in seen:
+                    seen.add(c.snippet)
+                    eliminated.append(
+                        {**_citation(c), "rival": humanise(other.label)}
+                    )
     return {
         "label": h.label,
         "probability": h.probability,
         "red_flag": bool(entry is not None and entry.red_flag),
         "support": [_citation(c) for c in h.support if c.snippet],
         "against": [_citation(c) for c in h.against if c.snippet],
+        "grounding": [_citation(c) for c in h.grounding if c.snippet],
+        "eliminated": eliminated,
     }
 
 
@@ -185,7 +215,7 @@ def _status(session_id: str) -> dict:
             "max_turns": session.limits.max_turns,
             "turn": len(outcome.steps),
             "differential": [
-                _hypothesis(h, session.kb)
+                _hypothesis(h, session.kb, outcome.differential)
                 for h in outcome.differential.hypotheses[:8]
             ],
             "prediction": outcome.prediction,

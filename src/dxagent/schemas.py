@@ -99,6 +99,7 @@ class Hypothesis:
     support: tuple[Citation, ...] = ()
     against: tuple[Citation, ...] = ()
     rationale: str = ""
+    grounding: tuple[Citation, ...] = ()
 
     @property
     def is_grounded(self) -> bool:
@@ -108,7 +109,7 @@ class Hypothesis:
         silently dropped -- an LLM-proposed diagnosis with no KB support is a
         signal worth reading, not noise.
         """
-        return len(self.support) > 0
+        return len(self.grounding) > 0 or len(self.support) > 0
 
     @property
     def is_retrieval_grounded(self) -> bool:
@@ -142,6 +143,7 @@ class Differential:
         support: dict[str, tuple[Citation, ...]] | None = None,
         rationales: dict[str, str] | None = None,
         against: dict[str, tuple[Citation, ...]] | None = None,
+        grounding: dict[str, tuple[Citation, ...]] | None = None,
     ) -> Differential:
         """Build a normalised differential from unnormalised positive scores.
 
@@ -150,12 +152,25 @@ class Differential:
         it produces hypotheses whose case against them is silently empty --
         which reads as "nothing argues against this" rather than "this was
         never assessed".
+
+        ``grounding`` is separate from ``support`` on purpose. A knowledge
+        base entry carries a citation saying where the *entry* came from, and
+        for this project's fixture knowledge base that citation reads
+        "synthetic entry, not sourced". It used to be concatenated onto the
+        front of ``support``, so every hypothesis gained a line under the
+        heading "supporting evidence" whose actual content was an admission
+        that the entry has no source. Honest text, displayed as its own
+        opposite. Grounding answers "is this hypothesis in the knowledge base
+        at all", which the gate requires; support answers "what about this
+        patient argues for it", which is a different question and the one a
+        reader is looking at.
         """
         if not scores:
             raise ValueError("cannot build a differential from no scores")
         support = support or {}
         rationales = rationales or {}
         against = against or {}
+        grounding = grounding or {}
         total = sum(scores.values())
         if total <= 0:
             # Degenerate posterior: fall back to uniform rather than crashing,
@@ -173,6 +188,7 @@ class Differential:
                     support=support.get(label, ()),
                     against=against.get(label, ()),
                     rationale=rationales.get(label, ""),
+                    grounding=grounding.get(label, ()),
                 )
                 for label, prob in ranked
             )

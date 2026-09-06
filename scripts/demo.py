@@ -134,12 +134,46 @@ def main() -> int:
             print("       supporting:")
             for citation in supporting[:3]:
                 print(wrap(f"[{citation.source_id}] {citation.snippet}", "         "))
+        else:
+            print("       supporting: no finding here argues for this")
         if against:
             print("       against:")
             for citation in against[:3]:
                 print(wrap(f"[{citation.source_id}] {citation.snippet}", "         "))
         if not against:
-            print("       against: nothing in the knowledge base argues against this")
+            print("       against: nothing here argues against it, which is weaker")
+            print("                than it sounds -- a diagnosis claiming few")
+            print("                findings strongly is hard to argue against")
+        # Probabilities normalise across the eight causes, so a diagnosis can
+        # rise because its rivals fell rather than because anything argued
+        # for it. Printing the thin supporting list without saying so makes a
+        # confident number look unjustified when the justification is simply
+        # elsewhere.
+        if len(supporting) < 2 and entry.probability >= 0.4:
+            ruled = [
+                (other.label, c)
+                for other in outcome.differential.hypotheses
+                if other.label != entry.label
+                for c in other.against
+                if c.snippet
+            ]
+            if ruled:
+                print("       reached mainly by elimination; what ruled out the rivals:")
+                for label, citation in ruled[:3]:
+                    print(wrap(
+                        f"[{citation.source_id}] against {label.replace('_', ' ')}: "
+                        f"{citation.snippet}",
+                        "         ",
+                    ))
+        # The entry's own citation, kept apart from the evidence. For this
+        # knowledge base it reads "synthetic entry, not sourced", and it used
+        # to be printed at the head of the supporting list.
+        for citation in entry.grounding:
+            if citation.snippet:
+                print(wrap(
+                    f"provenance: [{citation.source_id}] {citation.snippet}",
+                    "       ",
+                ))
         print()
 
     print(f"{THIN}\nTHE DECISION\n{THIN}\n")
