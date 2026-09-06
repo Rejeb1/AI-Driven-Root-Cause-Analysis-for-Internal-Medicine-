@@ -670,6 +670,97 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         low=0.61,
         high=0.73,
     ),
+    # A whole column, from the accuracy half of a study already cited here
+    # for its clinical tables.
+    #
+    # PIOPED II reports two things. The clinical characteristics paper gives
+    # the symptom and sign tables this file already uses; the companion paper
+    # gives the test's own accuracy against a composite reference standard --
+    # sensitivity 83%, specificity 96%, in the same 824 patients. The
+    # denominators match the tables already quoted above, 192 with embolism
+    # and 632 without, which is a useful check that it is the same cohort.
+    #
+    # Sensitivity *is* P(filling defect | pulmonary embolism) and one minus
+    # specificity *is* P(filling defect | no pulmonary embolism). No
+    # inversion, no distributional model: the two quantities this column
+    # needs are what a diagnostic-accuracy study reports.
+    #
+    #     P(defect | PE)        0.95 invented  ->  0.83
+    #     P(defect | not PE)    0.01-0.03      ->  0.04
+    #
+    # **The first of those is a safety correction, not a bookkeeping one.**
+    # At 0.95 the model treated a negative CTPA as near-conclusive against
+    # pulmonary embolism. The measured sensitivity is 0.83, so roughly one
+    # embolism in six is missed by the scan, and a negative result should
+    # leave more residual probability than this knowledge base allowed. A
+    # number that made the system too willing to rule out a red-flag
+    # diagnosis is the worst direction for an error here, and it had been
+    # sitting in a fully invented column since the beginning.
+    #
+    # Pooling the rivals at one value is legitimate here for the reason it
+    # was legitimate for immobility and calf tenderness, and is not for
+    # crackles: a false-positive filling defect is an imaging artefact, not
+    # something pneumonia causes more often than a panic attack does.
+    ("pulmonary_embolism", "imaging:ctpa_filling_defect"): measured(
+        0.83,
+        Citation(
+            "PIOPED-II-CTA-2006",
+            "Stein PD et al., N Engl J Med 2006;354(22):2317-27",
+            "multidetector CT angiography was 83% sensitive and 96% specific "
+            "for acute pulmonary embolism against a composite reference "
+            "standard in 824 patients, 192 of whom had embolism",
+        ),
+        low=0.76,
+        high=0.92,
+    ),
+    # The other half of the same specificity, written into each rival that
+    # carries the cell. One value across all four, because a false-positive
+    # filling defect is a property of the scan rather than of the disease the
+    # patient turns out to have.
+    ("community_acquired_pneumonia", "imaging:ctpa_filling_defect"): measured(
+        0.04,
+        Citation(
+            "PIOPED-II-CTA-2006",
+            "Stein PD et al., N Engl J Med 2006;354(22):2317-27",
+            "specificity 96%, so a filling defect was reported in about 4% "
+            "of the 632 patients in whom pulmonary embolism was excluded",
+        ),
+        low=0.02,
+        high=0.06,
+    ),
+    ("acute_coronary_syndrome", "imaging:ctpa_filling_defect"): measured(
+        0.04,
+        Citation(
+            "PIOPED-II-CTA-2006",
+            "Stein PD et al., N Engl J Med 2006;354(22):2317-27",
+            "specificity 96%, so a filling defect was reported in about 4% "
+            "of the 632 patients in whom pulmonary embolism was excluded",
+        ),
+        low=0.02,
+        high=0.06,
+    ),
+    ("acute_pulmonary_oedema", "imaging:ctpa_filling_defect"): measured(
+        0.04,
+        Citation(
+            "PIOPED-II-CTA-2006",
+            "Stein PD et al., N Engl J Med 2006;354(22):2317-27",
+            "specificity 96%, so a filling defect was reported in about 4% "
+            "of the 632 patients in whom pulmonary embolism was excluded",
+        ),
+        low=0.02,
+        high=0.06,
+    ),
+    ("panic_attack", "imaging:ctpa_filling_defect"): measured(
+        0.04,
+        Citation(
+            "PIOPED-II-CTA-2006",
+            "Stein PD et al., N Engl J Med 2006;354(22):2317-27",
+            "specificity 96%, so a filling defect was reported in about 4% "
+            "of the 632 patients in whom pulmonary embolism was excluded",
+        ),
+        low=0.02,
+        high=0.06,
+    ),
     # The ordering violation a mechanism audit of the grid turned up.
     #
     # This knowledge base had P(raised troponin | pulmonary embolism) at an

@@ -1225,7 +1225,24 @@ def test_sourcing_repaired_the_buried_diagnosis(kb):
         Finding("productive_cough", Polarity.PRESENT),
         Finding("imaging:ctpa_filling_defect", Polarity.PRESENT),
     ]
-    assert kb.get("pulmonary_embolism").features["imaging:ctpa_filling_defect"] >= 0.9
+    # The premise of this case: a positive CTPA is the strongest single piece
+    # of evidence for pulmonary embolism in the vocabulary. It is no longer
+    # >= 0.9. PIOPED II measured multidetector CT angiography at 83%
+    # sensitive against a composite reference standard, so the value is 0.83
+    # and roughly one embolism in six is missed by the scan. That is a
+    # correction in the safety-relevant direction -- the old 0.95 made a
+    # *negative* CTPA near-conclusive against a red-flag diagnosis -- and the
+    # premise survives it: 0.83 against 0.04 in every rival is still a
+    # likelihood ratio above twenty.
+    ctpa = kb.get("pulmonary_embolism").features["imaging:ctpa_filling_defect"]
+    rivals = [
+        e.features["imaging:ctpa_filling_defect"]
+        for e in kb.diseases()
+        if e.label != "pulmonary_embolism"
+        and "imaging:ctpa_filling_defect" in e.features
+    ]
+    assert ctpa == 0.83
+    assert ctpa / max(rivals) > 20
 
     # Sourcing the priors moved this again. Pulmonary embolism turns out to be
     # rare among these presentations -- StatPearls puts it under 5% of dyspnoea
@@ -1783,11 +1800,18 @@ def test_correlation_survives_the_sourcing_that_removed_its_prop():
     # story on this case: the first PIOPED pass stopped the *rivals* being
     # penalised for the same absences, and left the disease the study is
     # about on the numbers it had.
-    assert (plain_rank, aware_rank) == (3, 1), "correlation still moves the rank"
+    # Moved again, and downward this time, by a correction in the safety
+    # direction. PIOPED II's own accuracy paper puts CT angiography at 83%
+    # sensitive rather than the invented 0.95, so the single strongest piece
+    # of evidence for pulmonary embolism in this vocabulary is weaker than
+    # the knowledge base used to claim. Correlation lifts the diagnosis from
+    # fourth to third instead of third to first. The mechanism is unchanged
+    # and still worth more than five-fold; what changed is how much there is
+    # to lift with.
+    assert (plain_rank, aware_rank) == (4, 3), "correlation still moves the rank"
     assert aware_p > 4 * plain_p, f"a lift, not a nudge: {plain_p:.3f} -> {aware_p:.3f}"
 
-    # Pinned so a later move is noticed. On this evidence set correlation now
-    # carries it all the way to first, which it did not before.
+    # Pinned so a later move is noticed.
     assert plain_p < 0.10 < aware_p < 0.50
 
     # The case, run properly, is no longer committed -- and the precise shape

@@ -254,8 +254,8 @@ a published cohort of 360 real pulmonary embolism patients (Miniati et al.,
 PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
 text through the fixed rubric, 3 by targeted search, and 14 from PIOPED II's
 arm of patients investigated for embolism who turned out not to have one
-(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 40%, and the
-remaining 92 are still invented.
+(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 43%, and the
+remaining 87 are still invented.
 
 That last pass is the one worth copying. The other four asked what a disease
 looks like. It asked what the *rivals* look like, which is the half of a
@@ -665,7 +665,7 @@ configuration still gets every fixture case.
 
 It is off anyway, and the reasons are worth being explicit about. It is 63
 invented numbers from one non-clinician in a single sitting. It takes the
-sourced fraction from 40% to 24% — not a regression, but the count finally
+sourced fraction from 43% to 24% — not a regression, but the count finally
 including claims the model was already making. And it turns one abstention
 into a wrong commit: acute coronary syndrome at 82% on a true pericarditis.
 
@@ -2050,3 +2050,61 @@ acute cardiogenic pulmonary oedema trials — so the literature measures the
 severity of selected patients rather than the prevalence of hypoxaemia among
 unselected ones. It is recorded here as a suspected violation that the
 available literature is structurally unable to settle.
+
+
+### A whole invented column, from the accuracy half of a paper already cited here
+
+`imaging:ctpa_filling_defect` was one of three columns with no sourced cell at
+all, and it turned out the source was already open. PIOPED II published twice:
+the clinical-characteristics paper this file has been quoting for symptom and
+sign tables, and a companion paper giving the test's own accuracy against a
+composite reference standard. Sensitivity 83%, specificity 96%, in the same
+824 patients — 192 with embolism and 632 without, the exact denominators
+already quoted here, which is a useful check that it is one cohort.
+
+Sensitivity *is* P(filling defect | pulmonary embolism); one minus specificity
+*is* P(filling defect | no pulmonary embolism). No inversion, no distributional
+model. The two quantities the column needs are what an accuracy study reports.
+
+    P(defect | PE)        0.95 invented   ->  0.83
+    P(defect | not PE)    0.01-0.03       ->  0.04   (four rivals)
+
+**The first is a safety correction rather than bookkeeping.** At 0.95 this
+model treated a negative CTPA as near-conclusive against pulmonary embolism.
+Measured sensitivity is 0.83, so roughly one embolism in six is missed by the
+scan and a negative result should leave far more residual probability than the
+knowledge base allowed. A number that made the system too willing to rule out
+a red-flag diagnosis is the worst direction an error can take here, and it sat
+in a fully invented column from the beginning.
+
+Pooling the four rivals at one value is legitimate for the reason it was
+legitimate for immobility and calf tenderness and is not for crackles: a
+false-positive filling defect is a property of the scan, not something
+pneumonia produces more often than a panic attack does.
+
+Coverage 40% to 43%, invented 92 to 87 — the largest single move since the
+PIOPED clinical tables. ECE improves sharply, 0.334 to 0.246; Brier worsens,
+0.116 to 0.151. Every arm is otherwise unchanged: fixtures 8 of 10 with 5
+commits and 0 wrong, hard cases 5 of 5 with 3 commits and 0 wrong, real cases
+2 correct with 0 wrong.
+
+It also moved fx-009's evidence set the other way for once. Correlation now
+lifts pulmonary embolism from fourth to third where it had reached first,
+because the single strongest piece of evidence for that diagnosis is weaker
+than the knowledge base used to claim. The mechanism is unchanged and still
+worth more than fivefold; there is simply less to lift with. That is the
+correct consequence of a more honest number about a scan.
+
+### The pattern across three passes
+
+Two of the three columns with no sourced cell are now closed or partly closed,
+and both closed from sources that were already in the file or already
+searched. The white count stays open for a reason about the literature rather
+than about effort, and hypoxia stays open because every cohort selects
+patients by an oxygen threshold.
+
+The transferable lesson is the same one the PIOPED tables taught two passes
+ago: **a paper cited for one thing may answer a second question nobody
+thought to ask it.** That pass read half a table; this one had been reading
+half a study. In both cases the citation was present and correct, which is
+precisely what makes the gap invisible on review.
