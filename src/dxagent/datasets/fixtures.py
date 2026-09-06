@@ -504,6 +504,46 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         low=0.34,
         high=0.62,
     ),
+    # A confirming source, and a defect it exposes that is deliberately left
+    # unfixed.
+    #
+    # Sensitivity is P(finding | disease) directly, so a diagnostic-accuracy
+    # meta-analysis needs no inversion. This one puts D-dimer at 93% sensitive
+    # for pulmonary embolism against an invented 0.95, which is the second
+    # time sourcing has confirmed a guess rather than overturned it.
+    #
+    # The specificity is the uncomfortable half. At 51%, P(raised D-dimer |
+    # not pulmonary embolism) is 0.49 across the arm of suspected patients who
+    # turned out not to have one -- and this knowledge base gives those same
+    # seven diseases 0.10 to 0.35, averaging about 0.22. The rivals are
+    # collectively understated by roughly a factor of two, which makes
+    # D-dimer a stronger discriminator here than it is in a real emergency
+    # department.
+    #
+    # That is not fixed, and the reason is the same one that rejected the
+    # blanket backoff and the completed grid: 0.49 is a pooled figure, and
+    # writing it into all seven would assert that a panic attack raises a
+    # D-dimer as often as a pneumonia does. Both policies of the form "write
+    # one value everywhere" have been measured in this project and both were
+    # rejected. The defect is recorded in DESIGN.md as measured rather than
+    # papered over with a number nobody chose.
+    #
+    # The pooled studies use cutoffs from 190 to 500 microg/L on six
+    # different turbidimetric assays. That heterogeneity is the same objection
+    # that blocked the natriuretic-peptide column, and it is tolerable here
+    # only because a single figure is being taken from a single pooled
+    # analysis rather than a column assembled across incompatible sources.
+    ("pulmonary_embolism", "lab:raised_d_dimer"): measured(
+        0.93,
+        Citation(
+            "DDIMER-TURBIDIMETRIC-META",
+            "Turbidimetric D-dimer meta-analysis, DARE NBK70277, 9 studies n=1901",
+            "pooled sensitivity 93% (95% CI 89-96) for pulmonary embolism in "
+            "the emergency department; pooled specificity 51% (42-59)",
+        ),
+        low=0.89,
+        high=0.96,
+    ),
     # Same review, same inversion, two more findings that carry matched
     # ratios. The chest radiograph one is worth noticing on its own account:
     # a sensitivity of 0.54 says the film is normal in nearly half of acute

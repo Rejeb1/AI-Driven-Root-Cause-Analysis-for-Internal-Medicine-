@@ -254,8 +254,8 @@ a published cohort of 360 real pulmonary embolism patients (Miniati et al.,
 PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
 text through the fixed rubric, 3 by targeted search, and 14 from PIOPED II's
 arm of patients investigated for embolism who turned out not to have one
-(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 36%, and the
-remaining 98 are still invented.
+(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 37%, and the
+remaining 97 are still invented.
 
 That last pass is the one worth copying. The other four asked what a disease
 looks like. It asked what the *rivals* look like, which is the half of a
@@ -665,7 +665,7 @@ configuration still gets every fixture case.
 
 It is off anyway, and the reasons are worth being explicit about. It is 63
 invented numbers from one non-clinician in a single sitting. It takes the
-sourced fraction from 36% to 24% — not a regression, but the count finally
+sourced fraction from 37% to 24% — not a regression, but the count finally
 including claims the model was already making. And it turns one abstention
 into a wrong commit: acute coronary syndrome at 82% on a true pericarditis.
 
@@ -1296,3 +1296,72 @@ committed-correct went one to two while the fixture arm went eight back to
 seven. The two sets disagree about whether this pass was an improvement, which
 is the first time that has happened and is a better problem than the one
 before it, when only one set could speak at all.
+
+
+### D-dimer, a confirmation, and a defect recorded rather than fixed
+
+Sensitivity is P(finding | disease) directly, so a diagnostic-accuracy
+meta-analysis needs no inversion at all. The turbidimetric D-dimer review
+(DARE NBK70277, nine studies, n=1901, emergency department) puts sensitivity
+at 93% (95% CI 89–96) against an invented 0.95. That is the second time
+sourcing has confirmed a guess rather than overturned one, and worth recording
+alongside the times it did not.
+
+The specificity is the uncomfortable half, and it exposes a defect this pass
+deliberately does not fix. At 51%, P(raised D-dimer | not pulmonary embolism)
+is 0.49 across the arm of suspected patients who turned out not to have one.
+This knowledge base gives those same seven diseases 0.10 to 0.35, averaging
+about 0.22:
+
+    community_acquired_pneumonia   0.35     acute_pulmonary_oedema  0.30
+    copd_exacerbation              0.25     acute_coronary_syndrome 0.20
+    pericarditis                   0.15     panic_attack            0.10
+                                            measured pooled:        0.49
+
+The rivals are collectively understated by roughly a factor of two, which
+makes D-dimer a stronger discriminator inside this model than it is in a real
+emergency department. That is a measured defect in six numbers, and it is
+being left in place.
+
+The reason is the one that rejected the blanket backoff and the completed
+grid, and it has not changed: 0.49 is a pooled figure over a mix of diseases,
+and writing it into all seven would assert that a panic attack raises a
+D-dimer as often as a pneumonia does. Both policies of the form "write one
+value everywhere" have now been measured in this project and both were
+rejected on evidence. Recording the defect is the honest option; papering over
+it with a number nobody chose is the option that would make the coverage
+percentage look better and the model worse.
+
+A caveat on the one figure that was taken. The pooled studies use cutoffs from
+190 to 500 microg/L across six turbidimetric assays, which is the same
+heterogeneity that blocked the natriuretic-peptide column. It is tolerable
+here only because a single number is being taken from a single pooled
+analysis, rather than a column being assembled from sources that disagree
+about what the test is.
+
+### Where the sourcing effort now stands, column by column
+
+Four passes have taken the invented count from 102 to 97 and coverage from 27%
+to 37%. What remains is not a matter of effort, and the reasons differ per
+column, which is the useful form for anyone picking this up:
+
+    column                    cells   why it is stuck
+    lab:raised_wcc              0/8   no diagnostic-accuracy literature treats
+                                      the white count as a test for these
+                                      diagnoses; it is a severity marker
+    lab:raised_d_dimer          1/7   rivals need a by-diagnosis breakdown;
+                                      only a pooled 0.49 exists
+    lab:raised_bnp              0/6   BNP against NT-proBNP against
+                                      age-specific cutoffs: no common scale
+    exam:hypoxia                0/6   reported as a continuous PaO2 or
+                                      saturation, rarely dichotomised
+    exam:tachycardia            2/8   differentially caused by every rival;
+                                      pooling smears it
+    imaging:ctpa_filling_defect 0/5   near-definitional for PE, and no study
+                                      reports it for the other seven
+
+The single source shape that would break this open is unchanged from the
+earlier taxonomy: a cohort of undifferentiated acute dyspnoea or chest pain
+reporting each finding *by final diagnosis*. Four separate searches have not
+found one. Until one exists, sourcing here is one cell per literature search,
+and the remaining cells are the ones no literature was written to answer.

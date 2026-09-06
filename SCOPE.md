@@ -102,8 +102,8 @@ contradicted, all four for that reason:
   this is recorded rather than adjusted.
 
 **Most of these numbers are still invented, and which ones are not is
-recorded.** 36% of the 153 likelihoods carry a citation — 13 from DDXPlus, 14
-from the Merck Manual's narrative text, 28 from published cohorts.
+recorded.** 37% of the 153 likelihoods carry a citation — 13 from DDXPlus, 14
+from the Merck Manual's narrative text, 29 from published cohorts.
 `scripts/sensitivity.py` reports the split and `dxagent.provenance` tracks it
 per number. See *Constraints*.
 
@@ -196,13 +196,13 @@ here holds symptoms, signs, laboratory results and imaging findings, and
 nothing in scope reasons about medication. That is a scope fact rather than a
 substitution.
 
-**The likelihood tables are still mostly invented — 98 of 153.** UMLS was
+**The likelihood tables are still mostly invented — 97 of 153.** UMLS was
 probed and found unusable for this purpose — mostly translations and billing
 crosswalks, and its one clinical relation mixes symptoms, risk factors and
 treatment complications without distinguishing them. HPO supplies concepts but
 no disease-to-finding edges outside rare Mendelian disease. Sourcing has
 therefore proceeded one number at a time, from three sources of descending
-strength: 28 frequencies from published cohorts (Miniati 2012, Zègre-Hemsey
+strength: 29 frequencies from published cohorts (Miniati 2012, Zègre-Hemsey
 2018, Noorain 2016, StatPearls), 13 counted in the DDXPlus simulator, and 14
 converted from
 Merck Manual narrative phrases through the fixed rubric in
@@ -222,7 +222,7 @@ base fall back to its own marginals, and the fixture set drops from 10/10 to
 load-bearing. Whatever else is said about this knowledge base, it cannot be
 said that most of it is padding.
 
-**Most of the remaining 98 are not sourceable from a reference text at all.**
+**Most of the remaining 97 are not sourceable from a reference text at all.**
 A textbook chapter describes what a disease presents with — five to eight
 notable findings. The knowledge base is a full grid of 8 diseases against every
 finding in the vocabulary, so it contains cells like P(raised BNP | asthma
@@ -239,7 +239,7 @@ be the misconduct this project's provenance tiers exist to prevent.
 **The disease priors are now derived from published aetiology, with wide
 bands.** They were invented for most of this project. Until recently they were also invisible to the audit —
 `dxagent.provenance` covered `P(finding | disease)` only, so a reader saw
-"36% sourced" with no hint that the priors were not part of that fraction at
+"37% sourced" with no hint that the priors were not part of that fraction at
 all. They now carry the same provenance tier as the likelihoods and are
 reported on their own line (`8 disease priors: 8 sourced, 0 invented`),
 counted separately rather than folded in, because merging them would let a
