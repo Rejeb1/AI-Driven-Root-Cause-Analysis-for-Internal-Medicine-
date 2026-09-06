@@ -433,6 +433,77 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         low=0.13,
         high=0.54,
     ),
+    # Recovered from pooled likelihood ratios rather than counted, which needs
+    # stating because it is a different act from the entries above.
+    #
+    # The JAMA Rational Clinical Examination review of dyspnoea in the
+    # emergency department reports LR+ and LR- for each finding and no raw
+    # frequencies, which is why an earlier pass through this project recorded
+    # the series as unusable. That was too quick. The two ratios are both
+    # functions of the same pair of unknowns and the system inverts:
+    #
+    #     LR+ = sens / (1 - spec)      spec = (LR+ - 1) / (LR+ - LR-)
+    #     LR- = (1 - sens) / spec      sens = 1 - LR- * spec
+    #
+    # and sensitivity in a cohort of dyspnoeic emergency patients is exactly
+    # P(finding | heart failure) over this project's own population. Only the
+    # sensitivity half is taken. The complement, 1 - spec, is P(finding | not
+    # heart failure) pooled over the other seven, and crackles and a raised
+    # JVP are differentially caused by pneumonia and by cor pulmonale, so
+    # pooling them would smear one disease's rate across the rest -- the same
+    # objection that kept PIOPED II's crackles row out of this file.
+    #
+    # Two caveats travel with the method. A meta-analysis may pool LR+ and
+    # LR- over different subsets of studies, so the recovered pair is close
+    # rather than exact; and the bands here are the reported confidence
+    # intervals pushed through the same inversion, which spans the reported
+    # uncertainty without being a confidence interval in its own right.
+    #
+    # It was worth doing. A raised JVP was invented at 0.80 against a
+    # recovered 0.39, so the guess was more than twice the measurement, in a
+    # finding this differential leans on to separate cardiac from pulmonary
+    # causes.
+    ("acute_pulmonary_oedema", "exam:raised_jvp"): measured(
+        0.39,
+        Citation(
+            "WANG-2005",
+            "Wang CS et al., JAMA 2005;294(15):1944-56, jugular venous distension",
+            "positive LR 5.1 (95% CI 3.2-7.9) and negative LR 0.66 (0.57-0.77) "
+            "for heart failure in dyspnoeic emergency patients, which invert "
+            "to a sensitivity of 0.39",
+        ),
+        low=0.30,
+        high=0.46,
+    ),
+    ("acute_pulmonary_oedema", "exam:crackles"): measured(
+        0.60,
+        Citation(
+            "WANG-2005",
+            "Wang CS et al., JAMA 2005;294(15):1944-56, pulmonary rales",
+            "positive LR 2.8 (95% CI 1.9-4.1) and negative LR 0.51 (0.37-0.70) "
+            "for heart failure in dyspnoeic emergency patients, which invert "
+            "to a sensitivity of 0.60",
+        ),
+        low=0.48,
+        high=0.69,
+    ),
+    # Overwrites the DDXPlus value of 0.755 by the precedence rule below: a
+    # frequency counted in real emergency patients outranks one counted in a
+    # simulator. The two disagree by half again, which is the same
+    # simulator-against-cohort gap already recorded for pleuritic pain in
+    # pulmonary embolism, and it is reported rather than reconciled.
+    ("acute_pulmonary_oedema", "orthopnoea"): measured(
+        0.50,
+        Citation(
+            "WANG-2005",
+            "Wang CS et al., JAMA 2005;294(15):1944-56, orthopnoea",
+            "positive LR 2.2 (95% CI 1.2-3.9) and negative LR 0.65 (0.45-0.92) "
+            "for heart failure in dyspnoeic emergency patients, which invert "
+            "to a sensitivity of 0.50; DDXPlus's simulated rate is 0.755",
+        ),
+        low=0.34,
+        high=0.62,
+    ),
     ("pericarditis", "exam:ecg_st_changes"): measured(
         0.50,
         Citation(

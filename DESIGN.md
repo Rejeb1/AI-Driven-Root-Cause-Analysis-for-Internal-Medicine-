@@ -254,8 +254,8 @@ a published cohort of 360 real pulmonary embolism patients (Miniati et al.,
 PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
 text through the fixed rubric, 3 by targeted search, and 14 from PIOPED II's
 arm of patients investigated for embolism who turned out not to have one
-(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 34%, and the
-remaining 101 are still invented.
+(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 35%, and the
+remaining 99 are still invented.
 
 That last pass is the one worth copying. The other four asked what a disease
 looks like. It asked what the *rivals* look like, which is the half of a
@@ -665,7 +665,7 @@ configuration still gets every fixture case.
 
 It is off anyway, and the reasons are worth being explicit about. It is 63
 invented numbers from one non-clinician in a single sitting. It takes the
-sourced fraction from 34% to 24% — not a regression, but the count finally
+sourced fraction from 35% to 24% — not a regression, but the count finally
 including claims the model was already making. And it turns one abstention
 into a wrong commit: acute coronary syndrome at 82% on a true pericarditis.
 
@@ -1100,3 +1100,112 @@ the completed grid was rejected, is that calibration outranks ranking; a
 change that improves Brier while tripling overconfidence needs a reason
 better than one case pointing at it. Recorded here so the next person has the
 measurement rather than the intuition.
+
+
+## Closing DDXPlus for good, and recovering frequencies from likelihood ratios
+
+Two attempts at the invented fraction: one ended a route, one opened a method.
+
+### DDXPlus is exhausted, provably rather than presumptively
+
+SCOPE.md has said for some time that the DDXPlus route was exhausted. What
+that rested on was the extractor emitting nothing new — and the extractor only
+ever looks at cells the fixture entry already carries, a deliberate choice
+recorded in `map_concepts.py`: "adding one changes the shape of the model
+rather than sourcing it." That argument weakened once the PIOPED pass seeded
+fourteen new cells on purpose, so the question was reopened and answered
+properly, by computing all eighty pairs the mapping can reach whether the cell
+exists or not.
+
+    mapped concepts x diseases                     80
+    cells DDXPlus can source that already exist    15
+    new cells with a non-zero frequency             0
+    new cells reading exactly 0.000                13
+
+Every unfilled pair reads exactly zero, which is not a frequency. The mapping
+file already warned about this — "a finding its rule base omits is generated
+for nobody" — and the pericarditis row shows what writing them would have
+cost: DDXPlus generates fever in 0 of 8623 pericarditis patients, against a
+fixture value of 0.60 and a disease that genuinely causes fever. Thirteen
+confidently sourced zeros would have been considerably worse than thirteen
+labelled guesses.
+
+Only ten of twenty-seven findings are mapped at all, and that ceiling is
+structural rather than clerical: DDXPlus holds no examination signs, no
+laboratory results and no imaging. Those are seventeen of the twenty-seven,
+and they are where most of the remaining invented cells live. The route is
+closed.
+
+### Likelihood ratios invert
+
+An earlier pass dismissed the JAMA Rational Clinical Examination series
+because it reports likelihood ratios rather than raw frequencies. That was
+recorded here as a negative result, and it was half wrong — which is the
+argument for writing negative results down somewhere they can be re-examined.
+
+Both ratios are functions of the same two unknowns, and the system inverts:
+
+    LR+ = sens / (1 - spec)        spec = (LR+ - 1) / (LR+ - LR-)
+    LR- = (1 - sens) / spec        sens = 1 - LR- * spec
+
+Sensitivity in a cohort of *dyspnoeic emergency patients* is exactly
+P(finding | heart failure) over this project's own population, so the review
+of dyspnoea in the emergency department (Wang CS et al., JAMA
+2005;294(15):1944-56) yields three cells directly:
+
+    finding            LR+   LR-    recovered sens   was
+    raised JVP         5.1   0.66            0.39    0.80  invented
+    crackles           2.8   0.51            0.60    0.75  invented
+    orthopnoea         2.2   0.65            0.50    0.755 DDXPlus
+
+Only the sensitivity half is taken. The complement is P(finding | not heart
+failure) pooled over the other seven diseases, and crackles and a raised JVP
+are differentially caused by pneumonia and by cor pulmonale, so pooling them
+would smear one disease's rate across the rest — the same objection that kept
+PIOPED II's crackles row out of this knowledge base.
+
+Orthopnoea overwrites a DDXPlus value through the existing precedence rule: a
+frequency counted in real emergency patients outranks one counted in a
+simulator. The two disagree by half again, the same gap already recorded for
+pleuritic pain in pulmonary embolism, and it is reported rather than
+reconciled.
+
+Two caveats travel with the method, and are noted in the source comment as
+well. A meta-analysis may pool LR+ and LR- over different subsets of studies,
+so the recovered pair is close rather than exact; and the bands are the
+reported confidence intervals pushed through the same inversion, which spans
+the reported uncertainty without being a confidence interval in its own right.
+
+### What it cost, which is the part worth reading
+
+Coverage 34% to 35%, invented 101 to 99. The hard cases charged for it
+immediately:
+
+    arm            before                     after
+    fixtures       10/10, 7 commits, 0 wrong  10/10, 8 commits, 0 wrong
+    hard cases     4/5 top-1, 3 commits       4/5 top-1, 1 commit
+    real cases     3/8, 0 wrong, rank 2.50    3/8, 0 wrong, rank 2.50
+    calibration    ECE .298 Brier .102        ECE .301 Brier .103
+
+Two hard cases stopped committing. fx-h01, the cardiac asthma, falls from 0.81
+to 0.79 and escalates; fx-h05, the asthma, from 0.70 to 0.61. Both were being
+answered *correctly* before.
+
+The mechanism is not subtle. A raised JVP was invented at 0.80 and measured at
+0.39, so the model had been more than twice as confident as the evidence
+allows that a patient in pulmonary oedema has a raised JVP. Lowering three of
+that disease's values also lowers the knowledge-base marginal those findings
+are scored against, which is why a case about asthma moved too.
+
+Kept. These are measurements replacing guesses, no wrong commit appeared
+anywhere, and the fixture arm actually gained a commit. The precedent here is
+consistent and was set when it cost something: the pericarditis ECG likelihood
+was sourced *lower* than the invented value and kept anyway, and the guideline
+workup costs a fixture case and was kept anyway. A model that is less decisive
+because it stopped overstating its own evidence is behaving correctly, and the
+two escalations are the abstention gate doing the thing the rest of this
+document says it is for.
+
+It is also the first time the hard cases have priced a change. The ten
+development fixtures scored this as an improvement, seven commits to eight,
+and would have reported nothing else.

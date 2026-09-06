@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 101 of its 153 likelihoods are invented, no
+an unfinished feature — because 99 of its 153 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -129,10 +129,10 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**101 of 153 likelihoods are invented.** That is the number, stated on its own
+**99 of 153 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project.
 
-The remaining 52 carry a citation: 15 counted from the DDXPlus simulator, 23
+The remaining 54 carry a citation: 14 counted from the DDXPlus simulator, 26
 from published cohorts, and 14 converted from Merck Manual narrative phrases.
 The eight disease priors are separately sourced, 8 of 8, and reported on their
 own line rather than folded in — merging them would let a sourced likelihood
@@ -460,8 +460,8 @@ them:
 | knowledge base | fixture cases correct |
 |---|---|
 | complete | 9/10 |
-| 101 invented deleted | **1/10** |
-| 52 sourced deleted, invented kept | 7/10 |
+| 99 invented deleted | **1/10** |
+| 54 sourced deleted, invented kept | 7/10 |
 
 (The 9/10 baseline rather than 10/10 is the same configuration inconsistency
 described just above: `sensitivity.py` also builds without correlation
@@ -571,7 +571,7 @@ empty row.
   agent in place of its own — not a configuration change, and not attempted.
 - **UMLS relations** — probed, found unusable, documented above.
 
-**Bounded by measurement rather than blocked:** the 101 remaining invented
+**Bounded by measurement rather than blocked:** the 99 remaining invented
 likelihoods. Both bulk routes are proven exhausted, and the PIOPED II pass
 demonstrates that individual cells can still be recovered when a study reports
 the right arm.
@@ -596,6 +596,29 @@ because consolidation is a binary observation that different studies define
 the same way — and it produced this project's first sourcing result that
 *confirmed* an invented value (0.20 held by judgement, 0.18 measured) rather
 than overturning it.
+
+**DDXPlus is now closed rather than presumed closed.** All eighty pairs its
+mapping can reach were computed, whether the cell existed or not. Fifteen it
+can source, and thirteen unfilled pairs that read *exactly* 0.000 — which is
+the simulator omitting a finding from its rule base, not a frequency. Writing
+them would have asserted fever in 0% of pericarditis patients.
+
+**And one dismissal turned out to be half wrong.** The JAMA Rational Clinical
+Examination series reports likelihood ratios rather than frequencies, which is
+why an earlier pass rejected it. But LR+ and LR- are two functions of the same
+two unknowns and the system inverts, and sensitivity in a cohort of dyspnoeic
+emergency patients is exactly P(finding | heart failure) over this project's
+population. Three cells followed, and one of them matters: a raised JVP was
+invented at **0.80** against a recovered **0.39**.
+
+That correction cost something, and the new hard cases were what charged for
+it. Two of them stopped committing — both cases the model had been getting
+*right* — because it had been more than twice as confident as the evidence
+allows that a patient in pulmonary oedema has a raised JVP. It was kept: these
+are measurements replacing guesses, no wrong commit appeared anywhere, and a
+model that is less decisive because it stopped overstating its evidence is
+behaving correctly. The ten old fixtures scored the same change as an
+improvement and would have reported nothing else.
 
 The realistic ceiling is therefore nearer 36-40% than the 45-50% that a count
 of the available literature suggests. `DESIGN.md` records the full taxonomy
