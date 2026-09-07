@@ -54,8 +54,24 @@ DISEASE_MAP: dict[str, tuple[str, ...]] = {
     "panic_attack": ("panic_attack",),
 }
 
-# A mapping withdrawn, kept as a worked example of the failure this file's
-# docstring predicts.
+# Two mappings withdrawn, kept as worked examples of the failure this file's
+# docstring predicts. Both were filed under "confident".
+#
+#   "orthopnoea": "E_217"
+#
+# E_217 asks "Are your symptoms worse when lying down and alleviated while
+# sitting up?" -- symptoms, not breathlessness. Orthopnoea is specifically
+# *breathlessness* that worsens lying flat, and the question as asked is
+# answered yes by a textbook pericarditis, whose pain is classically worse
+# supine and relieved by sitting forward. Pointing a heart-failure finding at
+# a question a pericarditis patient answers yes to is the same error as the
+# one below, in a column where it would be harder to notice.
+#
+# It supplied no cell at the time it was withdrawn -- the acute pulmonary
+# oedema value it had produced was already superseded by an inverted
+# likelihood ratio from Wang 2005 -- so removing it changed nothing. It is
+# removed anyway, because a mapping left in place is a mapping that gets used
+# by the next sourcing pass.
 #
 #   "exertional_chest_pain": "E_218"
 #
@@ -98,8 +114,16 @@ CONCEPT_MAP: dict[str, str | tuple[str, ...]] = {
     "fever": "E_91",                     # Do you have a fever?
     "productive_cough": "E_77",          # cough producing coloured/abundant sputum
     "pleuritic_pain": "E_220",           # pain increased when breathing in deeply
-    "orthopnoea": "E_217",               # worse lying down, better sitting up
-    "smoking_history": "E_79",           # Do you smoke cigarettes?
+    # --- uncertain: the same subject, a narrower question ---------------
+    # E_79 asks "Do you smoke cigarettes?", which is *current* smoking. The
+    # concept here is a smoking history, which includes the large number of
+    # COPD and coronary patients who have stopped. The direction of the gap
+    # is knowable even if its size is not: this understates. Downgraded from
+    # confident after the E_218 withdrawal below, because the same review
+    # that caught that one caught this, and the two cells it still supplies
+    # (0.72 for acute coronary syndrome, 0.82 for COPD exacerbation) should
+    # be read as floors.
+    "smoking_history": "E_79",
     "palpitations": "E_155",             # heart racing / irregular / pounding
     "wheeze_subjective": "E_214",        # wheezing sound when you exhale
     "recent_immobility": "E_110",        # immobile 3+ days in the last 4 weeks
