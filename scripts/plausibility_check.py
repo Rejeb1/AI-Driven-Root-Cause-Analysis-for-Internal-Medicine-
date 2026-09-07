@@ -127,6 +127,182 @@ CLAIMS: tuple[tuple[str, str, str], ...] = (
 )
 
 
+# Ordering claims: which disease must lead a column, and over which rivals
+# ---------------------------------------------------------------------------
+# The CLAIMS above test direction against a marginal, and they only cover the
+# findings SCOPE.md happened to name. Nothing checked the *ordering within a
+# column* until five errors were found by doing it by hand:
+#
+#     P(raised BNP | PE)            0.20, below every rival that mattered
+#     P(recent immobility | PE)     0.61, a simulator value 2.4x the truth
+#     P(raised troponin | PE)       0.25, below the sourced 0.32 for COPD
+#     P(defect | PE)                0.95, overstating a scan that misses 1 in 6
+#     P(exertional pain | oedema)   0.77, above ACS, from a mis-mapped question
+#
+# None was caught by the test suite, because tests check outputs and these are
+# inputs. Each was obvious once the column was sorted and read against what the
+# diseases do, so that reading is encoded here.
+#
+# Each entry says: for this finding, this disease must score strictly above
+# each of these rivals, for this reason. The reasons are deliberately
+# textbook-level, so a clinician can agree or disagree with each in one
+# sentence -- which is the closest this project gets to the review it cannot
+# have. They are claims about *ordering* rather than magnitude, because
+# ordering is what a non-clinician can assert honestly.
+ORDERING_CLAIMS: tuple[tuple[str, str, tuple[str, ...], str], ...] = (
+    ("lab:raised_troponin", "acute_coronary_syndrome",
+     ("community_acquired_pneumonia", "copd_exacerbation", "asthma_exacerbation",
+      "panic_attack", "acute_pulmonary_oedema", "pulmonary_embolism"),
+     "myocardial injury is what defines the diagnosis"),
+    ("lab:raised_troponin", "pulmonary_embolism",
+     ("community_acquired_pneumonia", "asthma_exacerbation", "panic_attack"),
+     "right ventricular strain releases troponin; a pneumonia does not"),
+    ("imaging:ctpa_filling_defect", "pulmonary_embolism",
+     ("community_acquired_pneumonia", "acute_coronary_syndrome",
+      "acute_pulmonary_oedema", "panic_attack"),
+     "the finding names the diagnosis"),
+    ("imaging:cxr_consolidation", "community_acquired_pneumonia",
+     ("pulmonary_embolism", "acute_coronary_syndrome", "acute_pulmonary_oedema",
+      "copd_exacerbation", "asthma_exacerbation", "pericarditis", "panic_attack"),
+     "consolidation is the radiological definition of pneumonia"),
+    ("imaging:cxr_pulmonary_oedema", "acute_pulmonary_oedema",
+     ("community_acquired_pneumonia", "pulmonary_embolism", "copd_exacerbation",
+      "asthma_exacerbation"),
+     "the finding names the diagnosis"),
+    ("lab:raised_bnp", "acute_pulmonary_oedema",
+     ("community_acquired_pneumonia", "pulmonary_embolism",
+      "acute_coronary_syndrome", "copd_exacerbation", "asthma_exacerbation"),
+     "ventricular stretch is the mechanism that releases it"),
+    ("lab:raised_d_dimer", "pulmonary_embolism",
+     ("community_acquired_pneumonia", "acute_coronary_syndrome",
+      "acute_pulmonary_oedema", "copd_exacerbation", "pericarditis",
+      "panic_attack"),
+     "the one thrombotic diagnosis in the differential"),
+    ("fever", "community_acquired_pneumonia",
+     ("acute_coronary_syndrome", "acute_pulmonary_oedema", "panic_attack",
+      "asthma_exacerbation"),
+     "an infection, against causes that are not infective"),
+    ("orthopnoea", "acute_pulmonary_oedema",
+     ("community_acquired_pneumonia", "pulmonary_embolism", "copd_exacerbation",
+      "asthma_exacerbation"),
+     "pulmonary congestion is what worsens lying flat"),
+    ("leg_swelling", "acute_pulmonary_oedema", ("community_acquired_pneumonia",),
+     "fluid overload"),
+    ("smoking_history", "copd_exacerbation", ("asthma_exacerbation",),
+     "COPD is overwhelmingly smoking-caused; asthma is not"),
+    ("sudden_onset", "pulmonary_embolism",
+     ("community_acquired_pneumonia", "copd_exacerbation"),
+     "abrupt vascular occlusion, against days of infection or decline"),
+    ("sudden_onset", "panic_attack",
+     ("community_acquired_pneumonia", "copd_exacerbation"),
+     "abrupt onset is part of the diagnostic criterion"),
+    ("exam:crackles", "community_acquired_pneumonia",
+     ("asthma_exacerbation", "panic_attack"),
+     "alveolar filling, against bronchospasm and against nothing"),
+    ("exam:crackles", "acute_pulmonary_oedema",
+     ("asthma_exacerbation", "panic_attack"),
+     "alveolar fluid, against bronchospasm and against nothing"),
+    ("exam:ecg_st_changes", "acute_coronary_syndrome",
+     ("copd_exacerbation", "asthma_exacerbation"),
+     "ischaemia, against airway disease"),
+    ("exertional_chest_pain", "acute_coronary_syndrome",
+     ("acute_pulmonary_oedema", "pericarditis", "panic_attack"),
+     "exertional ischaemic pain is the cardinal symptom of the diagnosis"),
+    ("pleuritic_pain", "pericarditis", ("acute_coronary_syndrome",),
+     "pleuritic pain, against ischaemic pain"),
+    ("lab:raised_wcc", "community_acquired_pneumonia",
+     ("panic_attack", "acute_pulmonary_oedema", "asthma_exacerbation"),
+     "bacterial infection raises the white count"),
+    # This one is stated in the form believed to be true, and currently
+    # fails against two of the three rivals. Stating only the half that
+    # passes would have hidden the defect inside the check meant to find it.
+    ("exam:hypoxia", "acute_pulmonary_oedema",
+     ("panic_attack", "copd_exacerbation", "pulmonary_embolism"),
+     "alveolar flooding impairing gas exchange defines the diagnosis"),
+)
+
+
+# Ordering claims this knowledge base currently fails, each with the reason it
+# is tolerated. The list is expected to shrink and must never grow silently: a
+# new violation means either a number moved the wrong way or a claim here is
+# wrong, and both should stop a build.
+KNOWN_ORDERING_VIOLATIONS: tuple[tuple[str, str, str, str], ...] = (
+    (
+        "exam:hypoxia",
+        "acute_pulmonary_oedema",
+        "copd_exacerbation",
+        "Alveolar flooding impairing gas exchange is the mechanism that "
+        "defines acute pulmonary oedema, so it should lead this column. It "
+        "sits at an invented 0.40, below COPD at 0.55 and pulmonary embolism "
+        "at 0.60. Unsourceable rather than unexamined: every cohort found for "
+        "it enrols patients *by* an oxygen-saturation threshold, usually SpO2 "
+        "under 90%, so that literature measures severity among selected "
+        "patients rather than prevalence among unselected ones.",
+    ),
+    (
+        "exam:hypoxia",
+        "acute_pulmonary_oedema",
+        "pulmonary_embolism",
+        "The same cell, against the other rival that outranks it.",
+    ),
+)
+
+
+def ordering_failures(kb):
+    """Every ordering claim the knowledge base violates.
+
+    Yields (concept, leader, rival, leader_value, rival_value).
+    """
+    out = []
+    for concept, leader, rivals, _why in ORDERING_CLAIMS:
+        entry = kb.get(leader)
+        if entry is None or concept not in entry.features:
+            continue
+        top = entry.features[concept]
+        for rival in rivals:
+            other = kb.get(rival)
+            if other is None or concept not in other.features:
+                continue
+            if other.features[concept] >= top:
+                out.append((concept, leader, rival, top, other.features[concept]))
+    return out
+
+
+def report_ordering(kb) -> int:
+    """Print the ordering audit. Returns the number of unexpected failures."""
+    import textwrap
+
+    failures = ordering_failures(kb)
+    seen = {(c, l, r) for c, l, r, _, _ in failures}
+    known = {(c, l, r) for c, l, r, _w in KNOWN_ORDERING_VIOLATIONS}
+    compared = sum(len(rivals) for _c, _l, rivals, _w in ORDERING_CLAIMS)
+
+    print()
+    print(f"{len(ORDERING_CLAIMS)} ordering claims, {compared} rival comparisons")
+    print("  which disease must lead each column and over which rivals, with a")
+    print("  textbook reason per claim -- see ORDERING_CLAIMS for the reasons")
+
+    unexpected = seen - known
+    print(f"{len(failures)} violated, {len(unexpected)} of them unexpected")
+    print()
+
+    if failures:
+        print(f"{'concept':<28} {'should lead':<26} {'but below':<26}  values")
+        print("-" * 96)
+        for concept, leader, rival, top, other in failures:
+            flag = "" if (concept, leader, rival) in known else "  <-- NEW"
+            print(f"{concept:<28} {leader:<26} {rival:<26}  "
+                  f"{top:.2f} vs {other:.2f}{flag}")
+        print()
+        for concept, leader, rival, why in KNOWN_ORDERING_VIOLATIONS:
+            if (concept, leader, rival) in seen:
+                print(f"known, and why it is tolerated -- {concept} / {leader}:")
+                for line in textwrap.wrap(why, 74):
+                    print(f"    {line}")
+                break
+    return len(unexpected)
+
+
 def main() -> int:
     kb = build_knowledge_base()
 
@@ -168,7 +344,7 @@ def main() -> int:
         print("None of the checked claims are contradicted. This is not a")
         print("validation of the 90-odd likelihoods with no stated claim to")
         print("check against -- see the module docstring.")
-        return 0
+        return report_ordering(kb)
 
     print(f"{'disease':<30} {'concept':<28} {'says':<8} {'LR':>6}  tier")
     print("-" * 84)
@@ -182,7 +358,7 @@ def main() -> int:
         "before assuming it is the number -- SCOPE.md's table predates most of\n"
         "the sourcing work and was never revisited against it."
     )
-    return 1
+    return 1 + report_ordering(kb)
 
 
 if __name__ == "__main__":

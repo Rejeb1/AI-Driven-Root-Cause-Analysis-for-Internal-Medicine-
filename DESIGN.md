@@ -2188,3 +2188,74 @@ exchange is the mechanism that defines the disease. Every cohort found for it
 enrols patients *by* an oxygen-saturation threshold, so the literature
 measures severity among selected patients rather than prevalence among
 unselected ones.
+
+
+## The ordering audit, made executable
+
+Everything in this project's test suite checks outputs. The knowledge base is
+inputs, and for most of its life nothing looked at it at all: 89 of 153
+likelihoods are invented, and the only scrutiny they had received was whichever
+ones happened to change a case.
+
+Reading each column sorted, against what the diseases actually do, found five
+errors in three passes:
+
+    P(raised BNP | PE)            0.20, below every rival that mattered
+    P(recent immobility | PE)     0.61, a simulator value 2.4x the truth
+    P(raised troponin | PE)       0.25, below the sourced 0.32 for COPD
+    P(defect | PE)                0.95, overstating a scan that misses 1 in 6
+    P(exertional pain | oedema)   0.77, above ACS, from a mis-mapped question
+
+Not one moved a fixture case enough to fail anything. Four were in pulmonary
+embolism, in a knowledge base built around not missing it. A sixth and seventh
+came from the same technique applied to the DDXPlus mappings rather than the
+grid: two questions asking about "symptoms" pointed at concepts naming a
+specific symptom.
+
+That reading is now `ORDERING_CLAIMS` in `scripts/plausibility_check.py`:
+twenty claims over sixty-five rival comparisons, each of the form *this
+disease must score strictly above these rivals for this finding, because ...*
+The reasons are deliberately textbook-level — a clinician can accept or reject
+each in one sentence, which is the closest this project gets to the review it
+cannot have.
+
+**They constrain ordering, not magnitude.** A non-clinician can honestly
+assert that consolidation is commoner in pneumonia than in panic attack. He
+cannot honestly assert that it is 0.95 rather than 0.85, and the existing
+`CLAIMS` check already covers direction against a marginal. Ordering is the
+band of judgement in between, and it is where every one of the five errors
+lived.
+
+### Stating the claim you believe, and letting it fail
+
+Two comparisons fail, both the same cell: acute pulmonary oedema's hypoxia at
+an invented 0.40, below COPD at 0.55 and pulmonary embolism at 0.60, when
+alveolar flooding impairing gas exchange is the mechanism that defines the
+disease.
+
+The first draft of the claim list quietly asserted only that oedema beats
+*panic attack* on hypoxia — which is true, passes, and hides the defect inside
+the check built to find it. The claim is now stated in the form believed
+correct, fails, and the failure is listed in `KNOWN_ORDERING_VIOLATIONS` with
+the reason it is tolerated: unsourceable rather than unexamined, because every
+cohort found enrols patients *by* an oxygen-saturation threshold and so
+measures severity among selected patients rather than prevalence among
+unselected ones.
+
+A check that only contains the assertions which pass measures nothing. This
+one is allowed to be red in a specified place.
+
+### What the guard actually guarantees
+
+`test_the_grid_still_orders_each_finding_the_way_the_diseases_do` asserts the
+set of failures equals the known list exactly, in both directions. A new
+violation stops the build; a repaired one also stops the build, so the
+exception list cannot quietly outlive the defect it documents. Verified by
+planting a violation — panic attack's white count raised above pneumonia's —
+and confirming the failure message names the cell.
+
+What it does not do is validate the numbers. Sixty-five comparisons over a
+153-cell grid leaves most of it unconstrained, and a value can satisfy every
+ordering claim while being twice what it should be. This catches the class of
+error that has actually occurred here five times; it does not catch the class
+nobody has found yet.

@@ -346,6 +346,34 @@ opposite failure to the one this project spends most of its time guarding
 against, and another symptom of a saturated set rather than a property to
 celebrate.
 
+### Nothing was checking the numbers themselves
+
+Every test in this project checks outputs. The knowledge base is inputs, and
+for most of its life nothing looked at it: 89 of 153 likelihoods are invented,
+and the only scrutiny they got was whichever ones happened to change a case.
+
+Reading each column sorted, against what the diseases actually do, found five
+errors in three passes — a natriuretic peptide at 0.20 for pulmonary
+embolism when right-ventricular strain is what releases it; an immobility rate
+from a simulator at 2.4 times the measured one; a troponin below the sourced
+value for COPD; a CT angiogram claimed at 0.95 when it misses one embolism in
+six; and an exertional-chest-pain value taken from a DDXPlus question that
+asks about *symptoms*, not chest pain. **Not one moved a fixture case enough
+to fail anything, and four were in pulmonary embolism** — in a system built
+around not missing it.
+
+That reading is now executable: twenty ordering claims over sixty-five rival
+comparisons, each of the form *this disease must score above these rivals for
+this finding, because ...*, with reasons a clinician could accept or reject in
+one sentence. They constrain ordering rather than magnitude, because ordering
+is what a non-clinician can assert honestly.
+
+Two comparisons fail and are listed as tolerated, both the same cell — acute
+pulmonary oedema's hypoxia, which should lead its column and does not. The
+claim is stated in the form believed correct and allowed to fail, because an
+earlier draft asserted only the half that passes and hid the defect inside the
+check built to find it.
+
 ### The fixture set was spent, so it was replaced
 
 The figures above have a consequence worth stating rather than hiding: a test

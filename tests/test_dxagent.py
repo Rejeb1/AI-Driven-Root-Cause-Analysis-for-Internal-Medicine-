@@ -2043,6 +2043,75 @@ def test_the_hard_cases_are_all_answered_after_the_dyspnoea_correction():
     assert len(top1) == 5, f"true diagnosis ranked first in {top1}"
 
 
+def test_the_grid_still_orders_each_finding_the_way_the_diseases_do():
+    """The check that would have caught five errors the test suite missed.
+
+    Everything else here tests outputs. These are inputs, and for most of this
+    project nothing looked at them at all: 89 of 153 likelihoods are invented,
+    and until recently the only scrutiny they had received was whichever ones
+    happened to change a case.
+
+    Reading each column sorted, against what the diseases actually do, found
+    five errors in three passes:
+
+        P(raised BNP | PE)            0.20, below every rival that mattered
+        P(recent immobility | PE)     0.61, a simulator value 2.4x the truth
+        P(raised troponin | PE)       0.25, below the sourced 0.32 for COPD
+        P(defect | PE)                0.95, overstating a scan missing 1 in 6
+        P(exertional pain | oedema)   0.77, above ACS, from a mis-mapped item
+
+    None of them moved a fixture case enough to fail anything. Four were in
+    pulmonary embolism, in a knowledge base built around not missing it.
+
+    ``ORDERING_CLAIMS`` in ``scripts/plausibility_check.py`` encodes that
+    reading as twenty claims over sixty-three rival comparisons, each with a
+    textbook-level reason a clinician could accept or reject in one sentence.
+    They constrain *ordering*, not magnitude, because ordering is what a
+    non-clinician can assert honestly.
+
+    Two failures are expected and listed in ``KNOWN_ORDERING_VIOLATIONS``,
+    both the same cell: acute pulmonary oedema's hypoxia sits below COPD's
+    and pulmonary embolism's, when alveolar flooding is the mechanism that
+    defines the disease. The claim is stated in the form believed true and
+    allowed to fail, because stating only the half that passes would hide the
+    defect inside the check meant to find it. It is unsourceable rather than
+    unexamined -- every cohort enrols patients by an oxygen threshold.
+
+    The set of failures must match that list exactly. A new one means a number
+    moved the wrong way or a claim here is wrong, and both should stop a build.
+    """
+    import importlib.util
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "plausibility_check",
+        Path(__file__).resolve().parent.parent / "scripts" / "plausibility_check.py",
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    failures = module.ordering_failures(build_knowledge_base(correlated=True))
+    seen = {(concept, leader, rival) for concept, leader, rival, _, _ in failures}
+    known = {(c, l, r) for c, l, r, _why in module.KNOWN_ORDERING_VIOLATIONS}
+
+    new = seen - known
+    assert not new, (
+        "a finding is now ordered against its own mechanism: "
+        + ", ".join(f"{c}: {l} below {r}" for c, l, r in sorted(new))
+    )
+    fixed = known - seen
+    assert not fixed, (
+        "these ordering violations are repaired and should be removed from "
+        "KNOWN_ORDERING_VIOLATIONS: " + ", ".join(str(x) for x in sorted(fixed))
+    )
+
+    # The claims have to be worth something. If the grid could satisfy them
+    # by accident the check would be decorative, so assert it is doing real
+    # comparisons rather than skipping cells that do not exist.
+    compared = sum(len(rivals) for _c, _l, rivals, _w in module.ORDERING_CLAIMS)
+    assert compared >= 60
+
+
 def test_documented_coverage_figures_match_the_knowledge_base(kb):
     """The documents quote counts; this fails when they go stale.
 

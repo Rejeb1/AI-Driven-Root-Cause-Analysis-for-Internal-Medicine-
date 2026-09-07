@@ -17,7 +17,7 @@ this went near a patient.
 Python 3.10+. The core runs with no install, no API key and no credentials.
 
 ```bash
-python3 -m pytest tests/ -q          # 157 pass, 2 skip
+python3 -m pytest tests/ -q          # 159 pass, 2 skip
 python3 scripts/run_eval.py          # evaluation report, with the required baselines
 python3 scripts/demo.py              # one consultation, as a readable transcript
 python3 scripts/consult.py           # a live consultation -- you play the patient
@@ -53,7 +53,7 @@ python3 scripts/demo.py --list          # available cases
 python3 scripts/sensitivity.py          # which invented numbers actually matter
 python3 scripts/sensitivity.py --ablate # what deleting them costs, vs moving them
 python3 scripts/sensitivity.py --bands  # do the sourced ranges change anything
-python3 scripts/plausibility_check.py   # does SCOPE.md still match the numbers
+python3 scripts/plausibility_check.py   # SCOPE.md's claims, and the ordering audit
 python3 scripts/build_ontology.py       # the finding/cause graph, as text or DOT
 python3 scripts/synthesize.py --dry-run # synthetic case plan (section 5.2)
 ```
