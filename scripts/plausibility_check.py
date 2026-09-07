@@ -234,10 +234,28 @@ KNOWN_ORDERING_VIOLATIONS: tuple[tuple[str, str, str, str], ...] = (
         "Alveolar flooding impairing gas exchange is the mechanism that "
         "defines acute pulmonary oedema, so it should lead this column. It "
         "sits at an invented 0.40, below COPD at 0.55 and pulmonary embolism "
-        "at 0.60. Unsourceable rather than unexamined: every cohort found for "
-        "it enrols patients *by* an oxygen-saturation threshold, usually SpO2 "
-        "under 90%, so that literature measures severity among selected "
-        "patients rather than prevalence among unselected ones.",
+        "at 0.60. "
+        "Unsourceable, and the reason is structural rather than a gap in the "
+        "literature. Six searches found no cohort reporting oxygen "
+        "saturation by final diagnosis in unselected dyspnoea, and what they "
+        "found instead explains why: saturation is part of how the severe "
+        "presentation is identified. Trials of acute cardiogenic pulmonary "
+        "oedema enrol on SpO2 below 90%, and the AHEAD registry classifies "
+        "the syndrome as severe respiratory distress with crackles and "
+        "orthopnoea and oxygen saturation usually under 90% before "
+        "treatment, a figure that appears only in the classification "
+        "criterion and never as an observed measurement afterwards. "
+        "Taking it would be circular in the way this project already refuses "
+        "for panic attack troponin: the patients are in the group partly "
+        "because of the finding being counted. Sourcing this cell needs a "
+        "cohort of undifferentiated dyspnoea in which pulmonary oedema is "
+        "diagnosed by other means, natriuretic peptide or echocardiography, "
+        "with saturation reported afterwards. That study may exist; it has "
+        "not been found. "
+        "The entanglement also means the invented 0.40 is wrong in a second "
+        "way: if hypoxia is quasi-definitional for the florid presentation, "
+        "the value belongs nearer the 0.95 that consolidation carries for "
+        "pneumonia than to the middle of a column.",
     ),
     (
         "exam:hypoxia",

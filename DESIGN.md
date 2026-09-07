@@ -2481,3 +2481,40 @@ saturation by final diagnosis — instead of two, one of which was ours.
 
 A test pins it: any threshold-dependent concept without a definition fails,
 so a new one cannot enter the vocabulary the way these three did.
+
+
+### Why the hypoxia cell cannot be sourced, established rather than assumed
+
+The operational definition above set the threshold at SaO2 below 95%, which is
+looser than the 90% earlier searches had assumed, so the search was repeated
+against sources previously dismissed. It failed again, and this time the
+failure is explained rather than reported.
+
+There is no cohort reporting oxygen saturation by final diagnosis in
+undifferentiated dyspnoea. What the search turns up instead is the reason:
+**saturation is part of how the florid presentation is identified.** Trials of
+acute cardiogenic pulmonary oedema enrol on SpO2 below 90%. The AHEAD
+registry, 4,153 patients with 748 classified as pulmonary oedema, defines the
+syndrome as *severe respiratory distress, with crackles over the lungs and
+orthopnea with O2 saturation usually <90% prior treatment* -- and that figure
+appears only in the classification criterion, never as an observed baseline
+measurement afterwards.
+
+Reading it as P(hypoxia | acute pulmonary oedema) would be circular in exactly
+the way this project already refuses for panic attack troponin: patients are
+in the group partly *because* of the finding being counted. The AHEAD wording
+is tempting because usually maps cleanly onto the narrative rubric at 0.75,
+which would have satisfied the failing ordering claim on the first try. It was
+checked, and the check is what disqualified it.
+
+Two things follow. The blockage is now a property of the concept rather than
+an accident of what has been published: sourcing this cell needs a cohort
+where pulmonary oedema is diagnosed by other means -- natriuretic peptide,
+echocardiography -- with saturation reported afterwards. And the invented 0.40
+is wrong in a second way nobody had noticed: if hypoxia is quasi-definitional
+for the severe presentation, the value belongs nearer the 0.95 that
+consolidation carries for pneumonia than to the middle of a column. The
+ordering claim understates the error it catches.
+
+The claim stays red. The note beside it now says all of this, so the next
+person does not spend the same six searches.
