@@ -470,12 +470,117 @@ class Vocabulary:
         return cls(terms={}, concepts=concepts, release=payload["release"])
 
 
+# What the threshold-dependent concepts actually mean
+# ---------------------------------------------------------------------------
+# The map above gives every concept an HPO term, which names a qualitative
+# state: "Hypoxemia", "Elevated circulating D-dimer", "Increased total
+# leukocyte count". No threshold. Every study that could source one of these
+# reports a threshold, so matching a source to a concept meant a judgement
+# call every time, and those judgement calls are exactly where the sourcing
+# effort kept stalling:
+#
+#   exam:hypoxia      unsourceable, partly because nothing said what it meant.
+#                     The only threshold stated anywhere in this project is in
+#                     guidelines.py, where the PERC rule is encoded with
+#                     "SaO2 < 95%".
+#   lab:raised_wcc    a cohort reported "leucocytes <3.5 or >8.8", which is
+#                     bidirectional and counts leukopenia. Rejected -- but the
+#                     concept never said it meant the raised side only.
+#   lab:raised_bnp    BNP > 100 pg/mL against an age-specific NT-proBNP
+#                     threshold: a column that could not be assembled because
+#                     the concept did not fix a scale.
+#   lab:raised_troponin  the vocabulary note already admits "assays differ"
+#                     and stops there.
+#
+# So these are the intended operational definitions. They are conventions
+# rather than measurements -- a clinician would recognise each as the ordinary
+# reporting threshold for its test -- and writing them down does three things
+# the previous silence did not: it gives a future sourcing pass a target to
+# match against, it makes an existing sourced cell auditable for whether its
+# study used a comparable cutoff, and it turns "unsourceable" into a claim
+# about the literature rather than a claim that hides an undefined concept.
+#
+# Where a cell already in the knowledge base was sourced at a different
+# threshold, that is recorded in the citation snippet rather than smoothed
+# over; ``deviations_from_operational_definitions`` below lists them.
+OPERATIONAL_DEFINITIONS: dict[str, str] = {
+    "exam:hypoxia": (
+        "Arterial oxygen saturation below 95% on room air, the threshold this "
+        "project already encodes for the PERC rule in guidelines.py."
+    ),
+    "exam:tachycardia": "Heart rate above 100 beats per minute at rest.",
+    "fever": (
+        "Temperature at or above 38C, measured or reported. The ambiguity is "
+        "real and is inherited from the sources: DDXPlus asks 'fever, either "
+        "felt or measured', while cohort studies record a measured "
+        "temperature, and the two differ by more than a rounding -- one real "
+        "case here is a pneumonia reporting days of fever who is afebrile on "
+        "arrival."
+    ),
+    "lab:raised_d_dimer": (
+        "Above the assay's conventional venous-thromboembolism rule-out "
+        "threshold, around 500 microg/L fibrinogen-equivalent units. Not an "
+        "age-adjusted or study-optimised cutoff; one candidate source was "
+        "rejected for using 990."
+    ),
+    "lab:raised_troponin": (
+        "Above the assay's 99th-percentile upper reference limit. Generation "
+        "matters and is not resolved by this definition: high-sensitivity "
+        "assays detect elevations conventional ones miss, which is why the "
+        "COPD and pulmonary embolism cells here carry wide bands rather than "
+        "tight ones."
+    ),
+    "lab:raised_bnp": (
+        "BNP above 100 pg/mL, or NT-proBNP above its acute-dyspnoea "
+        "threshold of roughly 300 ng/L. Two analytes treated as answering one "
+        "question -- did the natriuretic peptide come back raised -- which is "
+        "an assumption, and the reason the rest of that column is still "
+        "invented."
+    ),
+    "lab:raised_wcc": (
+        "Total white cell count above the upper reference limit, around "
+        "11 x10^9/L. Unidirectional: leukopenia is a different finding and in "
+        "sepsis points the other way, which is why a bidirectional "
+        "'<3.5 or >8.8' figure was rejected rather than used."
+    ),
+}
+
+
+def deviations_from_operational_definitions(kb) -> list[tuple[str, str, str]]:
+    """Sourced cells whose study used a threshold other than the intended one.
+
+    Returns (disease, concept, note). This is a reading of the citation
+    snippets rather than a parse: the snippets record the cutoff each study
+    used, deliberately, so that this comparison is possible at all.
+    """
+    known = {
+        ("pulmonary_embolism", "lab:raised_troponin"):
+            "high-sensitivity troponin T above 14 ng/L or troponin I above "
+            "0.5 ng/mL, two assays in one cohort",
+        ("copd_exacerbation", "lab:raised_troponin"):
+            "conventional troponin I at 0.017 microg/L",
+        ("pulmonary_embolism", "lab:raised_bnp"):
+            "NT-proBNP at 350 ng/L rather than the 300 named above",
+    }
+    out = []
+    for (label, concept), note in known.items():
+        entry = kb.get(label)
+        if entry is None or concept not in entry.features:
+            continue
+        source = entry.sources.get(concept)
+        if source is not None and source.citation is not None:
+            out.append((label, concept, note))
+    return out
+
+
 __all__ = [
     "CURATED",
     "Concept",
     "HPO_RELEASE",
     "HPO_SOURCE",
     "Term",
+    "OPERATIONAL_DEFINITIONS",
     "Vocabulary",
+    "deviations_from_operational_definitions",
     "parse_obo",
 ]

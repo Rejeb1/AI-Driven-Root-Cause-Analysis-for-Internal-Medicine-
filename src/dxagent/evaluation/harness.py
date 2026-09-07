@@ -40,6 +40,16 @@ class EvaluationResult:
     outcomes: list[CaseOutcome] = field(default_factory=list)
     truths: dict[str, str] = field(default_factory=dict)
     temperature: float = 1.0
+    # Whether that temperature is a fitted value or the untouched default, and
+    # how many labelled cases were available to fit it. The report used to
+    # print "temperature (fitted) 1.00" unconditionally, which reads as "a fit
+    # was performed and found the posterior already calibrated". On the
+    # fixture split no fit is ever performed: the calibration fraction is
+    # three cases against a 30-sample floor, so 1.00 is the default nobody
+    # touched. Honest machinery, misleading label -- the same shape as the
+    # unsourced disclosure that used to be displayed as supporting evidence.
+    temperature_fitted: bool = False
+    temperature_samples: int = 0
     # Populated only when the case source carries gold differentials; the
     # fixtures label a single diagnosis, so these stay empty there and the
     # corresponding report sections are omitted rather than printed as zeros.
@@ -47,7 +57,17 @@ class EvaluationResult:
     abstention: AbstentionMetrics | None = None
 
     def report(self) -> str:
-        header = f"temperature (fitted)          {self.temperature:.2f}"
+        if self.temperature_fitted:
+            header = (
+                f"temperature                   {self.temperature:.2f}  "
+                f"(fitted on {self.temperature_samples} cases)"
+            )
+        else:
+            header = (
+                f"temperature                   {self.temperature:.2f}  "
+                f"(NOT fitted: {self.temperature_samples} calibration cases, "
+                f"needs 30 -- this is the default, not a finding)"
+            )
         return header + "\n" + format_report(
             self.ranking,
             self.calibration,
@@ -60,6 +80,8 @@ class EvaluationResult:
         """Persist metrics and per-case outcomes for later comparison."""
         payload = {
             "temperature": self.temperature,
+            "temperature_fitted": self.temperature_fitted,
+            "temperature_samples": self.temperature_samples,
             "ranking": asdict(self.ranking),
             "calibration": asdict(self.calibration),
             "selective": asdict(self.selective),
@@ -158,6 +180,8 @@ def evaluate(
         outcomes=outcomes,
         truths=truths,
         temperature=agent.gate.scaler.temperature,
+        temperature_fitted=agent.gate.scaler.fitted,
+        temperature_samples=agent.gate.scaler.fit_n,
         differential=differential_metrics(outcomes, gold) if gold else None,
         abstention=abstention_metrics(outcomes, ambiguity) if ambiguity else None,
     )

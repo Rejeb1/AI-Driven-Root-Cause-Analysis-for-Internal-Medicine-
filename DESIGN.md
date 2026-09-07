@@ -2397,3 +2397,87 @@ correlations, one is nine times too high, four undeclared pairs are as
 correlated as the declared ones, and none of it changes an output. The next
 person to touch this should know the numbers are wrong and that it does not
 currently matter, rather than discovering the first half alone.
+
+
+## Two claims the reports were making that the machinery was not
+
+### The temperature was never fitted, and the header said it was
+
+`TemperatureScaler` refuses to fit below thirty labelled cases and explains
+why in its own comment: an early run fitted T=0.5 from two samples,
+*sharpening* an already-overconfident posterior. The refusal is correct and
+the machinery is honest.
+
+The report was not. It printed
+
+    temperature (fitted)          1.00
+
+unconditionally, which reads as *a fit was performed and found the posterior
+already calibrated*. On the fixture split the calibration fraction is three
+cases against a floor of thirty, so no fit is ever attempted and 1.00 is the
+untouched default — the opposite of what the line implied. It now reads
+
+    temperature                   1.00  (NOT fitted: 3 calibration cases,
+                                         needs 30 -- this is the default,
+                                         not a finding)
+
+Same shape as the unsourced disclosure that used to appear under "supporting
+evidence": correct behaviour, wrong label, and a reader with no way to tell.
+That is three of these now, all found by reading output rather than by a test.
+
+**The underlying problem is not fixable here.** Thirty labelled cases do not
+exist. Ten hand-extracted case reports is a third of the floor, the fixtures
+are invented, and the synthetic corpus is generated from the knowledge base
+being calibrated. Fitting on DDXPlus was considered and rejected: only eight
+of twenty-seven concepts map to it, so its cases carry a third of the evidence
+a real one does, and a temperature fitted on that distribution would not
+transfer. What was fixable is the claim.
+
+### Three columns were unsourceable partly because they were undefined
+
+`exam:hypoxia` has been the standing red mark in the ordering audit: acute
+pulmonary oedema at an invented 0.40, below COPD and pulmonary embolism, when
+alveolar flooding impairing gas exchange is what defines the disease. It was
+recorded as unsourceable because every cohort enrols patients *by* an oxygen
+threshold.
+
+That was true and incomplete. The concept also never said what it meant. Its
+vocabulary entry is the HPO term "Hypoxemia" and nothing else, while every
+study that could source it reports a threshold. The only numeric threshold
+anywhere in this project is in `guidelines.py`, where the PERC rule is encoded
+as `SaO2 < 95%` — a definition the knowledge base was using without stating.
+
+The same gap explains two other blocked columns, and reading them back the
+symptom was visible each time:
+
+    lab:raised_wcc    a cohort figure was rejected for being bidirectional,
+                      "leucocytes <3.5 or >8.8", which counts leukopenia --
+                      but the concept never said it meant the raised side.
+    lab:raised_bnp    could not be assembled across BNP > 100 pg/mL and an
+                      age-specific NT-proBNP threshold, because the concept
+                      fixed no scale to compare them on.
+
+`OPERATIONAL_DEFINITIONS` in `vocabulary.py` now states the intended threshold
+for all seven threshold-dependent concepts. They are conventions rather than
+measurements — a clinician would recognise each as the ordinary reporting
+threshold for its test — and writing them down does three things the silence
+did not: gives a future sourcing pass a target to match, makes an existing
+cell auditable for whether its study used a comparable cutoff, and turns
+"unsourceable" into a claim about the literature rather than one that hides an
+undefined concept.
+
+Three sourced cells already deviate, and `deviations_from_operational_defini-
+tions` lists them rather than smoothing them over: pulmonary embolism's
+troponin came from a cohort using two assays at once, COPD's from a
+conventional troponin I at 0.017 microg/L, and pulmonary embolism's
+natriuretic peptide from NT-proBNP at 350 rather than 300. The citation
+snippets carry each study's cutoff precisely so that comparison is possible.
+
+**Defining the concept was necessary and not sufficient.** The hypoxia cell is
+still invented and still fails the ordering claim: a target threshold does not
+conjure a cohort that reports prevalence rather than enrolling on it. What
+changed is that the blockage is now one thing — no unselected cohort reports
+saturation by final diagnosis — instead of two, one of which was ours.
+
+A test pins it: any threshold-dependent concept without a definition fails,
+so a new one cannot enter the vocabulary the way these three did.

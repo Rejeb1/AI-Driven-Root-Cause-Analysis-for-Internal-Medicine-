@@ -2179,6 +2179,109 @@ def test_documented_coverage_figures_match_the_knowledge_base(kb):
     assert not stale, "documented coverage figures are stale:\n  " + "\n  ".join(stale)
 
 
+def test_the_threshold_dependent_concepts_say_what_they_mean():
+    """Why three columns were unsourceable, and it was not only the literature.
+
+    Every concept had an HPO term naming a qualitative state -- "Hypoxemia",
+    "Elevated circulating D-dimer", "Increased total leukocyte count" -- and no
+    threshold. Every study that could source one reports a threshold. So
+    matching a source to a concept required a judgement call every time, and
+    those calls are exactly where sourcing kept stalling:
+
+    - ``exam:hypoxia`` could not be sourced partly because nothing said what
+      it meant. The only threshold stated anywhere in this project is the
+      PERC rule's "SaO2 < 95%" in guidelines.py.
+    - ``lab:raised_wcc`` rejected a cohort figure for being bidirectional --
+      "leucocytes <3.5 or >8.8" counts leukopenia -- but the concept never
+      said it meant the raised side only.
+    - ``lab:raised_bnp`` could not be assembled across BNP and NT-proBNP
+      because the concept fixed no scale.
+
+    The definitions are conventions rather than measurements. Writing them
+    down gives a future sourcing pass something to match, makes an existing
+    cell auditable for whether its study used a comparable cutoff, and turns
+    "unsourceable" into a claim about the literature rather than one that
+    hides an undefined concept.
+
+    Three cells were sourced at thresholds other than the stated ones, which
+    is recorded rather than hidden -- the citation snippets carry each study's
+    cutoff precisely so this comparison is possible.
+    """
+    from dxagent.vocabulary import (
+        CURATED,
+        OPERATIONAL_DEFINITIONS,
+        deviations_from_operational_definitions,
+    )
+
+    kb = build_knowledge_base(correlated=True)
+
+    # Every concept given a definition must actually exist in the vocabulary.
+    for concept in OPERATIONAL_DEFINITIONS:
+        assert concept in CURATED, f"{concept} is not a real concept"
+
+    # Every threshold-dependent concept the knowledge base uses must have one.
+    # A "raised"/"low" concept without a stated cutoff is the defect this
+    # fixes, so a new one should fail here rather than be discovered later.
+    threshold_dependent = {
+        c
+        for e in kb.diseases()
+        for c in e.features
+        if c.startswith("lab:") or c in {"exam:hypoxia", "exam:tachycardia", "fever"}
+    }
+    missing = threshold_dependent - set(OPERATIONAL_DEFINITIONS)
+    assert not missing, f"threshold-dependent concepts with no definition: {missing}"
+
+    deviations = deviations_from_operational_definitions(kb)
+    assert len(deviations) == 3, (
+        "a sourced cell now uses a different cutoff, or one was repaired: "
+        f"{deviations}"
+    )
+
+
+def test_the_report_does_not_call_an_unfitted_temperature_fitted():
+    """The evaluation header used to claim a fit that never happened.
+
+    ``TemperatureScaler`` refuses to fit below 30 labelled cases, and says why
+    in its own comment: fitting one parameter on a handful of cases once
+    produced T=0.5 from two samples, sharpening an already-overconfident
+    posterior. That refusal is correct and the machinery is honest.
+
+    The report was not. It printed ``temperature (fitted) 1.00``
+    unconditionally, which reads as "a fit was performed and found the
+    posterior already calibrated". On the fixture split the calibration
+    fraction is three cases against a floor of thirty, so no fit is ever
+    attempted and 1.00 is the untouched default -- the opposite of what the
+    line implied.
+
+    Same shape as the unsourced disclosure that used to appear under
+    "supporting evidence": correct behaviour, wrong label, and a reader with
+    no way to tell.
+
+    Fixing it needs more real patients, not code. Ten hand-extracted case
+    reports is a third of the floor, the fixtures are invented and the
+    synthetic corpus is generated from the knowledge base being calibrated, so
+    there is nothing honest to fit on. What can be fixed is the claim.
+    """
+    from dxagent.datasets import build_cases
+    from dxagent.evaluation import evaluate, split_cases
+
+    kb = build_knowledge_base(correlated=True)
+    calibration, evaluation = split_cases(build_cases(), calibration_fraction=0.35)
+    agent = DiagnosticAgent(kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb))
+    result = evaluate(agent, evaluation, calibration)
+
+    assert not result.temperature_fitted, (
+        "if a fit now happens the report wording below is stale, not wrong"
+    )
+    assert result.temperature_samples < 30
+    assert result.temperature == 1.0
+
+    header = result.report().splitlines()[0]
+    assert "NOT fitted" in header
+    assert "needs 30" in header
+    assert "this is the default, not a finding" in header
+
+
 def test_the_model_parameters_outside_the_likelihood_table_are_counted():
     """Forty-seven invented numbers that no coverage figure used to include.
 

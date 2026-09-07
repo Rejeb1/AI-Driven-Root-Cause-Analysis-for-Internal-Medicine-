@@ -663,10 +663,18 @@ evidence fit separates these failures from successes; none does, and that
 remained true after several rounds of sourcing. This is a stated limitation, not
 a backlog item.
 
-Two more: calibration is fitted on ten fixture cases (the scaler refuses to fit
-below 30 samples, which prevents a nonsense fit but does not create data), and
-conformal coverage guarantees assume exchangeability, which a curated fixture
-set does not satisfy.
+Two more. **Calibration is not fitted at all** — a claim this document
+itself used to get wrong, saying it was "fitted on ten fixture cases". The
+scaler refuses below 30 samples, correctly, and the calibration split is
+*three*, so the temperature is the untouched default of 1.00. The evaluation
+header compounded it by printing `temperature (fitted) 1.00`, which reads as a
+fit that found the posterior already calibrated; it now states that no fit
+happened and why. Thirty labelled cases do not exist here: ten hand-extracted
+case reports is a third of the floor, the fixtures are invented, and the
+synthetic corpus is generated from the knowledge base being calibrated.
+
+And conformal coverage guarantees assume exchangeability, which a curated
+fixture set does not satisfy.
 
 One category error is explicitly blocked: CURB-65 scores the severity of
 pneumonia *already diagnosed*, so retrieving "confusion scores 1" as evidence

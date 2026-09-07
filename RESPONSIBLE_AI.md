@@ -144,9 +144,15 @@ marketing:
   masquerade they are. `DESIGN.md` records the measurement showing that no
   threshold on evidence fit separates these failures from successes, and that
   this remains true after several rounds of sourcing.
-- **Calibration is fitted on ten fixture cases.** `TemperatureScaler` refuses
-  to fit below 30 samples, which prevents a nonsense fit but does not create
-  data. Every calibration number in this project should be read as indicative.
+- **Calibration is not fitted at all**, and this document previously said it
+  was fitted on ten fixture cases. `TemperatureScaler` refuses below 30
+  samples, correctly, and the calibration split is three, so the temperature
+  is the untouched default of 1.00. The evaluation header used to print
+  "temperature (fitted) 1.00", which reads as a fit that found the posterior
+  already calibrated; it now states that no fit happened and how far short
+  the sample is. Thirty labelled cases do not exist here, so every
+  calibration number in this project should be read as indicative and as
+  uncorrected.
 - **Conformal coverage guarantees assume exchangeability**, which a curated
   fixture set does not satisfy.
 
