@@ -2319,3 +2319,81 @@ achieved by leaving them out of the count.
 The correlation weights are not in that category. They are claims about how
 much two findings overlap in real patients, which is a measurable quantity
 that nobody here has measured.
+
+
+## Measuring the correlation weights, and finding they barely matter
+
+The previous entry counted five correlation weights among the 47 invented
+parameters and called them the worst case: judgement calls between 0.70 and
+0.85 that are the difference between zero and three wrong commits on the real
+patients, with nothing recording that they were invented. Unlike a gate
+threshold, `rho` is a genuinely measurable quantity — `redundancy_weights`
+uses it as a correlation coefficient between two findings — so it was
+measured.
+
+DDXPlus carries 200,091 patients across the eight modelled diseases. Three
+within-group pairs have both findings mapped to evidence codes, so the phi
+coefficient can be computed directly:
+
+    pair                                  invented    measured
+    leg_swelling / recent_immobility          0.85       0.495
+    fever / productive_cough                  0.75       0.551
+    wheeze_subjective / smoking_history       0.70       0.079
+
+Every one is overstated, the last by a factor of nine. And the pairs the model
+treats as independent are not:
+
+    fever / palpitations                      0.00      -0.134
+    pleuritic_pain / smoking_history          0.00      -0.162
+    productive_cough / leg_swelling           0.00      -0.242
+    wheeze_subjective / recent_immobility     0.00      -0.135
+
+`redundancy_weights` takes the absolute value, so a correlation of -0.24 would
+damp exactly as much as +0.24. The structure is overstated where it is
+declared and set to zero where it is not, and one undeclared pair is three
+times more correlated than a declared one.
+
+### And it makes no difference
+
+Substituting the three measured values for the invented ones:
+
+    arm                    invented weights        measured weights
+    real cases             2 correct, 0 wrong      2 correct, 0 wrong
+    hard cases             5/5, 0 wrong            5/5, 0 wrong
+    fixtures               8/10                    8/10
+    ECE / Brier            0.240 / 0.147           0.237 / 0.146
+
+Nothing moves. That is worth more than the correction would have been,
+because it changes what the earlier warning was about. Correlation weighting
+*as a mechanism* is the most load-bearing thing measured in this project —
+turning it off produces three wrong commits on real patients where there were
+none. The *values* of its weights, across the range from 0.079 to 0.85, are
+close to irrelevant.
+
+So the five invented weights are not the hazard the previous entry implied.
+The hazard is the binary decision to damp correlated findings at all, and that
+decision is supported by the strongest measurement here.
+
+### Not adopted, and the reason is the measurement itself
+
+The three measured values are not written into the knowledge base.
+
+Adopting them would buy nothing except a better provenance count — the
+behaviour is identical, so the only thing that would change is that five
+invented parameters become three. Changing a number to improve how the audit
+reads, when the number demonstrably does not affect any output, is the
+metric-gaming this project refuses everywhere else.
+
+Two further reasons that would matter if the first did not. DDXPlus is a
+simulator, so these correlations describe its generating rules rather than
+patients, and a correlation between findings is exactly the kind of structure
+a rule-based generator imposes rather than observes. And each group weight
+covers every pair in the group — group one has four members and therefore six
+pairs, of which one is measured — so writing the measured value in would
+assert five unmeasured pairs share it.
+
+What is recorded instead: the declared weights are roughly twice the simulated
+correlations, one is nine times too high, four undeclared pairs are as
+correlated as the declared ones, and none of it changes an output. The next
+person to touch this should know the numbers are wrong and that it does not
+currently matter, rather than discovering the first half alone.

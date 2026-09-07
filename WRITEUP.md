@@ -144,9 +144,20 @@ figure this project quoted: five correlation weights, twenty-seven acquisition
 costs, five gate thresholds, three loop budget limits, seven selector
 constants. They decide which questions get asked and when the system commits.
 
-The worst case is the correlation weights — five judgement calls between 0.70
-and 0.85 that are the difference between **zero and three wrong commits** on
-the ten real patients. SCOPE.md already states why an untracked invented
+The worst case looked like the correlation weights — five judgement calls
+between 0.70 and 0.85 that are the difference between **zero and three wrong
+commits** on the ten real patients. Unlike a gate threshold, those are a
+measurable quantity, so they were measured against 200,091 DDXPlus patients:
+0.85 against 0.495, 0.75 against 0.551, 0.70 against **0.079**. All overstated,
+the last ninefold, and four pairs the model calls independent measure up to
+0.24.
+
+Substituting the measured values changes nothing — same commits, same wrong
+count, ECE 0.240 against 0.237. So the mechanism is load-bearing and its
+numbers are not, which is a more useful thing to know than the correction
+would have been. They are left alone: changing a number that affects no output
+in order to improve how the audit reads is the metric-gaming this project
+refuses elsewhere. SCOPE.md already states why an untracked invented
 number is worse than a tracked one, about the disease priors, which had the
 same problem until they were pulled into the audit: *an invented number the
 audit cannot name reads as an absence of a problem.* That hole was closed for

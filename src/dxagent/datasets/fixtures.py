@@ -89,6 +89,33 @@ def _cite(source: str, locator: str, snippet: str = "") -> tuple[Citation, ...]:
 # observed absent, and multiplied independently they bury the true diagnosis
 # deep enough that a positive CTPA afterwards cannot retrieve it. They are not
 # four independent reassurances; they are one absent clinical picture.
+# Measured against DDXPlus, found overstated, and deliberately not changed.
+#
+# ``redundancy_weights`` uses these as correlation coefficients, which is a
+# measurable quantity, so they were measured: 200,091 DDXPlus patients across
+# the eight modelled diseases, phi coefficient per pair, for the three
+# within-group pairs whose findings both map to evidence codes.
+#
+#     leg_swelling / recent_immobility        0.85 declared   0.495 measured
+#     fever / productive_cough                0.75 declared   0.551 measured
+#     wheeze_subjective / smoking_history     0.70 declared   0.079 measured
+#
+# All three overstated, the last ninefold. Four pairs declared independent
+# measure between -0.13 and -0.24, and redundancy_weights takes the absolute
+# value, so one undeclared pair is three times more correlated than a
+# declared one.
+#
+# Substituting the measured values changes nothing: real cases 2 correct and
+# 0 wrong either way, hard cases 5 of 5 either way, ECE 0.240 against 0.237.
+# The *mechanism* is the most load-bearing thing measured in this project --
+# without it the ten real patients produce three wrong commits instead of
+# none -- and the *values*, anywhere between 0.08 and 0.85, are close to
+# irrelevant.
+#
+# They are left alone because correcting them would buy nothing but a better
+# provenance count, and changing a number that demonstrably affects no output
+# in order to improve how the audit reads is the metric-gaming this project
+# refuses elsewhere. DESIGN.md carries the full measurement.
 _CORRELATION_GROUPS: tuple[tuple[float, tuple[str, ...]], ...] = (
     # venous thromboembolism: one picture, four ways of asking about it
     (0.85, ("sudden_onset", "leg_swelling", "calf_tenderness", "recent_immobility")),
