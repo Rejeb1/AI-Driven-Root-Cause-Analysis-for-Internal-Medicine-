@@ -49,6 +49,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from dxagent.belief import BayesianProposer  # noqa: E402
 from dxagent.datasets import build_cases, build_knowledge_base  # noqa: E402
+from dxagent.provenance import parameter_report  # noqa: E402
 from dxagent.provenance import report as provenance_report  # noqa: E402
 from dxagent.schemas import Finding, Polarity  # noqa: E402
 
@@ -234,6 +235,12 @@ def main() -> int:
 
     coverage = provenance_report(kb)
     print(coverage.summary())
+    # The likelihood table is not the whole model. Forty-seven further
+    # invented numbers -- correlation weights, costs, gate thresholds --
+    # decide what gets asked and when the loop commits, and were absent from
+    # every coverage figure this project quoted until they were counted here.
+    print()
+    print(parameter_report().summary())
 
     if args.ablate:
         return ablate(kb, cases)

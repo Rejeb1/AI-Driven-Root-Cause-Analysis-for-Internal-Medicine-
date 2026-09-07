@@ -2259,3 +2259,63 @@ What it does not do is validate the numbers. Sixty-five comparisons over a
 ordering claim while being twice what it should be. This catches the class of
 error that has actually occurred here five times; it does not catch the class
 nobody has found yet.
+
+
+## Forty-seven invented numbers the audit was never counting
+
+dxagent.provenance tracked 153 likelihoods and 8 disease priors, and this
+project quoted coverage over those as its headline honesty metric. It was not
+counting the rest of the model.
+
+     5  correlation weights     datasets/fixtures.py
+    27  acquisition costs       datasets/fixtures.py
+     5  gate thresholds         gate.py
+     3  loop budget limits      agent.py
+     7  selector constants      actions.py
+    --
+    47  all invented, none tracked
+
+None of them is a likelihood, so none was tracked, and their absence from
+every reported figure was not a decision anyone made.
+
+SCOPE.md already states why this matters, about the disease priors, which had
+exactly this problem until they were pulled into the report:
+
+> They were invented and untracked for most of this project life, which was
+> the more dangerous state -- an invented number the audit cannot name reads
+> as an absence of a problem.
+
+The hole was closed for the priors and nobody asked whether it existed
+elsewhere. It did, five times over.
+
+**The correlation weights are the case that should have been obvious.** Five
+judgement calls between 0.70 and 0.85 that are the difference between zero and
+three wrong commits on the ten real patients -- the single most load-bearing
+mechanism measured anywhere in this project, and the only defence of the claim
+that the system does not commit wrongly. Nothing recorded that its parameters
+were invented, and a reader of the coverage figure would have had no way to
+find out.
+
+They are reported separately rather than folded into the likelihood
+percentage, for the same reason the priors are. A correlation weight and a
+P(finding | disease) answer different questions, and averaging them produces
+a number that is easier to quote and means less.
+
+The counts are read from the classes themselves rather than written down, so
+adding a threshold or a cost moves the total and fails the test. A new
+invented parameter cannot enter the model silently, which is the property
+that was missing rather than the number 47.
+
+### What this does not fix
+
+Counting a number is not sourcing it, and none of the 47 has a citation. Two
+of the groups are arguably not the same kind of object as a likelihood at all
+-- a gate threshold is a policy choice about how much risk to accept, and
+there is no study that reports the correct value of min_confidence. The
+honest position is that they are design decisions rather than measurements,
+which is a defensible thing to be, but it has to be said out loud rather than
+achieved by leaving them out of the count.
+
+The correlation weights are not in that category. They are claims about how
+much two findings overlap in real patients, which is a measurable quantity
+that nobody here has measured.

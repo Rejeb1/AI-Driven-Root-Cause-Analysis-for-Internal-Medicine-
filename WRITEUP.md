@@ -138,6 +138,21 @@ The eight disease priors are separately sourced, 8 of 8, and reported on their
 own line rather than folded in — merging them would let a sourced likelihood
 table hide unsourced priors inside one flattering percentage.
 
+**And the likelihood table is not the whole model.** Forty-seven further
+numbers are invented and, until they were counted, appeared in no coverage
+figure this project quoted: five correlation weights, twenty-seven acquisition
+costs, five gate thresholds, three loop budget limits, seven selector
+constants. They decide which questions get asked and when the system commits.
+
+The worst case is the correlation weights — five judgement calls between 0.70
+and 0.85 that are the difference between **zero and three wrong commits** on
+the ten real patients. SCOPE.md already states why an untracked invented
+number is worse than a tracked one, about the disease priors, which had the
+same problem until they were pulled into the audit: *an invented number the
+audit cannot name reads as an absence of a problem.* That hole was closed for
+the priors and nobody asked whether it existed elsewhere. It did, five times
+over.
+
 `provenance.py` records three tiers:
 
 - **MEASURED** — a frequency counted in a named cohort or dataset.

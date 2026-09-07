@@ -156,8 +156,18 @@ marketing:
 
 ### The dominant risk is the knowledge base, and it is measured
 
-89 of 153 likelihoods are invented. The eight disease priors are no longer
-among them — they are derived from published presentation-conditional
+89 of 153 likelihoods are invented, and so are 47 further model parameters
+that no coverage figure used to count: five correlation weights, twenty-seven
+acquisition costs, five gate thresholds, three loop budget limits and seven
+selector constants. They decide which questions get asked and when the loop
+commits. `dxagent.provenance.parameter_report` names and counts them, and
+reports them separately from the likelihoods rather than folded in, because
+averaging two different quantities produces a figure that is easier to quote
+and means less. The correlation weights are the ones to worry about: five
+judgement calls that are the difference between zero and three wrong commits
+on the ten real patients.
+
+The eight disease priors are no longer among the untracked — they are derived from published presentation-conditional
 aetiology, with bands wide enough to span the disagreement between the two
 sources.
 `dxagent.provenance` tracks every likelihood *and every prior* as measured,

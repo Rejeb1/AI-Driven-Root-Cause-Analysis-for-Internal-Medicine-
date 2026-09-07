@@ -2179,6 +2179,57 @@ def test_documented_coverage_figures_match_the_knowledge_base(kb):
     assert not stale, "documented coverage figures are stale:\n  " + "\n  ".join(stale)
 
 
+def test_the_model_parameters_outside_the_likelihood_table_are_counted():
+    """Forty-seven invented numbers that no coverage figure used to include.
+
+    ``provenance.report`` covers 153 likelihoods and 8 disease priors, and
+    this project quoted its coverage over those as its honesty metric. It was
+    not counting the rest of the model: five correlation weights,
+    twenty-seven acquisition costs, five gate thresholds, three loop budget
+    limits and seven selector constants. None is a likelihood, so none was
+    tracked, and their absence was nobody's decision.
+
+    SCOPE.md already states why that matters, about the priors, which had the
+    same problem until they were pulled into the report -- an invented number
+    the audit cannot name reads as an absence of a problem. The hole was
+    closed for priors and nobody asked whether it existed elsewhere.
+
+    The worst case is the correlation weights. Five judgement calls between
+    0.70 and 0.85 that are the difference between zero and three wrong
+    commits on the ten real patients, with nothing anywhere recording that
+    they are invented.
+
+    They are counted separately rather than folded into the likelihood
+    percentage, for the reason the priors are: a correlation weight and a
+    P(finding | disease) answer different questions, and averaging them
+    produces a number that is easier to quote and means less.
+    """
+    from dxagent.provenance import parameter_report
+
+    report = parameter_report()
+    assert report.total == 47
+    assert report.invented == 47, "none of these has a source yet"
+
+    by_name = {g.name: g for g in report.groups}
+    assert by_name["correlation weights"].count == 5
+    assert by_name["acquisition costs"].count == 27
+    assert by_name["gate thresholds"].count == 5
+
+    # Every group says where it lives, so the count can be checked against
+    # the code rather than trusted.
+    assert all(g.where.endswith(".py") for g in report.groups)
+    assert all(g.note for g in report.groups)
+
+    # The counts are read from the classes themselves rather than written
+    # here, so adding a threshold or a cost moves this number and fails the
+    # assertion above. That is the point: a new invented parameter should not
+    # be able to enter the model silently.
+    from dxagent.datasets import fixtures
+
+    assert by_name["acquisition costs"].count == len(fixtures.COSTS)
+    assert by_name["correlation weights"].count == len(fixtures._CORRELATION_GROUPS)
+
+
 def test_priors_are_counted_separately_and_default_to_invented(kb):
     """The priors must be visible in the audit, and not folded into it.
 

@@ -211,8 +211,157 @@ def report(kb) -> ProvenanceReport:
     )
 
 
+# The numbers this module did not count
+# ---------------------------------------------------------------------------
+# ``report`` above covers 153 likelihoods and 8 disease priors, and for a long
+# time this project quoted its coverage over those and called that its honesty
+# metric. It was not counting the rest of the model.
+#
+# There are 47 further invented numbers: five correlation weights,
+# twenty-seven acquisition costs, five gate thresholds, three loop budget
+# limits and seven selector constants. None of them is a likelihood, so none
+# was tracked, and their absence from the audit was not a decision anyone
+# made.
+#
+# SCOPE.md already states why that matters, about the disease priors, which
+# had exactly this problem until they were pulled into the report:
+#
+#     They were invented and untracked for most of this project's life, which
+#     was the more dangerous state -- an invented number the audit cannot name
+#     reads as an absence of a problem.
+#
+# The hole was closed for priors and nobody asked whether it existed
+# elsewhere. It did, five times over, and the worst case is the correlation
+# weights: five judgement calls that are the difference between zero and three
+# wrong commits on the real patients, with nothing anywhere recording that
+# they are invented.
+#
+# They are reported separately rather than folded into the likelihood
+# percentage, for the same reason the priors are. A correlation weight and a
+# P(finding | disease) are different quantities answering different questions,
+# and averaging them would produce a number that is easier to quote and means
+# less.
+
+
+@dataclass(frozen=True)
+class ParameterGroup:
+    """One family of non-likelihood numbers, and where it lives."""
+
+    name: str
+    count: int
+    provenance: Provenance
+    where: str
+    note: str
+
+    @property
+    def is_sourced(self) -> bool:
+        return self.provenance is not Provenance.INVENTED
+
+
+@dataclass(frozen=True)
+class ParameterReport:
+    groups: tuple[ParameterGroup, ...]
+
+    @property
+    def total(self) -> int:
+        return sum(g.count for g in self.groups)
+
+    @property
+    def invented(self) -> int:
+        return sum(g.count for g in self.groups if not g.is_sourced)
+
+    def summary(self) -> str:
+        lines = [
+            f"{self.total} model parameters outside the likelihood table: "
+            f"{self.invented} invented"
+        ]
+        for group in self.groups:
+            tier = group.provenance.value
+            lines.append(f"  {group.count:>3} {group.name:<26} {tier:<9} {group.where}")
+        return "\n".join(lines)
+
+
+def parameter_report() -> ParameterReport:
+    """Count the invented numbers that are not likelihoods or priors.
+
+    Imports are deferred because ``datasets.fixtures`` imports this module,
+    and the point of the function is to reach into the places these numbers
+    actually live rather than maintain a second copy of them here that could
+    drift.
+    """
+    from .actions import InformationGainSelector
+    from .agent import LoopLimits
+    from .datasets import fixtures
+    from .gate import AbstentionGate
+
+    def float_fields(cls) -> int:
+        return sum(
+            1
+            for f in cls.__dataclass_fields__.values()
+            if isinstance(f.default, float) and not isinstance(f.default, bool)
+        )
+
+    def numeric_fields(cls) -> int:
+        return sum(
+            1
+            for f in cls.__dataclass_fields__.values()
+            if isinstance(f.default, (int, float)) and not isinstance(f.default, bool)
+        )
+
+    return ParameterReport(
+        groups=(
+            ParameterGroup(
+                "correlation weights",
+                len(fixtures._CORRELATION_GROUPS),
+                Provenance.INVENTED,
+                "datasets/fixtures.py",
+                "How much each cluster of findings is one clinical picture. "
+                "The most load-bearing invented numbers in the system: without "
+                "correlation weighting the ten real patients produce three "
+                "wrong commits instead of none.",
+            ),
+            ParameterGroup(
+                "acquisition costs",
+                len(fixtures.COSTS),
+                Provenance.INVENTED,
+                "datasets/fixtures.py",
+                "What each question or test costs the budget, and so which "
+                "ones the selector can afford to ask.",
+            ),
+            ParameterGroup(
+                "gate thresholds",
+                float_fields(AbstentionGate),
+                Provenance.INVENTED,
+                "gate.py",
+                "Confidence, margin, red-flag tolerance, proposer "
+                "disagreement and evidence fit. Every commit or escalation "
+                "turns on these five.",
+            ),
+            ParameterGroup(
+                "loop budget",
+                numeric_fields(LoopLimits),
+                Provenance.INVENTED,
+                "agent.py",
+                "Turn and cost ceilings, and the due-diligence gain floor.",
+            ),
+            ParameterGroup(
+                "selector constants",
+                float_fields(InformationGainSelector),
+                Provenance.INVENTED,
+                "actions.py",
+                "Information-gain tuning: the cost offset, the red-flag "
+                "bonus, and the thresholds that make a test count as "
+                "decisive.",
+            ),
+        )
+    )
+
+
 __all__ = [
     "LikelihoodSource",
+    "ParameterGroup",
+    "ParameterReport",
+    "parameter_report",
     "NARRATIVE_RUBRIC",
     "Provenance",
     "ProvenanceReport",
