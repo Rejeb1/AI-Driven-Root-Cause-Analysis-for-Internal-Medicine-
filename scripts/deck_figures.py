@@ -128,7 +128,12 @@ def _count_tests() -> int:
     return int(match.group(1)) if match else 0
 
 
-def collect() -> Figures:
+def collect(reason_limit: int = 78) -> Figures:
+    """Live figures. ``reason_limit`` is how much of an escalation reason the
+    caller has room for: the seven-page explainer prints these in a narrow
+    column and needs them short, the deep dive gives them a column of their
+    own and can show the concept that was sought, which is the informative
+    half and the first thing an aggressive clip removes."""
     kb = build_knowledge_base(correlated=True)
     report = provenance.report(kb)
 
@@ -175,7 +180,7 @@ def collect() -> Figures:
         else:
             rank = [h.label for h in outcome.differential.hypotheses].index(case.diagnosis) + 1
             reason = outcome.escalation.reason if outcome.escalation else ""
-            result = f"Escalated — ranked {rank}; {_shorten(reason)}"
+            result = f"Escalated — ranked {rank}; {_shorten(reason, reason_limit)}"
         rows.append((case.presenting_complaint, truth, result))
 
     sourced = report.measured + report.narrative
