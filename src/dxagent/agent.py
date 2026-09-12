@@ -167,6 +167,46 @@ def choose_action(
     return action, mandated, ruleout, flip
 
 
+def escalation_reason(
+    decision, action: Action | None, affordable: bool, out_of_turns: bool
+) -> tuple[str, str | None] | None:
+    """Why the loop is stopping, as (reason, unresolved question) -- or None
+    if it is not stopping yet.
+
+    The gate's reason leads. It is the blocker -- "top-1 confidence 27% below
+    threshold 65%", "time-critical diagnosis not excluded" -- and the
+    loop-status clause after it only says why no further turn will change
+    that. The order used to be the reverse, and the packet's first line was
+    then the one clause true of nearly every escalation, while the workup
+    note ``name_the_missing_workup`` appends last ("D-dimer sought, not
+    available") was what a reader took for the cause. On the real cases it
+    was not the cause once: pulmonary embolism sat at 2-5% on every one of
+    them, and two scripts grew a clause-ranking workaround to dig the useful
+    line back out. The fix belongs here, not in the readers.
+
+    Shared by both engines for the usual reason.
+    """
+    if out_of_turns:
+        return (
+            f"{decision.reason}; turn limit reached before the confidence "
+            "threshold was met",
+            action.target if action else None,
+        )
+    if action is None:
+        return (
+            f"{decision.reason}; no remaining action would meaningfully narrow "
+            "the differential",
+            None,
+        )
+    if not affordable:
+        return (
+            f"{decision.reason}; cost budget exhausted, the next informative "
+            f"step ({action.target}) exceeds the remaining allowance",
+            action.target,
+        )
+    return None
+
+
 def name_the_missing_workup(reason: str, state: CaseState) -> str:
     """Add the sought-but-unobtainable workup items to an escalation reason.
 
@@ -296,26 +336,11 @@ class DiagnosticAgent:
                 )
 
             if not decision.should_commit:
-                if out_of_turns:
+                stop = escalation_reason(decision, action, affordable, out_of_turns)
+                if stop is not None:
+                    reason, unresolved = stop
                     return self._escalate(
-                        state, calibrated, decision.confidence,
-                        "turn limit reached before the confidence threshold was "
-                        f"met; {decision.reason}",
-                        action.target if action else None,
-                    )
-                if action is None:
-                    return self._escalate(
-                        state, calibrated, decision.confidence,
-                        "no remaining action would meaningfully narrow the "
-                        f"differential; {decision.reason}",
-                        None,
-                    )
-                if not affordable:
-                    return self._escalate(
-                        state, calibrated, decision.confidence,
-                        f"cost budget exhausted; the next informative step "
-                        f"({action.target}) exceeds the remaining allowance",
-                        action.target,
+                        state, calibrated, decision.confidence, reason, unresolved
                     )
 
             findings = list(environment.respond(action))

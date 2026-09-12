@@ -78,26 +78,19 @@ _PRETTY = {
 
 
 def _shorten(reason: str, limit: int = 78) -> str:
-    """The most informative clause of an escalation reason.
+    """The first clause of an escalation reason, clipped to fit a column.
 
-    Escalation reasons are semicolon-joined and the first clause is almost
-    always "no remaining action would meaningfully narrow the differential",
-    which is true of nearly every escalation and therefore says nothing about
-    the individual case. Prefer a clause that names what was sought and could
-    not be had, or the specific threshold that was missed.
+    The first clause is the gate's own reason -- the blocker. This used to
+    rank clauses and prefer "sought but not available", because the engines
+    once put the loop-status boilerplate first; that ranking is what made the
+    real-case table name a workup gap as the cause when pulmonary embolism
+    was already under tolerance. The order is now fixed at source
+    (``agent.escalation_reason``), so the right clause is simply the first.
     """
     clauses = [c.strip() for c in reason.split(";") if c.strip()]
     if not clauses:
         return ""
-    ranked = sorted(
-        clauses,
-        key=lambda c: (
-            "not available" not in c,
-            "below threshold" not in c,
-            "not excluded" not in c,
-        ),
-    )
-    best = ranked[0]
+    best = clauses[0]
     if len(best) > limit:
         best = best[: limit - 1].rstrip() + "…"
     return best
@@ -180,14 +173,10 @@ def collect(reason_limit: int = 78) -> Figures:
         else:
             rank = [h.label for h in outcome.differential.hypotheses].index(case.diagnosis) + 1
             reason = outcome.escalation.reason if outcome.escalation else ""
-            # The top-1 probability is printed because the clause _shorten
-            # picks is usually "D-dimer sought, not available", and read on
-            # its own that says the case stopped on PE exclusion. It did not:
-            # on every such real case PE was already under the red-flag
-            # tolerance, and what stopped the loop was a top hypothesis stuck
-            # well under the 65% floor with nothing informative left to ask.
-            # Without the number, the packet's most visible line names a
-            # cause that is not the cause.
+            # The top-1 probability is printed even though the confidence
+            # clause already carries it, because the red-flag clause does
+            # not, and a column where some rows show the number and some do
+            # not reads as if the missing ones had none.
             top = outcome.differential.top.probability
             result = (
                 f"Escalated at {top:.0%} — ranked {rank}; "

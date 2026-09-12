@@ -197,6 +197,64 @@ def baseline_comparison(kb, test_cases, result, args=None) -> str:
     return "\n".join(lines)
 
 
+def case_detail(outcomes, truths) -> list[str]:
+    lines = []
+    for outcome in outcomes:
+        truth = truths[outcome.case_id]
+        top = outcome.differential.top
+        mark = "ok " if top.label == truth else "MISS"
+        verdict = "commit " if not outcome.abstained else "escalate"
+        lines.append(
+            f"  {outcome.case_id} {verdict} {mark} "
+            f"p={top.probability:.2f} top1={top.label} truth={truth} "
+            f"turns={len(outcome.steps)} cost={outcome.budget_spent:.1f}"
+        )
+        if outcome.escalation:
+            lines.append(f"      reason: {outcome.escalation.reason}")
+        if outcome.steps:
+            path = " -> ".join(s.action.target for s in outcome.steps)
+            lines.append(f"      evidence sought: {path}")
+    return lines
+
+
+def hard_case_report(agent) -> str:
+    """The five diagnostic traps, run and printed after the fixture report.
+
+    The fixture set is saturated -- ``build_hard_cases`` says why -- and for
+    most of this project's life the traps written to replace it were run only
+    inside one test, so the headline report a reader actually sees still
+    measured the set that cannot separate a good change from a bad one.
+
+    They are printed as their own block rather than folded into the split:
+    every figure in DESIGN.md is stated against the ten fixtures, and changing
+    that denominator quietly would invalidate the record this project keeps
+    on purpose. Same agent, same thresholds, separate denominator.
+    """
+    from dxagent.datasets.fixtures import build_hard_cases
+    from dxagent.evaluation import run_agent
+
+    cases = build_hard_cases()
+    outcomes = run_agent(agent, cases)
+    truths = {c.case_id: c.diagnosis for c in cases}
+
+    top1 = sum(o.differential.top.label == truths[o.case_id] for o in outcomes)
+    committed = [o for o in outcomes if not o.abstained]
+    right = sum(o.differential.top.label == truths[o.case_id] for o in committed)
+    wrong = len(committed) - right
+
+    lines = [
+        "",
+        "hard cases (five named diagnostic traps; separate denominator, see "
+        "build_hard_cases)",
+        f"  top-1                    {top1}/{len(cases)}",
+        f"  committed                {len(committed)}/{len(cases)}  "
+        f"({right} correct, {wrong} wrong)",
+        "",
+        *case_detail(outcomes, truths),
+    ]
+    return "\n".join(lines)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ddxplus", help="path to a local DDXPlus release directory")
@@ -304,21 +362,10 @@ def main() -> int:
         print(baseline_comparison(kb, test_cases, result, args))
 
     print("\nper-case detail")
-    for outcome in result.outcomes:
-        truth = result.truths[outcome.case_id]
-        top = outcome.differential.top
-        mark = "ok " if top.label == truth else "MISS"
-        verdict = "commit " if not outcome.abstained else "escalate"
-        print(
-            f"  {outcome.case_id} {verdict} {mark} "
-            f"p={top.probability:.2f} top1={top.label} truth={truth} "
-            f"turns={len(outcome.steps)} cost={outcome.budget_spent:.1f}"
-        )
-        if outcome.escalation:
-            print(f"      reason: {outcome.escalation.reason}")
-        if outcome.steps:
-            path = " -> ".join(s.action.target for s in outcome.steps)
-            print(f"      evidence sought: {path}")
+    print("\n".join(case_detail(result.outcomes, result.truths)))
+
+    if not args.ddxplus:
+        print(hard_case_report(build_agent(args.min_confidence, args.min_margin)))
 
     if args.json:
         result.to_json(Path(args.json))

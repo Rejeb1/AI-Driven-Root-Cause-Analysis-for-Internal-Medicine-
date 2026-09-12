@@ -43,6 +43,7 @@ from .actions import InformationGainSelector, classify
 from .agent import (
     LoopLimits,
     choose_action,
+    escalation_reason,
     name_the_missing_workup,
     still_outstanding,
 )
@@ -153,26 +154,11 @@ class GraphAgent:
                 budget_spent=case_state.budget_spent,
             )
         elif not decision.should_commit:
-            if out_of_turns:
+            stop = escalation_reason(decision, action, affordable, out_of_turns)
+            if stop is not None:
+                reason, unresolved = stop
                 outcome = self._escalate(
-                    case_state, differential, decision.confidence,
-                    "turn limit reached before the confidence threshold was met; "
-                    f"{decision.reason}",
-                    action.target if action else None,
-                )
-            elif action is None:
-                outcome = self._escalate(
-                    case_state, differential, decision.confidence,
-                    "no remaining action would meaningfully narrow the "
-                    f"differential; {decision.reason}",
-                    None,
-                )
-            elif not affordable:
-                outcome = self._escalate(
-                    case_state, differential, decision.confidence,
-                    f"cost budget exhausted; the next informative step "
-                    f"({action.target}) exceeds the remaining allowance",
-                    action.target,
+                    case_state, differential, decision.confidence, reason, unresolved
                 )
 
         return {

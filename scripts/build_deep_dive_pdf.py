@@ -800,7 +800,7 @@ story += [Paragraph(
     "support an accuracy claim, and it is reported this small on purpose rather than "
     "not reported at all.", S["body"])]
 
-_rows = [["Case", "True diagnosis", "Verdict", "What the escalation packet names"]]
+_rows = [["Case", "True diagnosis", "Verdict", "Why it stopped"]]
 for _c, _t, _r in F.real_rows:
     _verdict, _, _why = _r.partition(";")
     _rows.append([_clip(_c, 200), _t, _clip(_verdict, 60), _clip(_why, 200)])
@@ -851,16 +851,18 @@ _red = sum("not excluded" in r for r in _esc)
 _budget = sum("budget" in r for r in _esc)
 _stuck = len(_esc) - _red - _budget
 story += [Paragraph(
-    f"Read the verdict column, not the last one. Of {len(_esc)} escalations, {_red} "
-    "stop because acute coronary syndrome is still above the red-flag tolerance, "
-    f"{_budget} on the cost budget, and {_stuck} because the top hypothesis is stuck "
-    "between about 27% and 49% against a 65% floor with nothing informative left to "
-    "ask. The <i>D-dimer sought, not available</i> note appears on most of those "
-    f"{_stuck}, and reads like the cause. It is not: in every one of them pulmonary "
-    "embolism was already under the tolerance. An earlier draft of this page, and the "
-    "author, drew the wrong conclusion from that line. The real blocker is a thin "
-    "record meeting a knowledge base that cannot separate pneumonia, pulmonary oedema "
-    "and COPD on the findings a case report happens to give.", S["body"])]
+    f"Of {len(_esc)} escalations, {_red} stop because acute coronary syndrome is still "
+    f"above the red-flag tolerance and {_stuck + _budget} because the top hypothesis is "
+    "stuck between about 27% and 49% against a 65% floor with nothing informative "
+    "left to ask. That last column used to read differently. The packet appends a "
+    "note when a workup item was sought and not recorded &mdash; <i>D-dimer, not "
+    "available</i> on most of these &mdash; and the engines once put the blocker "
+    "last, so the note was what a reader saw first and took for the cause. It was "
+    "not: pulmonary embolism sat at 2&ndash;5% on every one of them, and an earlier "
+    "draft of this page, and the author, proposed a fix for a problem that was not "
+    "there. The order is now fixed where the reason is made. The real blocker is a "
+    "thin record meeting a knowledge base that cannot separate pneumonia, pulmonary "
+    "oedema and COPD on the findings a case report happens to give.", S["body"])]
 
 story += [Paragraph("What an escalation actually hands back", S["h2"])]
 story += [Paragraph(

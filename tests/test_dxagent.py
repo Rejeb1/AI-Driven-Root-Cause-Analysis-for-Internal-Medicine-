@@ -3283,6 +3283,56 @@ def test_escalation_names_a_workup_item_that_was_sought_but_unavailable():
     assert name_the_missing_workup("reason", unasked) == "reason"
 
 
+def test_the_escalation_reason_leads_with_the_gate_not_the_loop_status():
+    """The first clause of an escalation must be the blocker.
+
+    The engines used to write "no remaining action would meaningfully narrow
+    the differential; <gate reason>", and the workup note went on the end.
+    Read top to bottom the packet then opened with the clause true of nearly
+    every escalation and closed with "D-dimer sought, not available", which
+    is what got read as the cause -- on the real cases, wrongly, every time:
+    pulmonary embolism was under tolerance on all of them. Two scripts grew a
+    clause-ranking workaround before the order was fixed where it is made.
+    Both engines share ``escalation_reason`` so they cannot diverge on it.
+    """
+    from dxagent.agent import escalation_reason
+    from dxagent.gate import GateDecision
+
+    refused = GateDecision(False, "top-1 confidence 27% below threshold 65%", 0.27)
+    step = Action(kind=ActionKind.LAB, target="lab:raised_bnp", cost=4.0,
+                  expected_information_gain=0.1, rationale="")
+
+    for stop in (
+        escalation_reason(refused, None, False, False),
+        escalation_reason(refused, step, True, True),
+        escalation_reason(refused, step, False, False),
+    ):
+        assert stop is not None
+        reason, _ = stop
+        assert reason.startswith(refused.reason), reason
+
+    # Not stopping: a refusal with an affordable, informative action left
+    # means the loop should ask it, not escalate.
+    assert escalation_reason(refused, step, True, False) is None
+
+    # And the workup note still goes last, after the blocker, on a real run.
+    kb = build_knowledge_base(correlated=True)
+    agent = DiagnosticAgent(
+        kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb),
+        limits=LoopLimits(uninformative_turns_still_count=False,
+                          unanswered_actions_still_cost=False),
+    )
+    from dxagent.datasets import REAL_CASES
+
+    outcomes = [agent.run(c) for c in REAL_CASES]
+    escalated = [o.escalation for o in outcomes if o.escalation is not None]
+    assert escalated
+    for packet in escalated:
+        first = packet.reason.split(";")[0]
+        assert "below threshold" in first or "not excluded" in first, packet.reason
+        assert "sought but not available" not in first
+
+
 def test_default_cost_accounting_is_unchanged_by_the_new_flag(kb, cases):
     """The flag is opt-in: on the fixtures the shipped default is identical."""
     from dxagent import DiagnosticAgent, LoopLimits
