@@ -180,7 +180,19 @@ def collect(reason_limit: int = 78) -> Figures:
         else:
             rank = [h.label for h in outcome.differential.hypotheses].index(case.diagnosis) + 1
             reason = outcome.escalation.reason if outcome.escalation else ""
-            result = f"Escalated — ranked {rank}; {_shorten(reason, reason_limit)}"
+            # The top-1 probability is printed because the clause _shorten
+            # picks is usually "D-dimer sought, not available", and read on
+            # its own that says the case stopped on PE exclusion. It did not:
+            # on every such real case PE was already under the red-flag
+            # tolerance, and what stopped the loop was a top hypothesis stuck
+            # well under the 65% floor with nothing informative left to ask.
+            # Without the number, the packet's most visible line names a
+            # cause that is not the cause.
+            top = outcome.differential.top.probability
+            result = (
+                f"Escalated at {top:.0%} — ranked {rank}; "
+                f"{_shorten(reason, reason_limit)}"
+            )
         rows.append((case.presenting_complaint, truth, result))
 
     sourced = report.measured + report.narrative
