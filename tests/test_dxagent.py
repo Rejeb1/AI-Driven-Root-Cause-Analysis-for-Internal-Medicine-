@@ -2165,6 +2165,13 @@ def test_documented_coverage_figures_match_the_knowledge_base(kb):
     # for a string no document contained any more.
     of_total = re.compile(rf"(\d+) of {total}\b")
     percent_of_total = re.compile(rf"(\d+)% (?:sourced|of the {total})")
+    # "<n> of <m> likelihoods" with any m: when the denominator itself moves,
+    # of_total stops matching the stale sentence and the guard passes on it.
+    # That happened once at 135 -> 153 and was patched by reading the total
+    # live; it happened again at 153 -> 176, because reading it live does not
+    # help when the document still says 153. So the denominator is checked
+    # too, wherever the sentence names the unit.
+    of_any_total = re.compile(r"(\d+) of (?:its )?(\d+) likelihoods")
 
     for name, text in documents.items():
         # Any "<n> of <total>" claim must use the live invented count.
@@ -2172,6 +2179,12 @@ def test_documented_coverage_figures_match_the_knowledge_base(kb):
             if quoted != invented:
                 stale.append(
                     f"{name}: says '{quoted} of {total}', live count is {invented}"
+                )
+        for quoted, denominator in of_any_total.findall(text):
+            if denominator != str(total) or quoted != invented:
+                stale.append(
+                    f"{name}: says '{quoted} of {denominator} likelihoods', "
+                    f"live figures are {invented} of {total}"
                 )
         # Any "<n>% sourced" or "<n>% of the <total>" claim must match.
         for quoted in percent_of_total.findall(text):
@@ -2319,13 +2332,18 @@ def test_the_model_parameters_outside_the_likelihood_table_are_counted():
     """
     from dxagent.provenance import parameter_report
 
+    # 47 when first counted. The pericardial columns added after the real
+    # case second pass (two concepts, so two costs, and one correlation
+    # pairing for the two readings of one ECG) took it to 50. Every one of
+    # the three was added on purpose and is named in fixtures.py; the point
+    # of this pin is that the next one cannot be added by accident.
     report = parameter_report()
-    assert report.total == 47
-    assert report.invented == 47, "none of these has a source yet"
+    assert report.total == 50
+    assert report.invented == 50, "none of these has a source yet"
 
     by_name = {g.name: g for g in report.groups}
-    assert by_name["correlation weights"].count == 5
-    assert by_name["acquisition costs"].count == 27
+    assert by_name["correlation weights"].count == 6
+    assert by_name["acquisition costs"].count == 29
     assert by_name["gate thresholds"].count == 5
 
     # Every group says where it lives, so the count can be checked against

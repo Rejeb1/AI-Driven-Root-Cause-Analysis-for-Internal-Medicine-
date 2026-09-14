@@ -213,13 +213,14 @@ def report(kb) -> ProvenanceReport:
 
 # The numbers this module did not count
 # ---------------------------------------------------------------------------
-# ``report`` above covers 153 likelihoods and 8 disease priors, and for a long
-# time this project quoted its coverage over those and called that its honesty
-# metric. It was not counting the rest of the model.
+# ``report`` above covers the likelihood table and 8 disease priors, and for a
+# long time this project quoted its coverage over those and called that its
+# honesty metric. It was not counting the rest of the model.
 #
-# There are 47 further invented numbers: five correlation weights,
-# twenty-seven acquisition costs, five gate thresholds, three loop budget
-# limits and seven selector constants. None of them is a likelihood, so none
+# There were 47 further invented numbers when first counted -- five
+# correlation weights, twenty-seven acquisition costs, five gate thresholds,
+# three loop budget limits and seven selector constants -- and 50 after the
+# pericardial columns added two costs and one correlation pairing. None of them is a likelihood, so none
 # was tracked, and their absence from the audit was not a decision anyone
 # made.
 #

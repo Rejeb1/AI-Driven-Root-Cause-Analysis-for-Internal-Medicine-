@@ -254,8 +254,8 @@ a published cohort of 360 real pulmonary embolism patients (Miniati et al.,
 PLoS ONE 2012;7(2):e30891), then 9 and 5 from the Merck Manual's narrative
 text through the fixed rubric, 3 by targeted search, and 14 from PIOPED II's
 arm of patients investigated for embolism who turned out not to have one
-(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage is 42%, and the
-remaining 89 are still invented.
+(Stein PD et al., Am J Med 2007;120(10):871-9). Coverage was 42% at that
+point, with 89 still invented.
 
 That last pass is the one worth copying. The other four asked what a disease
 looks like. It asked what the *rivals* look like, which is the half of a

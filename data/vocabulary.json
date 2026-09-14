@@ -73,6 +73,16 @@
       "umls_name": null
     },
     {
+      "key": "exam:ecg_pr_depression",
+      "hpo_id": null,
+      "hpo_name": null,
+      "modality": "ecg",
+      "note": "PR-segment depression, one of the two ECG findings StatPearls calls the most characteristic of acute pericarditis. HPO has no PR-segment term. Added after a real pericarditis committed as pneumonia at 78% because nothing in this vocabulary could see what decided the case; kept under the exam: prefix so it classifies and costs like exam:ecg_st_changes.",
+      "cui": null,
+      "snomed_ct": null,
+      "umls_name": null
+    },
+    {
       "key": "exam:ecg_st_changes",
       "hpo_id": "HP:0012249",
       "hpo_name": "Abnormal ST segment",
@@ -201,6 +211,16 @@
       "cui": "C0034063",
       "snomed_ct": "19242006",
       "umls_name": "Pulmonary Edema"
+    },
+    {
+      "key": "imaging:pericardial_effusion",
+      "hpo_id": "HP:0001698",
+      "hpo_name": "Pericardial effusion",
+      "modality": "imaging",
+      "note": "Pericardial effusion, on echocardiography or CT. One of the four ESC diagnostic criteria for acute pericarditis and absent from this vocabulary until a real pericarditis with a large effusion was committed as pneumonia. Under imaging: because it is a separate test with a separate cost, not a chest-radiograph reading.",
+      "cui": null,
+      "snomed_ct": null,
+      "umls_name": null
     },
     {
       "key": "lab:raised_bnp",

@@ -62,6 +62,7 @@ COSTS: dict[str, float] = {
     "exam:friction_rub": 1.0,
     "exam:hypoxia": 0.5,
     "exam:ecg_st_changes": 2.0,
+    "exam:ecg_pr_depression": 2.0,  # read from the same tracing
     # bloods
     "lab:raised_wcc": 4.0,
     "lab:raised_d_dimer": 4.0,
@@ -70,6 +71,7 @@ COSTS: dict[str, float] = {
     # imaging
     "imaging:cxr_consolidation": 8.0,
     "imaging:cxr_pulmonary_oedema": 8.0,
+    "imaging:pericardial_effusion": 8.0,  # echocardiography; same tier as a film
     "imaging:ctpa_filling_defect": 20.0,
 }
 
@@ -128,6 +130,10 @@ _CORRELATION_GROUPS: tuple[tuple[float, tuple[str, ...]], ...] = (
     (0.70, ("wheeze_subjective", "smoking_history", "exam:reduced_breath_sounds")),
     # ischaemia
     (0.75, ("exertional_chest_pain", "exam:ecg_st_changes", "lab:raised_troponin")),
+    # one tracing: ST change and PR depression are read off the same ECG and
+    # in pericarditis are two parts of one stage-I picture, so they must not
+    # count as two independent pieces of evidence. Invented, like the others.
+    (0.80, ("exam:ecg_st_changes", "exam:ecg_pr_depression")),
 )
 
 
@@ -1003,6 +1009,35 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         low=0.50,
         high=None,
     ),
+    # The same chapter names PR-segment depression as one of the two most
+    # characteristic ECG findings, and gives no separate frequency for it.
+    # The rubric would turn "most characteristic" into 0.85, which would put
+    # a component of the ECG change above the chapter's own figure for any
+    # ECG change at all. So it takes the ST cell's measured value and bound,
+    # with both sentences quoted, rather than the rubric's larger number.
+    ("pericarditis", "exam:ecg_pr_depression"): measured(
+        0.50,
+        Citation(
+            "STATPEARLS-PERICARDITIS",
+            "NCBI Bookshelf NBK431080, Evaluation",
+            "the most characteristic electrocardiographic findings in acute "
+            "pericarditis include diffuse concave ST-segment elevation and "
+            "PR-segment depression; more than half of patients ... exhibit "
+            "characteristic electrocardiogram changes",
+        ),
+        low=0.50,
+        high=None,
+        note="frequency is the chapter's figure for ECG change as a whole",
+    ),
+    ("pericarditis", "imaging:pericardial_effusion"): from_narrative(
+        "often",
+        Citation(
+            "STATPEARLS-PERICARDITIS",
+            "NCBI Bookshelf NBK431080, Pathophysiology",
+            "pericardial inflammation often leads to fluid accumulation "
+            "within the pericardial sac, resulting in a pericardial effusion",
+        ),
+    ),
 }
 
 # Load-bearing numbers that no source can supply, and the reason is structural
@@ -1237,14 +1272,10 @@ def _complete(concept: str, values: dict[str, float]) -> None:
 
 
 # -- disease-generated signs ------------------------------------------------
-# Pericardial rub: needs inflamed pericardium. Slightly higher for the two
-# diseases that can produce a *pleural* rub an examiner might record here.
-_complete("exam:friction_rub", {
-    "pulmonary_embolism": 0.05, "community_acquired_pneumonia": 0.05,
-    "acute_coronary_syndrome": 0.03, "acute_pulmonary_oedema": 0.02,
-    "copd_exacerbation": 0.02, "asthma_exacerbation": 0.02,
-    "panic_attack": 0.02,
-})
+# The pericardial rub used to be completed here. It is now in the shipped
+# entries themselves, at these values, after the real-case second pass showed
+# the single-describer defect described above producing a wrong commit on a
+# real pericarditis; see the "pericardial columns" note above the entries.
 # Clot on CTPA. Near-absent without pulmonary embolism.
 _complete("imaging:ctpa_filling_defect", {
     "copd_exacerbation": 0.02, "asthma_exacerbation": 0.02, "pericarditis": 0.02,
@@ -1442,6 +1473,40 @@ def build_knowledge_base(
         unlisted_likelihood=UNLISTED_IS_ATYPICAL if unlisted_as_atypical else None
     )
 
+    # The two pericardial columns
+    # -----------------------------------------------------------------------
+    # imaging:pericardial_effusion and exam:ecg_pr_depression were added after
+    # a real pericarditis (PMC13305284) was committed as pneumonia at 78%: a
+    # week of pleuritic pain, tachycardia, white count 13, an infiltrate, CT
+    # negative for embolism -- and a large pericardial effusion drained through
+    # a surgical window, which nothing in this vocabulary could see. Effusion
+    # and ECG change are two of the four ESC diagnostic criteria for the
+    # disease. Their absence was a vocabulary gap, not a tuning target.
+    #
+    # The pericarditis cells are sourced (StatPearls, in _SOURCED). The
+    # fourteen rival cells are INVENTED, and adding them is not optional: a
+    # concept only one disease lists backs every other disease off to that
+    # one value, so effusion at 0.55 for pericarditis alone would have been
+    # 0.55 for pneumonia too and discriminated nothing. They are set at the
+    # rubric's "rare" tier (0.05), with acute pulmonary oedema's effusion at
+    # 0.10 because fluid overload does produce small effusions. What a
+    # non-clinician can defend is the ordering -- pericarditis must lead both
+    # columns, and plausibility_check.py asserts it -- not the magnitudes.
+    # With the friction-rub cells below this takes the invented count from 89
+    # to 110 and the sourced fraction down. That is the honest price of the vocabulary saying what it needs.
+    #
+    # exam:friction_rub had the same defect for the same reason: pericarditis
+    # was its only describer, so a sourced 0.60 was the backoff for every
+    # rival and a rub present moved nothing -- the one sign the hard-case
+    # docstring says separates myopericarditis from infarction was inert. It
+    # gets seven invented rival cells, at the values the complete_grid
+    # completion had already argued for: 0.05 where a *pleural* rub might be
+    # recorded as one (embolism, pneumonia), 0.03 for a post-infarction rub,
+    # 0.02 elsewhere.
+    #
+    # Not added: cardiomegaly on the radiograph, the third finding that
+    # decided that case. No source for its frequency could be verified, and a
+    # cell invented to fix one known case is the tuning this file refuses.
     kb.add(
         DiseaseEntry(
             label="community_acquired_pneumonia",
@@ -1465,6 +1530,10 @@ def build_knowledge_base(
                 "imaging:cxr_consolidation": 0.90,
                 "imaging:cxr_pulmonary_oedema": 0.05,
                 "imaging:ctpa_filling_defect": 0.02,
+                # pericardial columns -- see the note above the first entry
+                "imaging:pericardial_effusion": 0.05,
+                "exam:ecg_pr_depression": 0.05,
+                "exam:friction_rub": 0.05,
             },
             citations=_cite("FIXTURE-KB", "cap", "synthetic entry, not sourced"),
         )
@@ -1494,6 +1563,10 @@ def build_knowledge_base(
                 "imaging:ctpa_filling_defect": 0.95,
                 "imaging:cxr_consolidation": 0.10,
                 "imaging:cxr_pulmonary_oedema": 0.03,
+                # pericardial columns -- see the note above the first entry
+                "imaging:pericardial_effusion": 0.05,
+                "exam:ecg_pr_depression": 0.05,
+                "exam:friction_rub": 0.05,
             },
             red_flag=True,
             citations=_cite("FIXTURE-KB", "pe", "synthetic entry, not sourced"),
@@ -1521,6 +1594,10 @@ def build_knowledge_base(
                 "lab:raised_bnp": 0.30,
                 "imaging:cxr_consolidation": 0.05,
                 "imaging:ctpa_filling_defect": 0.02,
+                # pericardial columns -- see the note above the first entry
+                "imaging:pericardial_effusion": 0.05,
+                "exam:ecg_pr_depression": 0.05,
+                "exam:friction_rub": 0.03,
             },
             red_flag=True,
             citations=_cite("FIXTURE-KB", "acs", "synthetic entry, not sourced"),
@@ -1549,6 +1626,10 @@ def build_knowledge_base(
                 "imaging:cxr_pulmonary_oedema": 0.85,
                 "imaging:cxr_consolidation": 0.15,
                 "imaging:ctpa_filling_defect": 0.03,
+                # pericardial columns -- see the note above the first entry
+                "imaging:pericardial_effusion": 0.10,
+                "exam:ecg_pr_depression": 0.05,
+                "exam:friction_rub": 0.02,
             },
             citations=_cite("FIXTURE-KB", "hf", "synthetic entry, not sourced"),
         )
@@ -1589,6 +1670,10 @@ def build_knowledge_base(
                 "exam:ecg_st_changes": 0.08,
                 "imaging:cxr_consolidation": 0.20,
                 "imaging:cxr_pulmonary_oedema": 0.08,
+                # pericardial columns -- see the note above the first entry
+                "imaging:pericardial_effusion": 0.05,
+                "exam:ecg_pr_depression": 0.05,
+                "exam:friction_rub": 0.02,
             },
             citations=_cite("FIXTURE-KB", "copd", "synthetic entry, not sourced"),
         )
@@ -1628,6 +1713,10 @@ def build_knowledge_base(
                 "exam:ecg_st_changes": 0.05,
                 "imaging:cxr_consolidation": 0.05,
                 "imaging:cxr_pulmonary_oedema": 0.03,
+                # pericardial columns -- see the note above the first entry
+                "imaging:pericardial_effusion": 0.05,
+                "exam:ecg_pr_depression": 0.05,
+                "exam:friction_rub": 0.02,
             },
             citations=_cite("FIXTURE-KB", "asthma", "synthetic entry, not sourced"),
         )
@@ -1651,6 +1740,9 @@ def build_knowledge_base(
                 "lab:raised_wcc": 0.45,
                 "lab:raised_d_dimer": 0.15,
                 "imaging:cxr_consolidation": 0.05,
+                # pericardial columns -- see the note above the first entry
+                "imaging:pericardial_effusion": 0.55,
+                "exam:ecg_pr_depression": 0.50,
             },
             citations=_cite("FIXTURE-KB", "pericarditis", "synthetic entry, not sourced"),
         )
@@ -1675,6 +1767,10 @@ def build_knowledge_base(
                 "lab:raised_wcc": 0.10,
                 "imaging:cxr_consolidation": 0.02,
                 "imaging:ctpa_filling_defect": 0.01,
+                # pericardial columns -- see the note above the first entry
+                "imaging:pericardial_effusion": 0.05,
+                "exam:ecg_pr_depression": 0.05,
+                "exam:friction_rub": 0.02,
             },
             citations=_cite("FIXTURE-KB", "panic", "synthetic entry, not sourced"),
         )

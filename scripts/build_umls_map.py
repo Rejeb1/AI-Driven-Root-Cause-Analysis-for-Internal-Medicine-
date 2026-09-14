@@ -213,6 +213,8 @@ SEARCH_TERMS: dict[str, tuple[str, str]] = {
     "exam:tachycardia": ("Tachycardia", _FINDING_TYPES),
     "exam:hypoxia": ("Hypoxemia", _FINDING_TYPES),
     "exam:raised_jvp": ("Jugular venous distension", _FINDING_TYPES),
+    "exam:ecg_pr_depression": ("PR segment depression", _FINDING_TYPES),
+    "imaging:pericardial_effusion": ("Pericardial effusion", _FINDING_TYPES),
     "exam:reduced_breath_sounds": ("Decreased breath sounds", _FINDING_TYPES),
     "exam:friction_rub": ("Pericardial friction rub", _FINDING_TYPES),
     "exam:ecg_st_changes": ("ST segment changes", _RESULT_TYPES),

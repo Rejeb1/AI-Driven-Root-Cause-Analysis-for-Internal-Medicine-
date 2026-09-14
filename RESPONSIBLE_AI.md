@@ -162,8 +162,8 @@ marketing:
 
 ### The dominant risk is the knowledge base, and it is measured
 
-89 of 153 likelihoods are invented, and so are 47 further model parameters
-that no coverage figure used to count: five correlation weights, twenty-seven
+110 of 176 likelihoods are invented, and so are 50 further model parameters
+that no coverage figure used to count: six correlation weights, twenty-nine
 acquisition costs, five gate thresholds, three loop budget limits and seven
 selector constants. They decide which questions get asked and when the loop
 commits. `dxagent.provenance.parameter_report` names and counts them, and

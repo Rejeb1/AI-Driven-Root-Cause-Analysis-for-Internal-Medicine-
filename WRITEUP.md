@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 89 of its 153 likelihoods are invented, no
+an unfinished feature — because 110 of its 176 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -39,11 +39,13 @@ acute pulmonary oedema. CHF is chronic and was the only non-acute entity in an
 otherwise acute differential, and it has no counterpart in the evaluation
 dataset while acute pulmonary oedema does.
 
-The vocabulary is 27 findings, each carrying an HPO identifier and, for 34 of
-35 concepts, a UMLS CUI and SNOMED CT code. Eight diseases against 27 findings
-is the 153-cell likelihood grid that the rest of this document keeps returning
-to, because that grid is simultaneously the system's engine and its principal
-weakness.
+The vocabulary is 29 findings, 26 of them carrying a UMLS CUI and SNOMED CT
+code alongside the HPO identifier. Eight diseases against 29 findings is the
+176-cell likelihood grid that the rest of this document keeps returning to,
+because that grid is simultaneously the system's engine and its principal
+weakness. It was 27 findings and 153 cells until the real-case second pass
+(§5) showed the vocabulary could not see a pericardial effusion or PR
+depression; the two concepts and their 23 new cells are accounted for there.
 
 ## 2. Architecture
 
@@ -129,18 +131,24 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**89 of 153 likelihoods are invented.** That is the number, stated on its own
-line, because it is the most important fact about this project.
+**110 of 176 likelihoods are invented.** That is the number, stated on its own
+line, because it is the most important fact about this project. It was 89 of
+153 until the pericardial columns were added (§5): two concepts the real cases
+showed were missing, two sourced cells for pericarditis, and 21 invented rival
+cells without which the new concepts would discriminate nothing. Coverage went
+*down*, from 42% to 38%, and that is the honest direction — the count now
+includes claims the model needs to make.
 
-The remaining 64 carry a citation: 10 counted from the DDXPlus simulator, 41
-from published cohorts, and 14 converted from Merck Manual narrative phrases.
+The remaining 66 carry a citation: 10 counted from the DDXPlus simulator, 43
+from published cohorts and StatPearls, and 13 converted from Merck Manual
+narrative phrases.
 The eight disease priors are separately sourced, 8 of 8, and reported on their
 own line rather than folded in — merging them would let a sourced likelihood
 table hide unsourced priors inside one flattering percentage.
 
-**And the likelihood table is not the whole model.** Forty-seven further
+**And the likelihood table is not the whole model.** Fifty further
 numbers are invented and, until they were counted, appeared in no coverage
-figure this project quoted: five correlation weights, twenty-seven acquisition
+figure this project quoted: six correlation weights, twenty-nine acquisition
 costs, five gate thresholds, three loop budget limits, seven selector
 constants. They decide which questions get asked and when the system commits.
 
@@ -375,7 +383,7 @@ celebrate.
 ### Nothing was checking the numbers themselves
 
 Every test in this project checks outputs. The knowledge base is inputs, and
-for most of its life nothing looked at it: 89 of 153 likelihoods are invented,
+for most of its life nothing looked at it: 110 of 176 likelihoods are invented,
 and the only scrutiny they got was whichever ones happened to change a case.
 
 Reading each column sorted, against what the diseases actually do, found five
@@ -612,6 +620,53 @@ a normal ECG and a normal radiograph (pericarditis ranked first; embolism
 third), and an NSTEMI with no chest discomfort at all (correctly ranked first,
 escalated at 53% with embolism at 11%). Neither was selected for being
 difficult. The rule took the second and ninth results of two queries.
+
+### The pericardial columns: what the wrong commit bought, and what it did not
+
+The wrong commit was a vocabulary gap, and that part was fixable. Two
+concepts were added — `imaging:pericardial_effusion` and
+`exam:ecg_pr_depression`, two of the four ESC diagnostic criteria for the
+disease — with the pericarditis cells sourced from StatPearls (effusion
+through the rubric's "often"; PR depression at the chapter's own "more than
+half" figure for ECG change rather than the rubric's 0.85 for
+"characteristic", because a component cannot outrun the whole). Cardiomegaly,
+the third finding that decided the case, was **not** added: no frequency for
+it could be verified, and a cell invented to fix one known case is the tuning
+this project refuses.
+
+The part that was not free: a concept only one disease lists is inert. The
+backoff for every other disease is the marginal over the diseases that
+*describe* the finding, so effusion at 0.55 for pericarditis alone would have
+been 0.55 for pneumonia too and discriminated nothing. Each new concept
+therefore needed seven invented rival cells. And the same defect turned out
+to have been sitting on `exam:friction_rub` all along — pericarditis was its
+only describer, so a sourced 0.60 was every rival's backoff and a rub present
+moved nothing. The one sign the hard-case docstring says separates
+myopericarditis from infarction had never done so. Seven more invented cells,
+at the values the off-by-default grid completion had already argued for.
+
+Net: 176 likelihoods, 110 invented, coverage down from 42% to 38%. Three new
+ordering claims pin pericarditis as the leader of all three columns. The rub
+cells paid off where the hard cases said they should: fx-h02, the
+myopericarditis written to test exactly that sign, went from escalating at 79%
+after twelve turns with acute coronary syndrome still at 10% to committing
+correctly at 96% in five. Hard cases are 5 of 5 with four commits and none
+wrong; the fixture set is unchanged in accuracy with one more commit. The
+parameter count outside the table went from 47 to 50 (two costs, one
+correlation pairing for the two readings of one ECG). All of it counted.
+
+**And the case is still wrong.** Two measurements, both kept. With the two
+findings handed to the reasoner directly, pneumonia falls from 0.94 to 0.78
+and pericarditis rises from 0.02 to 0.15 — real movement, not enough: the
+pulmonary infiltrate is weighted 18:1 for pneumonia, and on the findings this
+vocabulary can express the patient genuinely looks like one. And in the loop
+itself neither finding is ever asked for: the selector committed at turn
+twelve with pericarditis at 4%, and a myopic information-gain selector does
+not spend a turn on a diagnosis it has already dismissed. That is the blind
+spot the presentation-triggered workup exists for, and there is no such rule
+for pericarditis. Vocabulary was necessary and not sufficient, and the
+honest sentence in the deep dive that read "the fix is vocabulary, not
+tuning" was half right.
 
 ### A configuration inconsistency found while writing this, and fixed
 

@@ -190,6 +190,16 @@ CURATED: dict[str, tuple[str | None, str, str]] = {
     ),
     "ecg:st_elevation": ("HP:0012251", "ecg", ""),
     "ecg:st_depression": ("HP:0012250", "ecg", ""),
+    "exam:ecg_pr_depression": (
+        None,
+        "ecg",
+        "PR-segment depression, one of the two ECG findings StatPearls calls "
+        "the most characteristic of acute pericarditis. HPO has no PR-segment "
+        "term. Added after a real pericarditis committed as pneumonia at 78% "
+        "because nothing in this vocabulary could see what decided the case; "
+        "kept under the exam: prefix so it classifies and costs like "
+        "exam:ecg_st_changes.",
+    ),
     # -- laboratory ---------------------------------------------------------
     "lab:raised_d_dimer": ("HP:0033106", "lab", "Elevated circulating D-dimer"),
     "lab:raised_troponin": (
@@ -219,6 +229,15 @@ CURATED: dict[str, tuple[str | None, str, str]] = {
         "RadLex is the appropriate vocabulary here.",
     ),
     "imaging:cxr_pulmonary_oedema": ("HP:0100598", "imaging", "Pulmonary edema"),
+    "imaging:pericardial_effusion": (
+        "HP:0001698",
+        "imaging",
+        "Pericardial effusion, on echocardiography or CT. One of the four ESC "
+        "diagnostic criteria for acute pericarditis and absent from this "
+        "vocabulary until a real pericarditis with a large effusion was "
+        "committed as pneumonia. Under imaging: because it is a separate test "
+        "with a separate cost, not a chest-radiograph reading.",
+    ),
     "imaging:ctpa_filling_defect": (
         None,
         "imaging",

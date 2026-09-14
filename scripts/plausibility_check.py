@@ -219,6 +219,25 @@ ORDERING_CLAIMS: tuple[tuple[str, str, tuple[str, ...], str], ...] = (
     ("exam:hypoxia", "acute_pulmonary_oedema",
      ("panic_attack", "copd_exacerbation", "pulmonary_embolism"),
      "alveolar flooding impairing gas exchange defines the diagnosis"),
+    # The three pericarditis-defining findings. All three were inert until
+    # the rivals were given cells -- a single-describer concept backs every
+    # other disease off to its own value -- so these claims exist to keep
+    # the rival cells below the leader, whatever anyone later sets them to.
+    ("exam:friction_rub", "pericarditis",
+     ("community_acquired_pneumonia", "pulmonary_embolism",
+      "acute_coronary_syndrome", "acute_pulmonary_oedema", "copd_exacerbation",
+      "asthma_exacerbation", "panic_attack"),
+     "the rub is the pericardium itself, inflamed"),
+    ("imaging:pericardial_effusion", "pericarditis",
+     ("community_acquired_pneumonia", "pulmonary_embolism",
+      "acute_coronary_syndrome", "acute_pulmonary_oedema", "copd_exacerbation",
+      "asthma_exacerbation", "panic_attack"),
+     "one of the four diagnostic criteria for the disease"),
+    ("exam:ecg_pr_depression", "pericarditis",
+     ("community_acquired_pneumonia", "pulmonary_embolism",
+      "acute_coronary_syndrome", "acute_pulmonary_oedema", "copd_exacerbation",
+      "asthma_exacerbation", "panic_attack"),
+     "PR depression is the ECG sign that separates pericarditis from infarction"),
 )
 
 

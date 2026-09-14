@@ -754,6 +754,17 @@ REAL_CASES: tuple[Case, ...] = (
     # autoimmune liver disease found afterwards is the cause; the
     # presentation is pericarditis. ECG showed "subtle PR depression" only,
     # so ``exam:ecg_st_changes`` is not recorded either way.
+    #
+    # This is the case that produced the project's first wrong commit --
+    # pneumonia at 78% -- and the reason the vocabulary gained
+    # ``imaging:pericardial_effusion`` and ``exam:ecg_pr_depression``
+    # afterwards. Both are recorded below because the report states both.
+    # The order of events matters and is stated: the case was added, run and
+    # written up as a wrong commit under the vocabulary of the time; the two
+    # concepts were added after, as a vocabulary correction covering two of
+    # the four ESC diagnostic criteria, with the rival cells invented and
+    # counted. Whatever the model does with them now is reported as a second
+    # measurement, not as the first one repaired.
     Case(
         case_id="pmc-13305284",
         presenting_complaint=(
@@ -771,6 +782,11 @@ REAL_CASES: tuple[Case, ...] = (
             "imaging:cxr_consolidation": True,
             # "Computed tomography excluded pulmonary embolism"
             "imaging:ctpa_filling_defect": False,
+            # "a large pericardial effusion" on chest imaging, confirmed on
+            # echocardiography with features of haemodynamic compromise
+            "imaging:pericardial_effusion": True,
+            # "sinus tachycardia with subtle PR depression"
+            "exam:ecg_pr_depression": True,
         },
         vocabulary=frozenset(),
     ),

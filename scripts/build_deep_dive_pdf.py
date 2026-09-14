@@ -683,8 +683,7 @@ story += [Spacer(1, 0.2 * cm)]
 story += [row([
     card(f"{PARAMS.total} parameters nobody was counting", [
         "The provenance report covered likelihoods and priors. It did not count "
-        "5 correlation weights, 27 acquisition costs, 5 gate thresholds, "
-        "3 budget limits and 7 selector constants.",
+        + ", ".join(f"{g.count} {g.name}" for g in PARAMS.groups) + ".",
         "The scope document already said why that is dangerous, about the priors: "
         "<i>an invented number the audit cannot name reads as an absence of a "
         "problem.</i> The hole was closed there and nobody asked whether it existed "
@@ -920,10 +919,11 @@ story += [Spacer(1, 0.2 * cm)]
 story += [row([
     card("Confident errors the gate cannot catch", [
         "Condition 6 asks whether the findings are explained by <i>something</i>. In a "
-        "masquerade they are. It has now happened on a real patient: a pericarditis "
-        "committed as pneumonia at 78%, because the findings that decide the case have "
-        "no concept in this vocabulary. <b>No threshold separates it from a correct "
-        "commit</b>, and the fix is vocabulary, not tuning."], PLUM_BG, PLUM),
+        "masquerade they are. It has happened on a real patient: a pericarditis "
+        "committed as pneumonia at 78%. Two missing concepts were added and sourced; "
+        "with both findings visible pericarditis rises from 2% to 15% and the case is "
+        "<b>still wrong</b> &mdash; and the loop never asks for either, because a "
+        "myopic selector does not investigate a diagnosis at 4%."], PLUM_BG, PLUM),
     card("Calibration is not fitted at all", [
         "The scaler refuses below 30 labelled cases, correctly. The calibration split "
         "is three, so the temperature is the untouched default.",
