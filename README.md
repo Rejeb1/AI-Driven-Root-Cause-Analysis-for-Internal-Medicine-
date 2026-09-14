@@ -21,7 +21,7 @@ python3 -m pytest tests/ -q          # 159 pass, 2 skip
 python3 scripts/run_eval.py          # evaluation report, with the required baselines
 python3 scripts/demo.py              # one consultation, as a readable transcript
 python3 scripts/consult.py           # a live consultation -- you play the patient
-python3 scripts/eval_real_cases.py   # 10 real patients from published PMC case reports
+python3 scripts/eval_real_cases.py   # 18 real patients from published PMC case reports
 ```
 
 **Browser UI.** `scripts/consult.py` on a web page instead of a terminal --
@@ -82,16 +82,18 @@ output rather than resting on someone having remembered.
 extracting. Keep `--limit` small at first -- the loop runs about a second per
 case and the baselines add two more passes over the same cases.
 
-**Real-case evaluation.** `dxagent.datasets.real_cases` holds 10 patients
+**Real-case evaluation.** `dxagent.datasets.real_cases` holds 18 patients
 hand-extracted from open-access PMC case reports -- not invented, not
 generated, never seen by the knowledge base. This is a different, much
 smaller thing than the 10 fixture cases: it exists to put a few real
 data points in front of the system, not to support any accuracy claim at
-n=10. No clinician reviewed the extraction. See the module docstring for
-exactly which reports, how each finding was read from the source text, and
-three candidates considered and deliberately excluded -- two whose true
-diagnosis falls outside or across the modelled 8, and one whose full text
-could not be reached.
+n=18. No clinician reviewed the extraction. The current result is 2 correct
+commits, **1 wrong commit**, and 15 escalations; the wrong one is a
+pericarditis whose deciding findings have no concept in this vocabulary,
+and it is kept. See the module docstring for exactly which reports, how
+each finding was read from the source text, the selection rule the second
+eight were chosen under, and every candidate considered and excluded with
+the reason.
 
 **PHI screening.** `synthesis.phi_scan` (regex, structured identifiers) runs
 with nothing installed. The NER layer that also catches a name in prose

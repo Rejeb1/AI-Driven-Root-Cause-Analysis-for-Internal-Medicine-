@@ -555,10 +555,11 @@ is not inert; it is load-bearing enough to bury a real pneumonia. It is
 recorded rather than adjusted, since lowering it because one case would
 benefit is the tuning this project refuses.
 
-Zero wrong commits is the property that matters, because calibrated abstention
-is this project's actual thesis. Three of eight is not a good accuracy number
-and is not offered as one — n=10, hand-picked for clarity. It is reported this
-small on purpose rather than not reported at all.
+Zero wrong commits was the property that mattered at n=10, because calibrated
+abstention is this project's actual thesis. Three of eight is not a good
+accuracy number and was not offered as one — hand-picked for clarity, reported
+this small on purpose rather than not reported at all. The second pass below
+took the count to eighteen and the property away.
 
 Every remaining escalation now names what it sought and could not get, e.g.
 *"Pulmonary embolism exclusion could not be completed — sought but not
@@ -569,6 +570,48 @@ simply absent from the document. A finding a report never mentions means no test
 was performed — it should cost neither a turn nor money. With that corrected, no
 case stops for running out of money, and every escalation is now a statement
 about the evidence rather than about the harness.
+
+### Eight more real patients, and the first wrong commit
+
+Ten was the weakest number in the project, so a second pass added one case
+per diagnosis under a rule written down before any full text was read: one
+title-restricted PMC query per condition, candidates taken **in order**, each
+accepted or rejected on four stated criteria, every rejection logged with its
+letter, nothing kept or discarded on how the model did. The log is in
+`real_cases.py` — twenty-seven rejections, most of them mimics ("X masquerading
+as acute coronary syndrome") or in-patient events that were never a
+presentation. The whole pass ran before any of the eight touched the model.
+
+The result on the eight new cases: **0 correct commits, 1 wrong commit,
+7 escalations**, with the true diagnosis ranked first in four of the seven.
+Across all eighteen: 2 correct, **1 wrong**, 15 escalations.
+
+The wrong one is a 23-year-old woman with a week of pleuritic chest pain,
+tachycardia, a white count of 13.0, a "pulmonary infiltrate" on chest imaging,
+and a CT that excluded embolism. The model committed to pneumonia at 78%. Her
+diagnosis was pericarditis, confirmed on tissue after a large pericardial
+effusion was drained through a surgical window. The knowledge base has no
+concept for a pericardial effusion, cardiomegaly, or PR depression — the
+three findings that decide the case — so pneumonia explained everything the
+model could see, and the gate's sixth condition, which asks whether the
+findings are explained by *something*, was satisfied. This is exactly the
+confident error §6 says the gate cannot catch, stated there in the abstract;
+here it is on a real patient. Nothing about the extraction is
+strained: "infiltrate" was mapped to consolidation the same way the first
+pass mapped "basal infiltrate", and the report says what it says.
+
+The rule was to keep whatever came, and this is kept. It is also the most
+useful data point in the set: the first-pass claim of zero wrong commits was
+a statement about ten patients whose deciding findings happened to be in the
+vocabulary, and one patient whose deciding finding is not was enough to end
+it. Ten cases could not show that. Eighteen did.
+
+Two of the eight are hard on purpose because the rule chose them, not because
+anyone did: a pulmonary embolism with no dyspnoea, no tachycardia, no hypoxia,
+a normal ECG and a normal radiograph (pericarditis ranked first; embolism
+third), and an NSTEMI with no chest discomfort at all (correctly ranked first,
+escalated at 53% with embolism at 11%). Neither was selected for being
+difficult. The rule took the second and ninth results of two queries.
 
 ### A configuration inconsistency found while writing this, and fixed
 

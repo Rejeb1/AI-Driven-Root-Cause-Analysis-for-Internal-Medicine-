@@ -927,8 +927,18 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
             and outcome.prediction != case.diagnosis
         )
 
-    assert wrong_commits(True) == 0
-    assert wrong_commits(False) == 3
+    # Re-measured when the real-case set went from ten to eighteen. The
+    # shipped configuration now commits one wrong -- a pericarditis read as
+    # pneumonia, on findings whose deciding sign has no concept here -- and
+    # the unweighted one four. The gap that decides this test is unchanged
+    # in direction and wider in count; the zero is gone and is not coming
+    # back by adjusting anything, which is the point of pinning the number
+    # that was measured rather than the one that was hoped for.
+    #
+    #     correlated=False   real (n=18): 3 correct, 4 WRONG commits
+    #     correlated=True    real (n=18): 2 correct, 1 wrong commit
+    assert wrong_commits(True) == 1
+    assert wrong_commits(False) == 4
 
 
 def _superseded_test_decisive_tests_do_not_repair(kb, cases):
@@ -3181,8 +3191,11 @@ def test_reading_unlisted_findings_as_atypical_buys_rank_and_costs_safety():
                 bad += outcome.prediction != case.diagnosis
         return bad
 
-    assert wrong_commits(False) == 0, "the shipped backoff commits nothing wrong"
-    assert wrong_commits(True) > 0, (
+    # At n=18 the shipped backoff commits one wrong (the pericarditis read as
+    # pneumonia; see real_cases.py) and the atypical backoff four. The trade
+    # this test records is the *difference*, and it is as wide as it was.
+    assert wrong_commits(False) == 1, "the shipped backoff's one wrong commit"
+    assert wrong_commits(True) > wrong_commits(False), (
         "if this stops being true the trade-off has changed and the default "
         "is worth revisiting -- re-measure rather than flipping the flag"
     )
@@ -3235,7 +3248,9 @@ def test_completing_the_grid_buys_rank_and_costs_one_wrong_commit():
     off_wrong, off_rank = measure(False)
     on_wrong, on_rank = measure(True)
 
-    assert off_wrong == 0, "the shipped grid still commits nothing wrong"
+    # At n=18: shipped 1 wrong, mean rank 3.11; complete grid 2 wrong, mean
+    # rank 2.17. Same trade as at n=10, one wrong commit further along.
+    assert off_wrong == 1, "the shipped grid's one wrong commit (n=18)"
     assert on_wrong > off_wrong, "completing the grid trades an abstention away"
     assert on_rank < off_rank, "and buys ranking with it"
 

@@ -77,7 +77,7 @@ def main() -> int:
         "Each is one real data point, not a benchmark.\n"
     ))
 
-    correct = 0
+    correct = wrong = 0
     escalation_reasons: list[tuple[str, str]] = []
     for case in REAL_CASES:
         outcome = agent.run(case)
@@ -93,6 +93,7 @@ def main() -> int:
         if outcome.verdict is Verdict.COMMITTED:
             got_it = outcome.prediction == case.diagnosis
             correct += int(got_it)
+            wrong += int(not got_it)
             print(
                 f"  system said:    {outcome.prediction.replace('_', ' ')} "
                 f"({outcome.confidence:.0%})  "
@@ -113,11 +114,16 @@ def main() -> int:
         print(f"  differential:   {top3}")
 
     print(f"\n{RULE}")
-    print(f"  {correct} committed and correct, out of {len(REAL_CASES)} real cases.")
+    print(
+        f"  {correct} committed and correct, {wrong} committed and WRONG, "
+        f"{len(REAL_CASES) - correct - wrong} escalated, out of "
+        f"{len(REAL_CASES)} real cases."
+    )
     print(wrap(
-        f"  Not a benchmark result -- n={len(REAL_CASES)}, hand-picked for "
-        "clarity, no clinician review of the extraction. Reported this "
-        "small on purpose rather than not reported at all.",
+        f"  Not a benchmark result -- n={len(REAL_CASES)}: ten hand-picked, "
+        "eight chosen by a rule fixed before any was read, no clinician "
+        "review of the extraction. Reported this small on purpose rather "
+        "than not reported at all.",
         indent="  ",
     ))
     if escalation_reasons:

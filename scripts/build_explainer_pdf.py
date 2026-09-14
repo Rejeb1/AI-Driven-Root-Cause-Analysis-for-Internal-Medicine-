@@ -286,16 +286,18 @@ story += [table(realcases, [6.9*cm, 3.9*cm, 6.7*cm], header_bg=BLUE, small=True)
 
 story += [Spacer(1, 0.25*cm),
           Paragraph(
-    f"{F.real_committed_wrong} wrong commits &mdash; that is the number to look at", S["h2"]),
+    f"{F.real_committed_wrong} wrong commit{'' if F.real_committed_wrong == 1 else 's'} "
+    "&mdash; that is the number to look at", S["h2"]),
           Paragraph(
     "Calibrated abstention is this project's claim, so the count that matters is not how many "
     f"cases it answered ({F.real_committed_correct} of {F.real_total}) but how many it answered "
-    "wrongly. Every escalation names what it sought and could not get: several of these reports "
-    "simply never recorded a D-dimer, and the agent says so rather than guessing around the gap. "
-    "An earlier version of this page reported all four then-available cases as escalated on "
-    "exhausted budgets; that was a harness artefact &mdash; the loop was charging turns and money "
-    "for findings the source never recorded &mdash; and fixing it is what turned three of these "
-    "into commits.", S["body"])]
+    "wrongly. For the first ten patients that number was zero. The second pass of eight, chosen "
+    "under a rule fixed before any full text was read, produced one: a pericarditis committed as "
+    "pneumonia at 78%, because the findings that decide the case &mdash; a large pericardial "
+    "effusion, cardiomegaly, PR depression &mdash; have no concept in this vocabulary, and "
+    "pneumonia explained everything the model could see. It is the confident error the gate "
+    "was always documented as unable to catch, now on a real patient, and it is kept.",
+    S["body"])]
 
 story += [Spacer(1, 0.15*cm),
           Paragraph(

@@ -23,6 +23,7 @@ from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.platypus import (
+    KeepTogether,
     PageBreak,
     Paragraph,
     SimpleDocTemplate,
@@ -793,12 +794,13 @@ story += [row([
 story += [PageBreak()]
 
 # ========================================================== 7. REAL PATIENTS
-story += [Paragraph("7 &nbsp; The ten real patients", S["h1"]), Rule(FULLW, TEAL),
-          Spacer(1, 0.3 * cm)]
+story += [Paragraph(f"7 &nbsp; The {F.real_total} real patients", S["h1"]),
+          Rule(FULLW, TEAL), Spacer(1, 0.3 * cm)]
 story += [Paragraph(
-    "The only evidence here that comes from actual people. Ten is far too few to "
-    "support an accuracy claim, and it is reported this small on purpose rather than "
-    "not reported at all.", S["body"])]
+    "The only evidence here that comes from actual people: ten in a first pass, eight "
+    "more in a second under a rule fixed before any full text was read. Still far too "
+    "few to support an accuracy claim, and reported this small on purpose rather than "
+    "not reported at all.", S["small"])]
 
 _rows = [["Case", "True diagnosis", "Verdict", "Why it stopped"]]
 for _c, _t, _r in F.real_rows:
@@ -809,24 +811,31 @@ story += [table(_rows, [5.6 * cm, 3.2 * cm, 3.1 * cm, FULLW - 11.9 * cm],
 
 story += [Spacer(1, 0.25 * cm)]
 story += [Paragraph(
-    f"<b>{F.real_committed_wrong} wrong commits &mdash; that is the number to look "
+    f"<b>{F.real_committed_wrong} wrong commit &mdash; that is the number to look "
     "at.</b> Calibrated abstention is the claim, so the count that matters is not how "
     f"many it answered ({F.real_committed_correct} of {F.real_total}) but how many it "
-    "answered wrongly. Every escalation names what it sought and could not get.",
-    S["body"])]
+    "answered wrongly. For the first ten patients that number was zero, and the "
+    "documents said so. The second pass took it away.", S["body"])]
 story += [quote(
-    "Over a sustained sourcing run, correct answers fell from 3 to "
-    f"{F.real_committed_correct} while wrong commits stayed at "
-    f"{F.real_committed_wrong}. Every step replaced an invented number with a measured "
-    "one; the aggregate is a system that answers fewer real patients. Two readings are "
-    "available and both are stated: the model stopped overstating evidence it never "
-    "had &mdash; several corrections were literally &ldquo;this test is less "
-    "conclusive than we claimed&rdquo; &mdash; or ten hand-picked patients are too few "
-    "for a two-case difference to mean anything. The second is almost certainly also "
-    "true, which is itself a finding about the evaluation.", AMBER)]
+    "A 23-year-old woman, a week of pleuritic chest pain, tachycardic, white count "
+    "13.0, a &ldquo;pulmonary infiltrate&rdquo; on chest imaging, CT negative for "
+    "embolism. The model committed to pneumonia at 78%. She had pericarditis, "
+    "confirmed on tissue after a large pericardial effusion was drained through a "
+    "surgical window. The knowledge base has no concept for a pericardial effusion, "
+    "cardiomegaly or PR depression &mdash; the three findings that decide the case "
+    "&mdash; so pneumonia explained everything it could see, and the gate's sixth "
+    "condition, which asks whether the findings are explained by <i>something</i>, "
+    "was satisfied. Section 8 describes this failure in the abstract. This is it on a "
+    "real patient, and the rule was to keep whatever came.", RED)]
+story += [Paragraph(
+    "Nothing about the extraction is strained: &ldquo;infiltrate&rdquo; was mapped to "
+    "consolidation the same way the first pass mapped &ldquo;basal infiltrate&rdquo;, "
+    "and the report says what it says. The first-pass claim of zero wrong commits was "
+    "a statement about ten patients whose deciding findings happened to be in the "
+    "vocabulary. One patient whose deciding finding is not was enough to end it.",
+    S["small"])]
 
-story += [Paragraph("How these ten were built, and why there are only ten", S["h2"])]
-story += [row([
+story += [KeepTogether([Paragraph("How the eighteen were chosen", S["h2"]), row([
     card("The extraction protocol", [
         "Each case comes from an open-access PMC case report with a confirmed final "
         "diagnosis. Findings are transcribed as present, absent, or "
@@ -835,26 +844,30 @@ story += [row([
         "<font color='#5d6b7a'>Only what the source states explicitly becomes a "
         "True or False. Silence stays silence, because reading it as a negative "
         "would manufacture data the report never gave.</font>"], TEAL_BG, TEAL),
-    card("How they were chosen", [
-        "The first four were picked to be genuinely hard. The next four were picked "
-        "for the opposite reason &mdash; clear-cut, explicit vitals &mdash; so the set "
-        "is not made only of worst cases. The last two went to the commonest causes on "
-        "epidemiology, under a rule fixed <i>before</i> any of them was run.",
-        "<font color='#5d6b7a'>Two candidates were rejected during that pass and both "
-        "rejections are written down, one for a label that was a judgement call and "
-        "one whose full text sat behind a verification page.</font>"],
+    card("First pass: ten", [
+        "Four picked to be genuinely hard, four for the opposite reason &mdash; "
+        "clear-cut, explicit vitals &mdash; and two more for the commonest causes on "
+        "epidemiology, under a rule fixed <i>before</i> any was run.",
+        "<font color='#5d6b7a'>Two candidates rejected, both written down.</font>"],
         BLUE_BG, BLUE),
-])]
+    card("Second pass: eight, one per diagnosis", [
+        "One title-restricted PMC query per condition, candidates taken <b>in "
+        "order</b>, each accepted or rejected on four stated criteria, every rejection "
+        "logged with its letter. All eight were added before any touched the model.",
+        "<font color='#5d6b7a'>27 rejections, mostly mimics and in-patient events "
+        "that were never a presentation. Result: 0 correct, 1 wrong, 7 escalations "
+        "with the truth ranked first in four.</font>"], PLUM_BG, PLUM),
+])])]
 story += [Spacer(1, 0.2 * cm)]
 _esc = [r for _, _, r in F.real_rows if r.startswith("Escalated")]
 _red = sum("not excluded" in r for r in _esc)
 _budget = sum("budget" in r for r in _esc)
 _stuck = len(_esc) - _red - _budget
 story += [Paragraph(
-    f"Of {len(_esc)} escalations, {_red} stop because acute coronary syndrome is still "
-    f"above the red-flag tolerance and {_stuck + _budget} because the top hypothesis is "
-    "stuck between about 27% and 49% against a 65% floor with nothing informative "
-    "left to ask. That last column used to read differently. The packet appends a "
+    f"Of {len(_esc)} escalations, {_red} stop because a time-critical diagnosis is "
+    f"still above the red-flag tolerance and {_stuck + _budget} because the top "
+    "hypothesis is stuck between about 27% and 53% against a 65% floor with nothing "
+    "informative left to ask. That last column used to read differently. The packet appends a "
     "note when a workup item was sought and not recorded &mdash; <i>D-dimer, not "
     "available</i> on most of these &mdash; and the engines once put the blocker "
     "last, so the note was what a reader saw first and took for the cause. It was "
@@ -907,9 +920,10 @@ story += [Spacer(1, 0.2 * cm)]
 story += [row([
     card("Confident errors the gate cannot catch", [
         "Condition 6 asks whether the findings are explained by <i>something</i>. In a "
-        "masquerade they are. On the one wrong commit the hard cases produced, the "
-        "wrong diagnosis fitted the evidence <b>better than the right diagnosis fitted "
-        "any other case</b>. No threshold separates them."], PLUM_BG, PLUM),
+        "masquerade they are. It has now happened on a real patient: a pericarditis "
+        "committed as pneumonia at 78%, because the findings that decide the case have "
+        "no concept in this vocabulary. <b>No threshold separates it from a correct "
+        "commit</b>, and the fix is vocabulary, not tuning."], PLUM_BG, PLUM),
     card("Calibration is not fitted at all", [
         "The scaler refuses below 30 labelled cases, correctly. The calibration split "
         "is three, so the temperature is the untouched default.",
@@ -972,10 +986,13 @@ story += [row([
         f"{F.invented} of {F.total} likelihoods invented, {PARAMS.total} further "
         "parameters invented, reported on every run, with a regression test that "
         "fails when the documents drift from the live figure."], GREEN_BG, GREEN),
-    card("It refuses rather than guesses", [
-        f"{F.real_committed_wrong} wrong commits across {F.real_total} real patients "
-        "and 5 deliberately hard ones. Every escalation names the workup it sought and "
-        "could not get."], GREEN_BG, GREEN),
+    card("It mostly refuses rather than guesses", [
+        f"{F.real_committed_wrong} wrong commit across {F.real_total} real patients "
+        f"and 5 deliberately hard ones, against "
+        f"{F.real_total - F.real_committed_correct - F.real_committed_wrong} escalations "
+        "that each name what was sought and not obtained. The one is written up, not "
+        "explained away."],
+        GREEN_BG, GREEN),
 ])]
 story += [Spacer(1, 0.2 * cm)]
 story += [row([
@@ -1025,7 +1042,7 @@ story += [Paragraph(
 story += [Spacer(1, 0.5 * cm)]
 story += [row([card("A closing caution", [
     "Nothing here has been reviewed by a clinician, most of the knowledge base is "
-    "invented, and the strongest evidence in the project is ten patients. "
+    "invented, and the strongest evidence in the project is eighteen patients. "
     "<b>This is not a diagnostic tool and must not be used as one.</b> What it is, is "
     "a system that will tell you exactly which parts of itself you should not trust "
     "&mdash; and that is the part worth keeping."], RED_BG, RED)])]
