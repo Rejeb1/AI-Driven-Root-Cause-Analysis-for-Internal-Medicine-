@@ -399,8 +399,11 @@ story += [Spacer(1, 0.25*cm),
     "that would otherwise be entirely invented &mdash; not evidence of real-world accuracy in "
     "either direction.", S["small"])]
 
-OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                   "dxagent_what_i_built.pdf")
+# An explicit output path lets the test suite render into a temporary
+# directory without overwriting the committed PDF on every run.
+OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "dxagent_what_i_built.pdf")
 doc = SimpleDocTemplate(OUT, pagesize=LETTER,
                         leftMargin=1.7*cm, rightMargin=1.7*cm,
                         topMargin=1.9*cm, bottomMargin=1.6*cm,

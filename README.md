@@ -152,6 +152,15 @@ instead of it, so their disagreement stays visible to the gate.
 | `DESIGN.md` | The running record of what was measured, including the conclusions later measurements took back |
 | `RESPONSIBLE_AI.md` | Privacy, safety and risk, with the limitations stated as limitations |
 | `VOCABULARY.md` | The concept layer: HPO, UMLS CUIs, SNOMED CT codes |
+| `dxagent_what_i_built.pdf` | Eight-page explainer: what this is, for someone with ten minutes |
+| `dxagent_deep_dive.pdf` | Fourteen-page deep dive: how it works, what was measured, what is wrong with it |
+
+Both PDFs read every figure from the code when they are built -- the counts,
+the real-case table, the baseline comparison, a case traced turn by turn --
+so a regenerated PDF cannot disagree with the repository it describes.
+Regenerate with `python3 scripts/build_explainer_pdf.py` and
+`python3 scripts/build_deep_dive_pdf.py`; a test builds both into a temporary
+directory so a rename elsewhere cannot break them silently.
 
 ## Design traceability
 

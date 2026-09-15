@@ -1048,7 +1048,9 @@ story += [row([card("A closing caution", [
     "&mdash; and that is the part worth keeping."], RED_BG, RED)])]
 
 
-OUT = str(HERE.parent / "dxagent_deep_dive.pdf")
+# An explicit output path lets the test suite render into a temporary
+# directory without overwriting the committed PDF on every run.
+OUT = sys.argv[1] if len(sys.argv) > 1 else str(HERE.parent / "dxagent_deep_dive.pdf")
 
 
 def on_page(c, d):

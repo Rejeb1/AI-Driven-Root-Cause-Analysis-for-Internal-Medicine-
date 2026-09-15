@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import math
 import re
+import sys
 
 import pytest
 
@@ -3377,3 +3378,32 @@ def test_default_cost_accounting_is_unchanged_by_the_new_flag(kb, cases):
         ).run(case)
         assert a.budget_spent == b.budget_spent
         assert a.differential.top.label == b.differential.top.label
+
+
+@pytest.mark.parametrize(
+    "script", ["build_explainer_pdf.py", "build_deep_dive_pdf.py"]
+)
+def test_the_pdf_builders_still_build(script, tmp_path):
+    """The two PDFs read their figures live, which is only a virtue while the
+    scripts still run.
+
+    Between them they reach into a dozen module members -- ORDERING_CLAIMS,
+    NARRATIVE_RUBRIC, real_rows, escalation.reason, parameter_report and so
+    on -- and a rename anywhere breaks a document that looks finished until
+    someone happens to regenerate it. This runs each builder into a temporary
+    directory, so the committed PDFs are untouched, and asks only that it
+    exits cleanly and writes a PDF. Slow (each builder runs the agents), so
+    it sits last.
+    """
+    import subprocess
+    from pathlib import Path
+
+    pytest.importorskip("reportlab")
+    root = Path(__file__).resolve().parent.parent
+    out = tmp_path / script.replace(".py", ".pdf")
+    done = subprocess.run(
+        [sys.executable, str(root / "scripts" / script), str(out)],
+        capture_output=True, text=True, timeout=600, cwd=root,
+    )
+    assert done.returncode == 0, done.stderr[-2000:]
+    assert out.exists() and out.read_bytes()[:5] == b"%PDF-"
