@@ -707,15 +707,19 @@ This rule was written after seeing the case it fixes, which is exactly when
 to be most suspicious, so what keeps it on the right side of that line is
 stated rather than assumed: it transcribes a Class I recommendation, it
 reads the presentation and never the posterior, it is not a threshold or a
-cell value, and its effect on every other set's accuracy is nil. Its effect
-on cost is not: it arms on every pleuritic pneumonia and embolism and orders
-an echocardiogram on them, and mean spend on the fixtures rises from 17.4 to
-23.2 (+33%), on the hard cases from 14.8 to 18.0, for no change in any
-verdict. On the real cases it costs nothing only because a test the report
-never recorded is free there. That is the trade every presentation-triggered
-workup makes — unnecessary tests against a missed diagnosis — and it is a
-clinical policy decision awaiting a clinician. The real test is the next
-pericarditis chosen by rule, not this one.
+cell value, and its effect on every other set is small and measured — and
+the first measurement of it here was wrong. An earlier draft of this
+paragraph put the rule's cost at +33% on the fixtures; that figure compared
+*all* workups off against all on, and charged the PE and ACS workups'
+D-dimers and CT angiograms to the pericarditis rule. Measured alone: the
+fixtures go from 21.7 to 23.2 (+7%), the hard cases from 15.6 to 18.0, the
+real cases from 17.6 to 17.5. And without it the fixtures carry a wrong
+commit — fx-009, an embolism committed as pneumonia at 68% — that the
+rule's ECG prevents by keeping the loop asking. Incidental, and still a
+prevented wrong commit. A staged version (ECG on pleuritic pain, echo only
+on a positive) was measured and saved nothing, so the flat guideline
+transcription stays. It is a clinical policy decision awaiting a clinician.
+The real test is the next pericarditis chosen by rule, not this one.
 
 **That test was run.** The same query, the same four criteria, continued
 from where the second pass stopped; the first acceptance was candidate 5,
