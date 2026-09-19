@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 110 of its 176 likelihoods are invented, no
+an unfinished feature — because 108 of its 177 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -131,15 +131,16 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**110 of 176 likelihoods are invented.** That is the number, stated on its own
+**108 of 177 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project. It was 89 of
 153 until the pericardial columns were added (§5): two concepts the real cases
 showed were missing, two sourced cells for pericarditis, and 21 invented rival
 cells without which the new concepts would discriminate nothing. Coverage went
 *down*, from 42% to 38%, and that is the honest direction — the count now
-includes claims the model needs to make.
+includes claims the model needs to make. A pneumonia sourcing pass (§5) then
+took it to 39%.
 
-The remaining 66 carry a citation: 10 counted from the DDXPlus simulator, 43
+The remaining 69 carry a citation: 9 counted from the DDXPlus simulator, 47
 from published cohorts and StatPearls, and 13 converted from Merck Manual
 narrative phrases.
 The eight disease priors are separately sourced, 8 of 8, and reported on their
@@ -312,6 +313,12 @@ on the deliberately weakened arm. The durable claim is not "correlation
 weighting is worth *n* cases"; it is that a mechanism's value is measured
 against a specific knowledge base and expires when that base changes.
 
+It expired once more while this document was being finished. The one
+measurement that had never reversed — that without the weighting the real
+patients drew three wrong commits, and with it none — reversed after a
+pneumonia sourcing pass; §5 has the figures. The mechanism stays, for the
+reason it was added. The claim that it was load-bearing does not.
+
 ### An overconfidence claim I made and retracted
 
 I wrote in DESIGN.md, and in a commit message, that correlation weighting was
@@ -383,7 +390,7 @@ celebrate.
 ### Nothing was checking the numbers themselves
 
 Every test in this project checks outputs. The knowledge base is inputs, and
-for most of its life nothing looked at it: 110 of 176 likelihoods are invented,
+for most of its life nothing looked at it: 108 of 177 likelihoods are invented,
 and the only scrutiny they got was whichever ones happened to change a case.
 
 Reading each column sorted, against what the diseases actually do, found five
@@ -705,6 +712,54 @@ pleuritic pneumonia and embolism and orders an echocardiogram on them — the
 same cost the PE workup already pays, and a clinical policy decision
 awaiting a clinician. The real test is the next pericarditis chosen by rule,
 not this one.
+
+### Separating the three dyspnoea diseases: one sourcing pass, and a claim it took down
+
+Fifteen of eighteen real cases escalated because the knowledge base could
+not separate pneumonia, pulmonary oedema and COPD on a thin record. The
+cells doing that work are mostly invented, so the honest move was to source
+them, and the cohort already cited for pneumonia's rest dyspnoea — 265
+confirmed pneumonias among 954 acutely admitted patients, PMC11141191 —
+reports the rest of its Table 1. Four cells taken: **productive cough**
+0.85 → 0.55 (a real cohort replacing the simulator, as Miniati did for
+embolism), **leg swelling** 0.05 → 0.04, **smoking history** 0.74 (the
+first cell for that concept outside COPD and asthma), and **hypoxia** 0.45 →
+0.61 — the column called structurally unsourceable because cohorts enrol on
+saturation, except that this one enrolled on suspected infection, so for
+pneumonia it is not circular; one point off the stated threshold, listed
+in the deviations. Four figures refused with the reason recorded: two
+bidirectional cutoffs, one auscultation finding broader than crackles, and
+a measured-at-admission fever of 29% that conflicts with a cell defined as
+measured *or* reported and is written down as a conflict rather than over
+the value.
+
+For COPD the only open-access cohort found reports medians and quartiles,
+and this file already refuses to turn a quartile into a point estimate. The
+bound itself is distribution-free, so it went into the audit instead:
+`QUARTILE_BOUNDS` in `plausibility_check.py` now checks that the invented
+COPD tachycardia and white-count cells sit inside the [0.25, 0.50] that 437
+hospitalised exacerbations imply. Both do. Pulmonary oedema got nothing new.
+
+Measured on every set: commits unchanged at 4 correct, 0 wrong; held-out
+ECE 0.335 → 0.286, Brier 0.159 → 0.170; real-case mean rank 2.33 → 2.50,
+because the second pneumonia lost her first place — a pneumonia that
+expectorates only half the time is a weaker explanation of a productive
+cough. 177 likelihoods, 108 invented, 39% sourced.
+
+**And this pass took down a claim §4 relied on.** The case for correlation
+weighting rested on real patients: "three wrong commits against none, and
+that gap has held or widened through every sourcing pass." After this pass
+the unweighted configuration commits nothing wrong on the eighteen real
+cases either — 5 correct, 0 wrong against the shipped 4 correct, 0 wrong.
+The three wrong commits it used to produce were being driven by an
+invented pneumonia cell, and the sourcing that corrected it removed the
+gap that had justified the mechanism. Correlation weighting stays on: it
+still buys the better Brier score on the held-out split (0.170 against
+0.208) and it is the principled correction for counting one clinical
+picture four times. But it stays for the reason it was added, not for a
+protective gap that the only instrument able to see it now says is not
+there. The test that pinned three-against-zero now pins zero-against-zero
+and says why.
 
 ### A configuration inconsistency found while writing this, and fixed
 

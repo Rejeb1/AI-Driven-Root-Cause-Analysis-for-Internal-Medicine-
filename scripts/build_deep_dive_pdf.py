@@ -1025,12 +1025,15 @@ story += [Spacer(1, 0.2 * cm)]
 story += [row([
     card("It records the conclusions it took back", [
         "A correlation measurement that reversed eight times before anyone recognised "
-        "the instrument was spent. A repair credited to sourcing that was partly "
-        "resting on an indefensible number. A published &ldquo;finding&rdquo; that "
-        "was a mapping bug."], PLUM_BG, PLUM),
+        "the instrument was spent &mdash; and the one that never had, three wrong "
+        "commits against none on real patients, which a pneumonia sourcing pass took "
+        "to none against none. A published &ldquo;finding&rdquo; that was a mapping "
+        "bug. A claim of zero wrong commits that lasted until the eighteenth patient."],
+        PLUM_BG, PLUM),
     card("It checks its own inputs", [
         f"{ORDER_CLAIMS} ordering claims over {ORDER_PAIRS} comparisons, "
-        f"{len(PC.CLAIMS)} direction claims from the scope document, and "
+        f"{len(PC.CLAIMS)} direction claims from the scope document, "
+        f"{len(PC.QUARTILE_BOUNDS)} distribution-free bounds from cohort quartiles, and "
         f"{len(OPERATIONAL_DEFINITIONS)} concepts given the operational threshold "
         "that makes sourcing possible at all."], TEAL_BG, TEAL),
 ])]

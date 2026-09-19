@@ -305,6 +305,63 @@ def ordering_failures(kb):
     return out
 
 
+# Distribution-free bounds on invented cells, from cohorts that report a
+# median and interquartile range rather than a fraction above a threshold.
+# Where the threshold falls among the quartiles bounds the fraction without
+# any distributional assumption: above Q3 means fewer than a quarter exceed
+# it, between the median and Q3 means between a quarter and a half. fixtures.py
+# refuses to turn such a bound into a point estimate -- that would need a
+# log-normal assumption no other cell depends on -- and that refusal stands.
+# What a bound can do is check an invented value, the way an ordering claim
+# does: constrain without asserting a magnitude.
+#
+#   (disease, concept, low, high, source, what the quartiles were)
+QUARTILE_BOUNDS: tuple[tuple[str, str, float, float, str, str], ...] = (
+    ("copd_exacerbation", "exam:tachycardia", 0.25, 0.50,
+     "PMC6307152 Table 2, 437 hospitalised COPD exacerbations, admission",
+     "heart rate median 91.5-95, IQR to 102.5-108 bpm; the 100 cutoff sits "
+     "between the median and Q3 in both arms"),
+    ("copd_exacerbation", "lab:raised_wcc", 0.25, 0.50,
+     "PMC6307152 Table 2, 437 hospitalised COPD exacerbations, admission",
+     "leucocytes median 10.1, IQR 7.7-14 x10^9/L; the 11 cutoff sits between "
+     "the median and Q3"),
+    # Not written, and recorded: the same table has admission temperature at
+    # median 36.4 with Q3 37.0, so fewer than a quarter were febrile on
+    # measurement. That bounds measured fever, and this project's fever
+    # concept is measured OR reported. Not a bound on the cell.
+)
+
+
+def bound_failures(kb) -> list[tuple[str, str, float, float, float]]:
+    """Invented or sourced cells outside a distribution-free bound."""
+    out = []
+    for label, concept, low, high, _src, _why in QUARTILE_BOUNDS:
+        entry = kb.get(label)
+        if entry is None or concept not in entry.features:
+            continue
+        value = entry.features[concept]
+        if not (low <= value <= high):
+            out.append((label, concept, value, low, high))
+    return out
+
+
+def report_bounds(kb) -> int:
+    """Print the quartile-bound audit. Returns the number of failures."""
+    failures = bound_failures(kb)
+    print()
+    print(f"{len(QUARTILE_BOUNDS)} distribution-free bounds from cohort quartiles")
+    print("  a bound checks an invented value without replacing it -- see")
+    print("  QUARTILE_BOUNDS for the sources and where each cutoff fell")
+    for label, concept, low, high, _src, _why in QUARTILE_BOUNDS:
+        entry = kb.get(label)
+        value = entry.features.get(concept) if entry else None
+        mark = "  " if value is not None and low <= value <= high else "!!"
+        shown = f"{value:.2f}" if value is not None else "--"
+        print(f"  {mark} {label:<28} {concept:<20} {shown} in [{low:.2f}, {high:.2f}]")
+    print(f"{len(failures)} outside their bound")
+    return len(failures)
+
+
 def report_ordering(kb) -> int:
     """Print the ordering audit. Returns the number of unexpected failures."""
     import textwrap
@@ -381,7 +438,7 @@ def main() -> int:
         print("None of the checked claims are contradicted. This is not a")
         print("validation of the 90-odd likelihoods with no stated claim to")
         print("check against -- see the module docstring.")
-        return report_ordering(kb)
+        return report_ordering(kb) + report_bounds(kb)
 
     print(f"{'disease':<30} {'concept':<28} {'says':<8} {'LR':>6}  tier")
     print("-" * 84)
@@ -395,7 +452,7 @@ def main() -> int:
         "before assuming it is the number -- SCOPE.md's table predates most of\n"
         "the sourcing work and was never revisited against it."
     )
-    return 1 + report_ordering(kb)
+    return 1 + report_ordering(kb) + report_bounds(kb)
 
 
 if __name__ == "__main__":

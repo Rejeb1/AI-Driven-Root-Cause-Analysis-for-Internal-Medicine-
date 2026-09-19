@@ -580,6 +580,8 @@ def deviations_from_operational_definitions(kb) -> list[tuple[str, str, str]]:
             "conventional troponin I at 0.017 microg/L",
         ("pulmonary_embolism", "lab:raised_bnp"):
             "NT-proBNP at 350 ng/L rather than the 300 named above",
+        ("community_acquired_pneumonia", "exam:hypoxia"):
+            "oxygen saturation below 96% rather than the 95% named above",
     }
     out = []
     for (label, concept), note in known.items():

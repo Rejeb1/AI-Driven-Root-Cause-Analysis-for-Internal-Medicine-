@@ -10,6 +10,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from deck_figures import collect  # noqa: E402
 
 F = collect()
+from dxagent.datasets import build_knowledge_base  # noqa: E402
+
+N_FINDINGS = len({c for e in build_knowledge_base().diseases() for c in e.features})
 from reportlab.lib import colors
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
@@ -206,7 +209,7 @@ story += [Paragraph("What's built and working", S["h1"]),
 
 built = [
     ["Component", "What it does"],
-    ["Bayesian reasoner", "Naive-Bayes in log-space over 8 diseases x 27 findings, correlation-weighted"],
+    ["Bayesian reasoner", f"Naive-Bayes in log-space over 8 diseases x {N_FINDINGS} findings, correlation-weighted"],
     ["Information-gain selector", "Picks the next question/test by expected entropy reduction per cost"],
     ["Abstention gate", "Six-condition commit/escalate decision; calibration + conformal prediction"],
     ["LangGraph engine", "Same reasoning loop as a state machine, proven equivalent to the reference loop by test"],

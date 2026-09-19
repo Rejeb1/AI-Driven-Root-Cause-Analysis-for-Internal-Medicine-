@@ -770,6 +770,7 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
     # Sourcing brought these back on this deliberately weakened arm -- no
     # workup floor, no decisive-test rule, no correlation weighting. The
     # shipped configuration gets all ten; see the docstring.
+    #
     assert wrong == ["fx-009", "fx-010"], f"unexpected failures: {wrong}"
 
     # Correlation weighting alone no longer rescues it. It used to, and the
@@ -802,6 +803,13 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
     # and the gate escalates rather than committing, so no wrong answer is
     # produced. See the correlation test below for why the fixture count is
     # the wrong thing to judge either mechanism on at all.
+    #
+    # "Carries fx-009" was pinned as false for a while -- the rule was not
+    # carrying it -- and became true again after pneumonia's productive-cough
+    # cell went from a simulated 0.85 to a cohort's 0.55: fx-009 is a
+    # dry-cough embolism, and once a pneumonia expectorates only half the
+    # time the decisive test is enough to tip it. The pin follows the
+    # measurement, in both directions.
     decisive = DiagnosticAgent(
         kb=build_knowledge_base(correlated=True),
         limits=LoopLimits(require_decisive_tests=True, require_workup=False),
@@ -810,7 +818,7 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
         case.case_id
         for case in cases
         if decisive.run(case).differential.top.label != case.diagnosis
-    ] == ["fx-009", "fx-010"]
+    ] == ["fx-010"]
 
 
 def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
@@ -946,8 +954,26 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     #
     #     correlated=False   real (n=18): 4 correct, 3 WRONG commits
     #     correlated=True    real (n=18): 4 correct, 0 wrong commits
+    #
+    # And then the gap closed. One sourcing pass on pneumonia -- four cells
+    # from a 265-patient cohort, the largest being productive cough from a
+    # simulated 0.85 to a measured 0.55 -- and the unweighted configuration
+    # stopped committing anything wrong on the real cases too:
+    #
+    #     correlated=False   real (n=18): 5 correct, 0 wrong, Brier .208, ECE .224
+    #     correlated=True    real (n=18): 4 correct, 0 wrong, Brier .170, ECE .286
+    #
+    # So the sentence above, "that gap has held or widened through every
+    # sourcing pass", is no longer true, and this test stops asserting it.
+    # What remains is not nothing: the weighting still buys the better Brier
+    # score on the held-out split and is the principled correction for
+    # counting one clinical picture four times. But the claim that it is what
+    # protects the zero on real patients rested on three wrong commits that
+    # an invented pneumonia cell was producing, and the measurement that
+    # found this is the same one that produced the claim. Correlation stays
+    # on for the reason it was added, not for a gap that is not there.
     assert wrong_commits(True) == 0
-    assert wrong_commits(False) == 3
+    assert wrong_commits(False) == 0
 
 
 def _superseded_test_decisive_tests_do_not_repair(kb, cases):
@@ -2359,7 +2385,7 @@ def test_the_threshold_dependent_concepts_say_what_they_mean():
     assert not missing, f"threshold-dependent concepts with no definition: {missing}"
 
     deviations = deviations_from_operational_definitions(kb)
-    assert len(deviations) == 3, (
+    assert len(deviations) == 4, (
         "a sourced cell now uses a different cutoff, or one was repaired: "
         f"{deviations}"
     )

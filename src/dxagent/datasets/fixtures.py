@@ -695,6 +695,76 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         low=0.61,
         high=0.73,
     ),
+    # The rest of that Table 1, read on a second pass after the real-case
+    # second pass showed the three dyspnoea diseases cannot be separated on a
+    # thin record. Same 265 confirmed pneumonias among 954 acutely admitted
+    # patients with suspected infection; the comparison arm is "not CAP" in
+    # that population, which is no particular rival of ours, so only the
+    # pneumonia column is used.
+    #
+    # Taken: expectoration, oedema, smoking status, saturation. Not taken, and
+    # why: "heart rate <51 or >90" is bidirectional and 90 is not this
+    # project's 100; "leucocytes <3.5 or >8.8" was rejected once already for
+    # the same reason; "abnormal chest auscultation" is broader than crackles
+    # and the close-but-not-quite rule leaves it out; "fever >38C" is 29.3%
+    # (77 of 265) -- a measured temperature at admission, against a concept
+    # defined as measured OR reported and a DDXPlus cell that asked "felt or
+    # measured". Recorded here as the definition conflict it is rather than
+    # written over a value that means something else.
+    ("community_acquired_pneumonia", "productive_cough"): measured(
+        0.55,
+        Citation(
+            "CAP-DIAGNOSTIC-MODEL-2024",
+            "Community-acquired pneumonia diagnostic model, PMC11141191, Table 1",
+            "expectoration recorded in 140 of 254 patients with confirmed "
+            "community-acquired pneumonia (55.1%); DDXPlus's simulated rate "
+            "was 0.853, the same gap as pleuritic pain in embolism",
+        ),
+        low=0.49,
+        high=0.61,
+        note="a real cohort replaces the simulator, as Miniati did for embolism",
+    ),
+    ("community_acquired_pneumonia", "leg_swelling"): measured(
+        0.04,
+        Citation(
+            "CAP-DIAGNOSTIC-MODEL-2024",
+            "Community-acquired pneumonia diagnostic model, PMC11141191, Table 1",
+            "oedema recorded in 10 of 265 patients with confirmed "
+            "community-acquired pneumonia (4.0%)",
+        ),
+        low=0.02,
+        high=0.07,
+    ),
+    ("community_acquired_pneumonia", "smoking_history"): measured(
+        0.74,
+        Citation(
+            "CAP-DIAGNOSTIC-MODEL-2024",
+            "Community-acquired pneumonia diagnostic model, PMC11141191, Table 1",
+            "current smoker 54 (21.3%) and previous smoker 134 (52.8%) of 254 "
+            "patients with confirmed community-acquired pneumonia: 74.1% ever "
+            "smoked",
+        ),
+        low=0.68,
+        high=0.79,
+        note="the first cell for this concept outside COPD and asthma; the "
+             "concept is ever-smoked, the Wells/PERC risk-factor sense",
+    ),
+    ("community_acquired_pneumonia", "exam:hypoxia"): measured(
+        0.61,
+        Citation(
+            "CAP-DIAGNOSTIC-MODEL-2024",
+            "Community-acquired pneumonia diagnostic model, PMC11141191, Table 1",
+            "oxygen saturation below 96% in 162 of 265 patients with confirmed "
+            "community-acquired pneumonia (61.1%); the study's cutoff is 96%, "
+            "this project's is 95%",
+        ),
+        low=0.55,
+        high=0.67,
+        note="the hypoxia column was called structurally unsourceable because "
+             "cohorts enrol on saturation; this one enrolled on suspected "
+             "infection, so for pneumonia it is not circular. One point off "
+             "the stated threshold, listed in the deviations.",
+    ),
     # A whole column, from the accuracy half of a study already cited here
     # for its clinical tables.
     #
@@ -1351,8 +1421,12 @@ _complete("leg_swelling", {
 # for DVT signs against a measured 0.23, so the guess was wrong by two to
 # eight times, which is the argument for sourcing over completing wherever a
 # source exists.
+# Pneumonia's cell is no longer completed here: a cohort measured it at 0.74
+# (CAP-DIAGNOSTIC-MODEL-2024, in _SOURCED). The completion had guessed 0.35,
+# which is the base-rate argument above losing to the measurement by a
+# factor of two -- the same lesson as the DVT signs, in the other direction.
 _complete("smoking_history", {
-    "acute_pulmonary_oedema": 0.45, "community_acquired_pneumonia": 0.35,
+    "acute_pulmonary_oedema": 0.45,
     "pulmonary_embolism": 0.30, "pericarditis": 0.25, "panic_attack": 0.25,
 })
 
@@ -1534,6 +1608,8 @@ def build_knowledge_base(
                 "imaging:pericardial_effusion": 0.05,
                 "exam:ecg_pr_depression": 0.05,
                 "exam:friction_rub": 0.05,
+                # sourced in _SOURCED; listed here so the entry characterises it
+                "smoking_history": 0.74,
             },
             citations=_cite("FIXTURE-KB", "cap", "synthetic entry, not sourced"),
         )

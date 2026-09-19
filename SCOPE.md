@@ -121,10 +121,11 @@ contradicted, all four for that reason:
   correcting it cost.
 
 **Most of these numbers are still invented, and which ones are not is
-recorded.** 38% of the 176 likelihoods carry a citation — 10 from DDXPlus, 13
-from the Merck Manual's narrative text, 43 from published cohorts and
+recorded.** 39% of the 177 likelihoods carry a citation — 9 from DDXPlus, 13
+from the Merck Manual's narrative text, 47 from published cohorts and
 StatPearls. The fraction fell from 42% when two pericardial concepts were
-added with invented rival cells; see DESIGN.md.
+added with invented rival cells, and recovered a point on a pneumonia
+sourcing pass; see WRITEUP.md §5.
 `scripts/sensitivity.py` reports the split and `dxagent.provenance` tracks it
 per number. See *Constraints*.
 
@@ -217,7 +218,7 @@ here holds symptoms, signs, laboratory results and imaging findings, and
 nothing in scope reasons about medication. That is a scope fact rather than a
 substitution.
 
-**The likelihood tables are still mostly invented — 110 of 176.** UMLS was
+**The likelihood tables are still mostly invented — 108 of 177.** UMLS was
 probed and found unusable for this purpose — mostly translations and billing
 crosswalks, and its one clinical relation mixes symptoms, risk factors and
 treatment complications without distinguishing them. HPO supplies concepts but
