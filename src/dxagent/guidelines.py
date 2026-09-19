@@ -502,6 +502,39 @@ def unexamined_signatures(
     return tuple(out)
 
 
+def cheap_unexamined(
+    findings: list[Finding], asked: set[str], cost_of, ceiling: float
+) -> str | None:
+    """The cheapest unasked defining finding of any partially-present picture.
+
+    The action that follows from ``unexamined_signatures`` without reading the
+    posterior: if some disease has one defining finding present and another
+    never asked, and asking costs no more than ``ceiling`` -- a history
+    question or a bedside sign, never a test -- ask it before committing.
+    Every disease is eligible, the current leader included; excluding the
+    leader would mean reading the differential, which is the one thing this
+    must not do. Returns None when nothing cheap is outstanding.
+    """
+    from collections import defaultdict
+
+    from .claims import ORDERING_CLAIMS
+
+    defining: dict[str, set[str]] = defaultdict(set)
+    for concept, leader, _rivals, _why in ORDERING_CLAIMS:
+        defining[leader].add(concept)
+    present = {f.concept for f in findings if f.polarity is Polarity.PRESENT}
+
+    best: tuple[float, str] | None = None
+    for label, concepts in defining.items():
+        if not concepts & present:
+            continue
+        for concept in concepts - asked:
+            cost = cost_of(concept)
+            if cost <= ceiling and (best is None or (cost, concept) < best):
+                best = (cost, concept)
+    return best[1] if best else None
+
+
 def vocabulary_gaps() -> dict[str, tuple[str, ...]]:
     """Criteria the current vocabulary cannot express, per rule.
 

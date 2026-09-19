@@ -21,7 +21,12 @@ from .actions import InformationGainSelector, classify
 from .belief import BayesianProposer, ConsensusProposer, Proposer
 from .environment import Case, CaseOracle, Environment
 from .gate import AbstentionGate
-from .guidelines import outstanding_workup, unavailable_workup, unexamined_signatures
+from .guidelines import (
+    cheap_unexamined,
+    outstanding_workup,
+    unavailable_workup,
+    unexamined_signatures,
+)
 from .knowledge import InMemoryKnowledgeBase
 from .schemas import (
     Action,
@@ -70,6 +75,23 @@ class LoopLimits:
     # separated.
     require_workup: bool = True
 
+    # Ceiling on the cost of a defining finding the loop must ask before it
+    # commits, when some disease's picture is partly present and that finding
+    # is still unexamined (``guidelines.cheap_unexamined``). History and
+    # bedside signs sit at or under 1.0; every test is above it. Reads the
+    # findings and the asked set, never the posterior.
+    #
+    # Off by default, because it was measured and did almost nothing. At a
+    # ceiling of 1.0, no verdict changes on any set; mean rank of the truth
+    # moves 1.30 -> 1.20 on the fixtures and 2.42 -> 2.37 on the real cases;
+    # cost rises 1.8, 0.6 and 0.5; held-out Brier 0.170 -> 0.175. At 0.2
+    # (history only) the same, with Brier 0.163. A mechanism that changes no
+    # decision is not adopted for a small rank movement, and a ceiling is one
+    # more invented number. Kept so the measurement can be repeated, and
+    # because the disclosure it acts on (``CaseOutcome.unexamined``) is the
+    # part that turned out to matter.
+    diligence_cost: float = 0.0
+
     # Whether a turn whose answer was UNKNOWN still counts against max_turns.
     # Default True matches every existing result exactly -- this flag did not
     # exist before, and the ten fixtures answer everything, so it changes
@@ -103,7 +125,7 @@ class LoopLimits:
     unanswered_actions_still_cost: bool = True
 
 
-def mandatory_action(kb, state: CaseState) -> Action | None:
+def mandatory_action(kb, state: CaseState, diligence_cost: float = 0.0) -> Action | None:
     """The next unsatisfied item of a triggered guideline workup, if any.
 
     Deliberately reads only ``state.findings`` -- never the differential.
@@ -120,6 +142,19 @@ def mandatory_action(kb, state: CaseState) -> Action | None:
             expected_information_gain=0.0,
             rationale=f"required by guideline workup: {workup}",
         )
+    if diligence_cost > 0.0:
+        concept = cheap_unexamined(
+            state.findings, state.asked, kb.cost_of, diligence_cost
+        )
+        if concept is not None:
+            return Action(
+                kind=classify(concept),
+                target=concept,
+                cost=kb.cost_of(concept),
+                expected_information_gain=0.0,
+                rationale="a defining finding of a picture partly present, "
+                          "cheap and never asked",
+            )
     return None
 
 
@@ -146,7 +181,10 @@ def choose_action(
     diagnosis. The checklist is still cleared before committing, enforced by
     ``still_outstanding`` rather than by seizing the turn.
     """
-    mandated = mandatory_action(kb, state) if limits.require_workup else None
+    mandated = (
+        mandatory_action(kb, state, limits.diligence_cost)
+        if limits.require_workup else None
+    )
 
     action = selector.select(state, differential)
     flip = (

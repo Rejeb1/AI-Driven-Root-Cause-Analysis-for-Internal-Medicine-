@@ -147,10 +147,10 @@ The eight disease priors are separately sourced, 8 of 8, and reported on their
 own line rather than folded in — merging them would let a sourced likelihood
 table hide unsourced priors inside one flattering percentage.
 
-**And the likelihood table is not the whole model.** Fifty further
+**And the likelihood table is not the whole model.** Fifty-one further
 numbers are invented and, until they were counted, appeared in no coverage
 figure this project quoted: six correlation weights, twenty-nine acquisition
-costs, five gate thresholds, three loop budget limits, seven selector
+costs, five gate thresholds, four loop budget limits, seven selector
 constants. They decide which questions get asked and when the system commits.
 
 The worst case looked like the correlation weights — five judgement calls
@@ -770,6 +770,19 @@ correctly dismissed. It is what the loop did not look at, stated where it
 can be argued with. The field is on every `CaseOutcome`, in the JSON export,
 the evaluation scripts, the consultation transcript and the web UI; the
 claims moved from the audit script into the package so one list serves both.
+
+One action does follow from the disclosure without reading the posterior:
+before committing, ask any unexamined defining finding of a partly-present
+picture that is *cheap* — a history question or a bedside sign, never a
+test. It is implemented (`LoopLimits.diligence_cost`) and it was measured
+at two ceilings on every set. It changed no verdict anywhere. Mean rank of
+the truth moved 1.30 → 1.20 on the fixtures and 2.42 → 2.37 on the real
+cases, cost rose by one to two units, held-out Brier moved within noise. A
+mechanism that changes no decision is not adopted for a small rank
+movement, and a ceiling is one more invented number — the parameter pin
+caught it as the fifty-first. It ships off, kept so the measurement can be
+repeated. The disclosure turned out to be the part that matters; acting on
+it did not.
 
 ### Separating the three dyspnoea diseases: one sourcing pass, and a claim it took down
 

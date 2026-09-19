@@ -2482,10 +2482,14 @@ def test_the_model_parameters_outside_the_likelihood_table_are_counted():
     # case second pass (two concepts, so two costs, and one correlation
     # pairing for the two readings of one ECG) took it to 50. Every one of
     # the three was added on purpose and is named in fixtures.py; the point
-    # of this pin is that the next one cannot be added by accident.
+    # of this pin is that the next one cannot be added by accident. It
+    # caught the 51st: LoopLimits.diligence_cost, a ceiling on the cheap
+    # due-diligence rule that was measured, found to change no verdict, and
+    # left off by default. Off is still a number somebody chose, so it stays
+    # in the count.
     report = parameter_report()
-    assert report.total == 50
-    assert report.invented == 50, "none of these has a source yet"
+    assert report.total == 51
+    assert report.invented == 51, "none of these has a source yet"
 
     by_name = {g.name: g for g in report.groups}
     assert by_name["correlation weights"].count == 6
@@ -3621,3 +3625,43 @@ def test_a_commit_discloses_the_rivals_it_never_examined():
         if o.verdict is Verdict.ESCALATED
     )
     assert escalated.unexamined == ()
+
+
+def test_the_cheap_diligence_rule_is_measured_and_off():
+    """The one action that follows from the disclosure without reading the
+    posterior: ask a cheap unexamined defining finding of a partly-present
+    picture before committing. Measured at ceilings of 0.2 and 1.0 on every
+    set, it changed no verdict, so it ships off. This pins that it is off,
+    that it does what it says when on, and that it never orders a test.
+    """
+    from dxagent.guidelines import cheap_unexamined
+    from dxagent.schemas import Finding, Polarity
+
+    kb = build_knowledge_base(correlated=True)
+    findings = [Finding("pleuritic_pain", Polarity.PRESENT)]
+    asked = {"pleuritic_pain"}
+
+    assert LoopLimits().diligence_cost == 0.0
+
+    # Pleuritic pain is a defining finding of pericarditis; the rub (cost 1)
+    # is the cheapest of its unexamined defining findings under a 1.0 ceiling.
+    assert cheap_unexamined(findings, asked, kb.cost_of, 1.0) == "exam:friction_rub"
+    # Under a history-only ceiling nothing pericardial qualifies -- the
+    # pericardial findings are exam and imaging -- and pleuritic pain defines
+    # no other disease, so there is nothing to ask.
+    assert cheap_unexamined(findings, asked, kb.cost_of, 0.2) is None
+    # Never a test: with every history and exam finding already asked, the
+    # imaging and lab items that remain are above any sensible ceiling.
+    cheap = {c for e in kb.diseases() for c in e.features if kb.cost_of(c) <= 1.0}
+    assert cheap_unexamined(findings, asked | cheap, kb.cost_of, 1.0) is None
+    # No partial signature, nothing to ask.
+    assert cheap_unexamined([Finding("fever", Polarity.ABSENT)], {"fever"}, kb.cost_of, 1.0) is None
+
+    # Switched on, the loop uses it somewhere across the fixtures; switched
+    # off, never. Verdicts are the same either way -- the measured result.
+    cases = build_cases()
+    on = [DiagnosticAgent(kb=kb, limits=LoopLimits(diligence_cost=1.0)).run(c) for c in cases]
+    off = [DiagnosticAgent(kb=kb).run(c) for c in cases]
+    used = lambda outs: any("cheap and never asked" in s.action.rationale for o in outs for s in o.steps)
+    assert used(on) and not used(off)
+    assert [o.prediction for o in on] == [o.prediction for o in off]

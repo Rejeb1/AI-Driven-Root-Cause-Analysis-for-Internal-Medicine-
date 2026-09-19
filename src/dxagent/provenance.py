@@ -220,7 +220,8 @@ def report(kb) -> ProvenanceReport:
 # There were 47 further invented numbers when first counted -- five
 # correlation weights, twenty-seven acquisition costs, five gate thresholds,
 # three loop budget limits and seven selector constants -- and 50 after the
-# pericardial columns added two costs and one correlation pairing. None of them is a likelihood, so none
+# pericardial columns added two costs and one correlation pairing, 51 with the
+# ceiling on the cheap due-diligence rule that is off by default. None of them is a likelihood, so none
 # was tracked, and their absence from the audit was not a decision anyone
 # made.
 #
