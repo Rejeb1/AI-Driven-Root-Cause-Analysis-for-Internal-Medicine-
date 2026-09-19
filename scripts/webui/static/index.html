@@ -559,6 +559,15 @@ function renderResult(d) {
   if (!committed && d.escalation?.unresolved_question) {
     un.innerHTML = `<b>Unresolved question:</b> ${d.escalation.unresolved_question}`;
     un.classList.remove("hidden");
+  } else if (committed && d.unexamined && d.unexamined.length) {
+    // What the loop walked past: rivals whose defining picture is partly
+    // present and whose remaining defining findings were never asked for.
+    // Read from the findings, not the posterior -- the diagnosis the model
+    // has dismissed is exactly the one it will not investigate on its own.
+    un.innerHTML = `<b>Not examined:</b> ` + d.unexamined.map(r =>
+      `${pretty(r.label)} — ${r.present.join(", ")} present; ${r.unexamined.join(", ")} never asked`
+    ).join("<br>");
+    un.classList.remove("hidden");
   } else un.classList.add("hidden");
 
   renderDx($("r-dx-list"), d.differential);

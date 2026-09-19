@@ -211,6 +211,11 @@ def case_detail(outcomes, truths) -> list[str]:
         )
         if outcome.escalation:
             lines.append(f"      reason: {outcome.escalation.reason}")
+        for rival in outcome.unexamined:
+            lines.append(
+                f"      not examined: {rival.label} -- {', '.join(rival.present)} "
+                f"present; {', '.join(rival.unexamined)} never asked"
+            )
         if outcome.steps:
             path = " -> ".join(s.action.target for s in outcome.steps)
             lines.append(f"      evidence sought: {path}")

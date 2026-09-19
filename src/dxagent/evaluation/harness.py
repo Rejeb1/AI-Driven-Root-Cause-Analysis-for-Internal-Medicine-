@@ -98,6 +98,11 @@ class EvaluationResult:
                     "cost": round(o.budget_spent, 2),
                     "actions": [s.action.target for s in o.steps],
                     "escalation_reason": o.escalation.reason if o.escalation else None,
+                    "unexamined": [
+                        {"label": r.label, "present": list(r.present),
+                         "unexamined": list(r.unexamined)}
+                        for r in o.unexamined
+                    ],
                 }
                 for o in self.outcomes
             ],

@@ -21,7 +21,7 @@ from .actions import InformationGainSelector, classify
 from .belief import BayesianProposer, ConsensusProposer, Proposer
 from .environment import Case, CaseOracle, Environment
 from .gate import AbstentionGate
-from .guidelines import outstanding_workup, unavailable_workup
+from .guidelines import outstanding_workup, unavailable_workup, unexamined_signatures
 from .knowledge import InMemoryKnowledgeBase
 from .schemas import (
     Action,
@@ -333,6 +333,9 @@ class DiagnosticAgent:
                     escalation=None,
                     steps=tuple(state.history),
                     budget_spent=state.budget_spent,
+                    unexamined=unexamined_signatures(
+                        state.findings, state.asked, calibrated.top.label
+                    ),
                 )
 
             if not decision.should_commit:

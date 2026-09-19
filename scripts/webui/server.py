@@ -221,6 +221,14 @@ def _status(session_id: str) -> dict:
             "prediction": outcome.prediction,
             "history": oracle.history,
         }
+        payload["unexamined"] = [
+            {
+                "label": r.label,
+                "present": [humanise(c) for c in r.present],
+                "unexamined": [humanise(c) for c in r.unexamined],
+            }
+            for r in outcome.unexamined
+        ]
         if outcome.verdict is Verdict.ESCALATED:
             payload["escalation"] = {
                 "reason": outcome.escalation.reason,

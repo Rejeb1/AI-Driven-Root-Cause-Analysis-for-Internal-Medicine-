@@ -99,6 +99,12 @@ def main() -> int:
                 f"({outcome.confidence:.0%})  "
                 f"[{'CORRECT' if got_it else 'WRONG'}]"
             )
+            for rival in outcome.unexamined:
+                print(
+                    f"  not examined:   {rival.label.replace('_', ' ')} -- "
+                    f"{', '.join(humanise(c) for c in rival.present)} present; "
+                    f"{', '.join(humanise(c) for c in rival.unexamined)} never asked"
+                )
         else:
             print(f"  system said:    ESCALATED -- {outcome.escalation.reason}")
             if outcome.escalation.unresolved_question:

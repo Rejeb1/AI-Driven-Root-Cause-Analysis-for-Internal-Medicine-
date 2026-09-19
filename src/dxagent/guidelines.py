@@ -462,6 +462,46 @@ def unavailable_workup(
     )
 
 
+def unexamined_signatures(
+    findings: list[Finding], asked: set[str], committed: str
+) -> tuple["UnexaminedRival", ...]:
+    """Rivals whose defining picture is partly present and partly unexamined.
+
+    The ordering claims say which findings define each disease. A rival is
+    reported when at least one of those findings was observed present and at
+    least one was never asked for -- a partial signature the loop walked past.
+    On the real pericarditis committed as pneumonia this would have read
+    "pericarditis: pleuritic pain present; effusion, PR depression, rub
+    unexamined", at the moment of the commit, in the packet.
+
+    Deliberately reads findings and the asked set, never the differential:
+    every posterior-conditioned criterion this project tried failed for the
+    same reason, that a diagnosis the model has dismissed is exactly the one
+    it will not investigate. This is disclosure, not a gate condition -- it
+    orders nothing and blocks nothing. Whether a listed rival should have been
+    examined is the reader's call, and now the reader can make it.
+    """
+    from collections import defaultdict
+
+    from .claims import ORDERING_CLAIMS
+    from .schemas import UnexaminedRival
+
+    defining: dict[str, set[str]] = defaultdict(set)
+    for concept, leader, _rivals, _why in ORDERING_CLAIMS:
+        defining[leader].add(concept)
+
+    present = {f.concept for f in findings if f.polarity is Polarity.PRESENT}
+    out = []
+    for label in sorted(defining):
+        if label == committed:
+            continue
+        hit = defining[label] & present
+        missing = defining[label] - asked
+        if hit and missing:
+            out.append(UnexaminedRival(label, tuple(sorted(hit)), tuple(sorted(missing))))
+    return tuple(out)
+
+
 def vocabulary_gaps() -> dict[str, tuple[str, ...]]:
     """Criteria the current vocabulary cannot express, per rule.
 

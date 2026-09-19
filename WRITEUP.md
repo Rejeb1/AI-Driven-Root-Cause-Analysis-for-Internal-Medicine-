@@ -717,6 +717,35 @@ workup makes — unnecessary tests against a missed diagnosis — and it is a
 clinical policy decision awaiting a clinician. The real test is the next
 pericarditis chosen by rule, not this one.
 
+### What a commit now says it did not look at
+
+The pericarditis fix was a rule for one disease. The blind spot behind it is
+general: a diagnosis the loop dismisses early is one it never investigates,
+and every posterior-conditioned criterion this project tried — four of them,
+documented in `actions.py` — failed for exactly that reason. The case also
+needed *two* findings in combination, so no single-test criterion would have
+fired. Writing a presentation-triggered workup per disease would be the
+mechanical answer, and each one is clinical content, not engineering.
+
+What can be made general is disclosure. The ordering claims already say
+which findings define each disease, so every commit now reports the rivals
+one of whose defining findings was observed present while the rest were
+never asked for — a partial signature the loop walked past. It reads the
+findings and the asked set, never the posterior; it orders nothing and
+blocks nothing. On the real pericarditis, at the moment it was committed as
+pneumonia, the packet would have read: *pericarditis — pleuritic pain
+present; effusion, PR depression, friction rub never asked.* That sentence
+did not exist when it was needed, and a reader with it could have made the
+call the loop could not.
+
+Measured on the fourteen commits across all three sets, eleven carry at
+least one such rival. That is not a defect count; an eight-question loop
+cannot cover twenty-three defining findings, and most of those rivals are
+correctly dismissed. It is what the loop did not look at, stated where it
+can be argued with. The field is on every `CaseOutcome`, in the JSON export,
+the evaluation scripts, the consultation transcript and the web UI; the
+claims moved from the audit script into the package so one list serves both.
+
 ### Separating the three dyspnoea diseases: one sourcing pass, and a claim it took down
 
 Fifteen of eighteen real cases escalated because the knowledge base could

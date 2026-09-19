@@ -371,6 +371,25 @@ class Escalation:
 
 
 @dataclass(frozen=True)
+class UnexaminedRival:
+    """A diagnosis whose picture is partly present and partly unexamined.
+
+    ``present`` are the findings that define this diagnosis (in the sense of
+    ``claims.ORDERING_CLAIMS``) and were observed present; ``unexamined`` are
+    the defining findings never asked for. Reported on a commit so the reader
+    can see what the loop did not look at, because the failure this exists
+    to name -- a real pericarditis committed as pneumonia with the effusion
+    never asked for -- was invisible in the packet at the time it happened.
+    Read from the findings, never the posterior: the whole point is to name
+    what the posterior had already dismissed.
+    """
+
+    label: str
+    present: tuple[str, ...]
+    unexamined: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class CaseOutcome:
     """Terminal result for one case."""
 
@@ -381,6 +400,9 @@ class CaseOutcome:
     escalation: Escalation | None
     steps: tuple[Step, ...]
     budget_spent: float
+    # Populated on a commit. Empty on an escalation, whose packet already
+    # names what it sought and could not get.
+    unexamined: tuple[UnexaminedRival, ...] = ()
 
     @property
     def prediction(self) -> str | None:
@@ -394,6 +416,7 @@ class CaseOutcome:
 
 __all__ = [
     "Action",
+    "UnexaminedRival",
     "ActionKind",
     "CaseOutcome",
     "CaseState",

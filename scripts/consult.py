@@ -195,6 +195,12 @@ def main() -> int:
     if outcome.verdict is Verdict.COMMITTED:
         print(wrap(f"COMMITTED to {outcome.prediction.replace('_', ' ')}."))
         print(wrap(f"Confidence {outcome.confidence:.0%}. Cost {outcome.budget_spent:.1f}."))
+        for rival in outcome.unexamined:
+            print(wrap(
+                f"Not examined: {rival.label.replace('_', ' ')} -- "
+                f"{', '.join(c.replace('_', ' ') for c in rival.present)} present; "
+                f"{', '.join(c.replace('_', ' ') for c in rival.unexamined)} never asked."
+            ))
     else:
         print(wrap("ESCALATED rather than committing."))
         print(wrap(f"Reason: {outcome.escalation.reason}"))

@@ -3537,3 +3537,71 @@ def test_the_pdf_builders_still_build(script, tmp_path):
     )
     assert done.returncode == 0, done.stderr[-2000:]
     assert out.exists() and out.read_bytes()[:5] == b"%PDF-"
+
+
+def test_a_commit_discloses_the_rivals_it_never_examined():
+    """What the loop walked past, named in the packet at the moment of commit.
+
+    The real pericarditis committed as pneumonia was invisible in its own
+    packet: the commit said pneumonia at 78% and nothing else. The ordering
+    claims already say which findings define each disease, so a commit can
+    report every rival one of whose defining findings is present while the
+    rest were never asked for -- a partial signature. Read from the findings
+    and the asked set, never the posterior, for the reason every posterior-
+    conditioned mechanism failed: the dismissed diagnosis is the one that
+    does not get investigated. It orders nothing and blocks nothing.
+    """
+    from dxagent.guidelines import unexamined_signatures
+    from dxagent.schemas import Finding, Polarity
+
+    # The historical case, as its findings stood when it was committed as
+    # pneumonia: pleuritic pain present, the pericardial workup never asked.
+    findings = [
+        Finding("pleuritic_pain", Polarity.PRESENT),
+        Finding("exam:tachycardia", Polarity.PRESENT),
+        Finding("lab:raised_wcc", Polarity.PRESENT),
+        Finding("imaging:cxr_consolidation", Polarity.PRESENT),
+        Finding("imaging:ctpa_filling_defect", Polarity.ABSENT),
+        Finding("exam:ecg_st_changes", Polarity.UNKNOWN),
+    ]
+    asked = {f.concept for f in findings}
+    rivals = {r.label: r for r in unexamined_signatures(
+        findings, asked, "community_acquired_pneumonia")}
+    assert "pericarditis" in rivals
+    assert rivals["pericarditis"].present == ("pleuritic_pain",)
+    assert set(rivals["pericarditis"].unexamined) == {
+        "exam:ecg_pr_depression", "exam:friction_rub", "imaging:pericardial_effusion",
+    }
+    # The committed diagnosis is never listed against itself, and a rival
+    # with no defining finding present is not a partial signature.
+    assert "community_acquired_pneumonia" not in rivals
+    assert "panic_attack" not in rivals  # sudden_onset was never observed
+
+    # Asking the missing findings clears the rival, whatever the answers.
+    cleared = findings + [
+        Finding("exam:ecg_pr_depression", Polarity.UNKNOWN),
+        Finding("exam:friction_rub", Polarity.ABSENT),
+        Finding("imaging:pericardial_effusion", Polarity.ABSENT),
+    ]
+    assert "pericarditis" not in {r.label for r in unexamined_signatures(
+        cleared, {f.concept for f in cleared}, "community_acquired_pneumonia")}
+
+    # Both engines carry it on a real commit, identically.
+    kb = build_knowledge_base(correlated=True)
+    from dxagent.datasets import REAL_CASES
+    from dxagent.graph import GraphAgent
+
+    case = next(c for c in REAL_CASES if c.case_id == "pmc-6129844")
+    real = LoopLimits(uninformative_turns_still_count=False,
+                      unanswered_actions_still_cost=False)
+    loop = DiagnosticAgent(kb=kb, limits=real).run(case)
+    graph = GraphAgent(kb=kb, limits=real).run(case)
+    assert loop.verdict is Verdict.COMMITTED
+    assert loop.unexamined == graph.unexamined
+    assert {r.label for r in loop.unexamined} >= {"pericarditis"}
+    # An escalation carries none; its packet names what it sought instead.
+    escalated = next(
+        o for o in (DiagnosticAgent(kb=kb, limits=real).run(c) for c in REAL_CASES)
+        if o.verdict is Verdict.ESCALATED
+    )
+    assert escalated.unexamined == ()

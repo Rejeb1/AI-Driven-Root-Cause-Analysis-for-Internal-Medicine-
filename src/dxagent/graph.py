@@ -50,7 +50,7 @@ from .agent import (
 from .belief import BayesianProposer, ConsensusProposer, Proposer
 from .environment import Case, CaseOracle, Environment
 from .gate import AbstentionGate
-from .guidelines import outstanding_workup
+from .guidelines import outstanding_workup, unexamined_signatures
 from .knowledge import InMemoryKnowledgeBase
 from .schemas import (
     Action,
@@ -152,6 +152,9 @@ class GraphAgent:
                 escalation=None,
                 steps=tuple(case_state.history),
                 budget_spent=case_state.budget_spent,
+                unexamined=unexamined_signatures(
+                    case_state.findings, case_state.asked, differential.top.label
+                ),
             )
         elif not decision.should_commit:
             stop = escalation_reason(decision, action, affordable, out_of_turns)
