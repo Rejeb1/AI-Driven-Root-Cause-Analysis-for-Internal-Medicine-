@@ -15,7 +15,7 @@ Output: `data/vocabulary.json` — pin this in version control.
 
 | | Status |
 |---|---|
-| **Nodes** — findings with stable ids, synonyms, hierarchy | Works. 30/36 concepts mapped, including labs and ECG. |
+| **Nodes** — findings with stable ids, synonyms, hierarchy | Works. 31/38 concepts mapped, including labs and ECG. The two added after the real-case second pass — `imaging:pericardial_effusion` (HP:0001698) and `exam:ecg_pr_depression` (no HPO term) — carry no UMLS CUI yet: `build_umls_map.py` has their search terms and needs a licensed key to run. 26/38 carry a CUI. |
 | **Edges** — disease→finding relations | **Unusable for this project.** |
 
 The edge problem is not a coverage gap to be patched; it is a domain mismatch.
