@@ -717,6 +717,27 @@ workup makes — unnecessary tests against a missed diagnosis — and it is a
 clinical policy decision awaiting a clinician. The real test is the next
 pericarditis chosen by rule, not this one.
 
+**That test was run.** The same query, the same four criteria, continued
+from where the second pass stopped; the first acceptance was candidate 5,
+a 23-year-old man with acute precordial pain, fever, tachycardia, ST
+elevation V2–V5, a pericardial friction rub and a normal troponin — acute
+pericarditis on cardiac MRI, with the lupus behind it found afterwards. Two
+extraction rulings went against the case before it was run: the pain is
+positional and never called pleuritic, so under the module's own rule
+`pleuritic_pain` is not recorded and the workup cannot arm on it; and a
+prolonged PR interval is not PR depression. The rule could arm only on the
+rub, and only if the loop asked for it.
+
+It did — at turn 11, on its own — and the rule then ordered the ECG at
+turn 12 rather than the turn 20 the selector would have reached on its own.
+The other two required items were an echocardiogram the report says was
+never performed and a PR finding it does not contain. Verdict with the
+rule: escalated, pericarditis first at 60%, under the 65% floor. Verdict
+without it: identical. A correct abstention either way; the rule fired as
+designed and changed nothing. That is the honest result of the test — not
+a validation, not a refutation — and it stays in the set. Real cases are
+now nineteen: 4 correct, 0 wrong, 15 escalated.
+
 ### What a commit now says it did not look at
 
 The pericarditis fix was a rule for one disease. The blind spot behind it is

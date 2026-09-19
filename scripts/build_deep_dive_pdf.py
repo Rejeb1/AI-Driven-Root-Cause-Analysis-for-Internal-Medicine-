@@ -854,11 +854,13 @@ story += [KeepTogether([Paragraph(
         "both. The case now commits correctly at 92%.",
         "<font color='#a4243b'>Written after seeing the case it fixes. It transcribes "
         "a guideline, reads the presentation and never the posterior, and moves no "
-        "other set. The next pericarditis chosen by rule is the real test.</font>"],
+        "other set. Tested on the next pericarditis chosen by rule: it fired as "
+        "designed and changed nothing &mdash; escalated at 60%, truth first, either "
+        "way.</font>"],
         RED_BG, RED),
 ])])]
 
-story += [KeepTogether([Paragraph("How the eighteen were chosen", S["h2"]), row([
+story += [KeepTogether([Paragraph(f"How the {F.real_total} were chosen", S["h2"]), row([
     card("The extraction protocol", [
         "Each case comes from an open-access PMC case report with a confirmed final "
         "diagnosis. Findings are transcribed as present, absent, or "
@@ -1072,7 +1074,7 @@ story += [Paragraph(
 story += [Spacer(1, 0.5 * cm)]
 story += [row([card("A closing caution", [
     "Nothing here has been reviewed by a clinician, most of the knowledge base is "
-    "invented, and the strongest evidence in the project is eighteen patients. "
+    f"invented, and the strongest evidence in the project is {F.real_total} patients. "
     "<b>This is not a diagnostic tool and must not be used as one.</b> What it is, is "
     "a system that will tell you exactly which parts of itself you should not trust "
     "&mdash; and that is the part worth keeping."], RED_BG, RED)])]
