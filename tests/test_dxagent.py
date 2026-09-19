@@ -1730,6 +1730,51 @@ def test_redundancy_weights_count_correlated_evidence_once():
     assert sum(kb.redundancy_weights(["p", "q", "r", "s"]).values()) == pytest.approx(1.0)
 
 
+def test_a_finding_that_was_never_recorded_cannot_be_redundant_with_one_that_was():
+    """An unknown answer carries no information, so it discounts nothing.
+
+    ``propose`` used to hand every finding in the state to the redundancy
+    weighting, including the ones asked for and never recorded. Those
+    contribute a likelihood of exactly 1.0 -- nothing -- and yet counted as
+    correlated partners, so a present consolidation was discounted for a
+    fever nobody had measured, and on a real pericarditis PR depression was
+    weighted 0.56 because the ST-segment question had come back unrecorded.
+    Thin records are exactly where that bites, and the real cases are thin.
+
+    Measured when fixed: real-case mean rank of the truth 3.22 -> 2.50, one
+    more correct commit, no new wrong one; and the existing wrong commit went
+    from 78% to 93%, because the evidence for the wrong answer stopped being
+    discounted too. Both directions are the same arithmetic.
+    """
+    from dxagent.belief import BayesianProposer
+    from dxagent.knowledge import DiseaseEntry, InMemoryKnowledgeBase
+    from dxagent.schemas import Finding, Polarity
+
+    kb = InMemoryKnowledgeBase()
+    kb.add(DiseaseEntry(label="x", prevalence=0.5, features={"a": 0.9, "b": 0.9},
+                        citations=()))
+    kb.add(DiseaseEntry(label="y", prevalence=0.5, features={"a": 0.1, "b": 0.1},
+                        citations=()))
+    kb.set_correlations({frozenset(("a", "b")): 1.0})
+    proposer = BayesianProposer(kb)
+
+    alone = proposer.propose([Finding(concept="a", polarity=Polarity.PRESENT)])
+    with_unknown = proposer.propose([
+        Finding(concept="a", polarity=Polarity.PRESENT),
+        Finding(concept="b", polarity=Polarity.UNKNOWN),
+    ])
+    with_partner = proposer.propose([
+        Finding(concept="a", polarity=Polarity.PRESENT),
+        Finding(concept="b", polarity=Polarity.PRESENT),
+    ])
+
+    # Asking about b and getting nothing must leave the posterior where it was.
+    assert with_unknown.top.probability == pytest.approx(alone.top.probability)
+    # Whereas actually observing b, fully correlated, adds no new information
+    # either -- the two together weigh what one does -- so the same posterior.
+    assert with_partner.top.probability == pytest.approx(alone.top.probability)
+
+
 def test_correlation_rescues_a_diagnosis_buried_by_repeated_evidence():
     """The defect this exists for, and the size of the effect.
 

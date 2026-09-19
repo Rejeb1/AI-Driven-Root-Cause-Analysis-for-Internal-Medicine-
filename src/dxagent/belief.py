@@ -58,8 +58,21 @@ class BayesianProposer:
         # Correlated findings are down-weighted so the product stops counting
         # the same information twice. With no correlations supplied every
         # weight is 1.0 and this is the naive-Bayes product unchanged.
+        #
+        # Only findings with a known polarity take part. A finding that was
+        # asked for and never recorded contributes nothing to the product --
+        # its likelihood is 1.0 -- so it cannot be redundant with anything,
+        # and letting it count as a partner discounted evidence that was
+        # actually observed. On a real pericarditis, PR depression was
+        # weighted 0.56 because the ST-segment question had come back "not
+        # recorded"; on every thin real record, a present crackle or
+        # consolidation was discounted for a fever nobody had measured. The
+        # weight is a redundancy correction, and nothing is redundant with an
+        # absence of information.
         weights = (
-            self.kb.redundancy_weights(f.concept for f in findings)
+            self.kb.redundancy_weights(
+                f.concept for f in findings if f.polarity is not Polarity.UNKNOWN
+            )
             if self.kb.correlations
             else {}
         )
