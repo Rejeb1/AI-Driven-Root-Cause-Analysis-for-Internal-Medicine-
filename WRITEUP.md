@@ -786,13 +786,23 @@ the unweighted configuration commits nothing wrong on the eighteen real
 cases either — 5 correct, 0 wrong against the shipped 4 correct, 0 wrong.
 The three wrong commits it used to produce were being driven by an
 invented pneumonia cell, and the sourcing that corrected it removed the
-gap that had justified the mechanism. Correlation weighting stays on: it
-still buys the better Brier score on the held-out split (0.170 against
-0.208) and it is the principled correction for counting one clinical
-picture four times. But it stays for the reason it was added, not for a
-protective gap that the only instrument able to see it now says is not
-there. The test that pinned three-against-zero now pins zero-against-zero
-and says why.
+gap that had justified the mechanism. The test that pinned
+three-against-zero now pins zero-against-zero and says why.
+
+Re-measured on every set, three ways — weighting off, the declared
+weights, and the measured phi values from 200,091 DDXPlus patients — the
+mechanism's justification moved rather than vanished. On the **fixtures**,
+switching it off makes the loop commit on every held-out case (coverage
+100% against 43%) and get two of the ten wrong against none: four facets of
+one clinical picture counted as four independent findings sharpen the
+posterior straight past the gate. That is what the weighting does, and it
+is visible on the set where the records are complete enough for redundancy
+to accumulate. The measured values change no verdict anywhere and move the
+held-out Brier from 0.170 to 0.160, third-decimal noise on seven cases;
+they stay unadopted for the reason recorded in `fixtures.py`. Correlation
+weighting stays on, for the gate's calibration on the fixtures and as the
+principled correction — not for a real-patient gap that the only
+instrument able to see it now says is not there.
 
 ### A configuration inconsistency found while writing this, and fixed
 

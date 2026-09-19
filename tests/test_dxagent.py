@@ -975,6 +975,22 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     assert wrong_commits(True) == 0
     assert wrong_commits(False) == 0
 
+    # Where the safety difference lives now: the fixtures. Without the
+    # weighting, four facets of one picture counted as four findings sharpen
+    # the posterior straight past the gate -- it commits on every held-out
+    # case and gets two of the ten wrong. With it, none. Measured with the
+    # substituted phi values too: identical verdicts, third-decimal Brier.
+    def fixture_wrong_commits(correlated: bool) -> int:
+        kb = build(correlated=correlated)
+        agent = DiagnosticAgent(kb=kb, proposer=BayesianProposer(kb), gate=AbstentionGate(kb=kb))
+        return sum(
+            1 for case in cases for outcome in [agent.run(case)]
+            if outcome.verdict is Verdict.COMMITTED and outcome.prediction != case.diagnosis
+        )
+
+    assert fixture_wrong_commits(True) == 0
+    assert fixture_wrong_commits(False) == 2
+
 
 def _superseded_test_decisive_tests_do_not_repair(kb, cases):
     """Kept unrun as a record of what was true before sourcing.

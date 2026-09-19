@@ -109,15 +109,26 @@ def _cite(source: str, locator: str, snippet: str = "") -> tuple[Citation, ...]:
 #
 # Substituting the measured values changes nothing: real cases 2 correct and
 # 0 wrong either way, hard cases 5 of 5 either way, ECE 0.240 against 0.237.
-# The *mechanism* is the most load-bearing thing measured in this project --
-# without it the ten real patients produce three wrong commits instead of
-# none -- and the *values*, anywhere between 0.08 and 0.85, are close to
-# irrelevant.
+# Re-measured at n=18 with 177 cells: no verdict moves on any set, held-out
+# Brier 0.16 against 0.17 and ECE 0.276 against 0.286 -- third-decimal
+# differences on seven cases. The *values*, anywhere between 0.08 and 0.85,
+# are close to irrelevant.
 #
-# They are left alone because correcting them would buy nothing but a better
-# provenance count, and changing a number that demonstrably affects no output
-# in order to improve how the audit reads is the metric-gaming this project
-# refuses elsewhere. DESIGN.md carries the full measurement.
+# The *mechanism* was called the most load-bearing thing measured in this
+# project because without it the real patients produced three wrong commits
+# instead of none. That gap closed when a pneumonia sourcing pass removed the
+# invented cell that was driving the three (see WRITEUP.md); the real cases
+# now commit nothing wrong either way. What the mechanism still does is
+# visible on the fixtures instead: without it the loop commits on every
+# held-out case (coverage 100% against 43%) and gets two of the ten wrong
+# (against none), because four facets of one clinical picture counted as
+# four independent findings sharpen the posterior straight past the gate.
+# It stays on for that, and for being the principled correction.
+#
+# The values are left alone because correcting them would buy nothing but a
+# better provenance count, and changing a number that demonstrably affects
+# no output in order to improve how the audit reads is the metric-gaming
+# this project refuses elsewhere. DESIGN.md carries the full measurement.
 _CORRELATION_GROUPS: tuple[tuple[float, tuple[str, ...]], ...] = (
     # venous thromboembolism: one picture, four ways of asking about it
     (0.85, ("sudden_onset", "leg_swelling", "calf_tenderness", "recent_immobility")),
