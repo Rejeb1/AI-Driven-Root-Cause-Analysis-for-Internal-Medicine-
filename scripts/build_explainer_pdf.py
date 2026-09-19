@@ -294,10 +294,12 @@ story += [Spacer(1, 0.25*cm),
     "wrongly. For the first ten patients that number was zero. The second pass of eight, chosen "
     "under a rule fixed before any full text was read, produced one: a pericarditis committed as "
     "pneumonia at 78%, because the findings that decide the case &mdash; a large pericardial "
-    "effusion, cardiomegaly, PR depression &mdash; have no concept in this vocabulary, and "
-    "pneumonia explained everything the model could see. It is the confident error the gate "
-    "was always documented as unable to catch, now on a real patient, and it is kept.",
-    S["body"])]
+    "effusion, PR depression &mdash; had no concept in this vocabulary, and pneumonia explained "
+    "everything the model could see. Getting it right took three separate fixes, each measured "
+    "on every set: the two concepts (coverage fell), a weighting defect (the case got <i>worse</i>, "
+    "93%), and a presentation-triggered workup transcribed from ESC 2015 that asks for the "
+    "echocardiogram a myopic selector never would. That last rule was written after seeing the "
+    "case it fixes, and the write-up says so.", S["body"])]
 
 story += [Spacer(1, 0.15*cm),
           Paragraph(

@@ -170,8 +170,8 @@ commits. `dxagent.provenance.parameter_report` names and counts them, and
 reports them separately from the likelihoods rather than folded in, because
 averaging two different quantities produces a figure that is easier to quote
 and means less. The correlation weights are the ones to worry about: five
-judgement calls that are the difference between one and four wrong commits
-on the eighteen real patients (zero and three on the first ten).
+judgement calls that are the difference between zero and three wrong commits
+on the eighteen real patients.
 
 The eight disease priors are no longer among the untracked — they are derived from published presentation-conditional
 aetiology, with bands wide enough to span the disagreement between the two

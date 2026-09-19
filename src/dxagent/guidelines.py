@@ -366,7 +366,38 @@ ACS_WORKUP = MandatoryWorkup(
     ),
 )
 
-WORKUPS: tuple[MandatoryWorkup, ...] = (PE_WORKUP, ACS_WORKUP)
+PERICARDITIS_WORKUP = MandatoryWorkup(
+    name="Pericarditis assessment",
+    trigger_any=("pleuritic_pain", "exam:friction_rub"),
+    required=(
+        "exam:ecg_st_changes",
+        "exam:ecg_pr_depression",
+        "imaging:pericardial_effusion",
+    ),
+    rationale=(
+        "Pleuritic chest pain or a rub is the presentation of pericarditis, "
+        "and a diagnosis the loop has dismissed to 4% is one it will never "
+        "spend a turn on: a real pericarditis with a large effusion was "
+        "committed as pneumonia without the effusion ever being asked for. "
+        "The ESC criteria for the diagnosis are two of four -- pericarditic "
+        "pain, rub, ECG change, effusion -- so the ECG and the echocardiogram "
+        "are what settle it either way. Transcription judgement, stated: the "
+        "guideline says 'suspected pericarditis'; pleuritic pain is how that "
+        "suspicion is expressed in this vocabulary, and it arms the workup on "
+        "pleuritic pneumonias and embolisms too. That is the same cost the "
+        "PE workup already pays, and it is a clinical policy decision "
+        "awaiting a clinician."
+    ),
+    citation=_cite(
+        "ESC-PERICARDIAL-2015",
+        "Adler Y et al., Eur Heart J 2015;36:2921-64, section 3.1, "
+        "recommendations for the diagnosis of acute pericarditis",
+        "In all cases of suspected acute pericarditis, ECG and transthoracic "
+        "echocardiography are recommended (Class I, Level C)",
+    ),
+)
+
+WORKUPS: tuple[MandatoryWorkup, ...] = (PE_WORKUP, ACS_WORKUP, PERICARDITIS_WORKUP)
 
 # A positive D-dimer, in a patient where PE_WORKUP was already armed, is not
 # one more piece of evidence to weigh against its acquisition cost -- it is

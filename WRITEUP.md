@@ -668,6 +668,44 @@ for pericarditis. Vocabulary was necessary and not sufficient, and the
 honest sentence in the deep dive that read "the fix is vocabulary, not
 tuning" was half right.
 
+Two more fixes followed, measured one at a time, and between them the case
+commits correctly at 92%.
+
+The first was a defect, not a policy. The redundancy weighting was computed
+over every finding in the state, including those asked for and never
+recorded. An unknown answer contributes a likelihood of exactly 1.0 to the
+product — nothing — yet it counted as a correlated partner, so a present
+consolidation was discounted for a fever nobody had measured, and PR
+depression was weighted 0.56 because the ST-segment question had come back
+unrecorded. Only findings with a known polarity now take part. Measured on
+every set: fixtures, hard cases and held-out split unchanged; real-case mean
+rank of the truth 3.22 → 2.50, one more correct commit, no new wrong one —
+and the pericarditis went from 78% pneumonia to **93%** pneumonia, because
+the evidence for the wrong answer stopped being discounted too. Same
+arithmetic in both directions, both kept.
+
+The second was the workup the mechanism was missing. ESC 2015 makes ECG and
+transthoracic echocardiography Class I in every case of suspected acute
+pericarditis; pleuritic pain or a rub is how that suspicion is expressed in
+this vocabulary. A third presentation-triggered workup, the same shape as
+the PE and ACS ones, now asks for both. On this case the ECG came back at
+turn nine with PR depression, pericarditis went live, and the selector
+ordered the echocardiogram itself two turns later. With the rule off the
+case is wrong again, and a test pins both directions.
+
+Real cases now: **4 correct, 0 wrong, 14 escalated** of 18. The other sets
+did not move.
+
+This rule was written after seeing the case it fixes, which is exactly when
+to be most suspicious, so what keeps it on the right side of that line is
+stated rather than assumed: it transcribes a Class I recommendation, it
+reads the presentation and never the posterior, it is not a threshold or a
+cell value, and its effect on every other set is nil. It also arms on every
+pleuritic pneumonia and embolism and orders an echocardiogram on them — the
+same cost the PE workup already pays, and a clinical policy decision
+awaiting a clinician. The real test is the next pericarditis chosen by rule,
+not this one.
+
 ### A configuration inconsistency found while writing this, and fixed
 
 `scripts/run_eval.py` built its knowledge base **without** correlation

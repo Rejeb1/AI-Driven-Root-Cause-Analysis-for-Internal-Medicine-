@@ -87,10 +87,13 @@ hand-extracted from open-access PMC case reports -- not invented, not
 generated, never seen by the knowledge base. This is a different, much
 smaller thing than the 10 fixture cases: it exists to put a few real
 data points in front of the system, not to support any accuracy claim at
-n=18. No clinician reviewed the extraction. The current result is 2 correct
-commits, **1 wrong commit**, and 15 escalations; the wrong one is a
-pericarditis whose deciding findings have no concept in this vocabulary,
-and it is kept. See the module docstring for exactly which reports, how
+n=18. No clinician reviewed the extraction. The current result is 4 correct
+commits, 0 wrong, 14 escalations. It was 2 correct and **1 wrong** until the
+wrong one -- a pericarditis whose deciding findings had no concept in this
+vocabulary -- drove a vocabulary correction, a weighting fix and a
+presentation-triggered workup, each measured on its own in WRITEUP.md; the
+rule that finally fixed it was written after seeing the case, and says so.
+See the module docstring for exactly which reports, how
 each finding was read from the source text, the selection rule the second
 eight were chosen under, and every candidate considered and excluded with
 the reason.

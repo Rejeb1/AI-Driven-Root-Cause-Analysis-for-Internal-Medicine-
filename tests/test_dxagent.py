@@ -938,8 +938,16 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     #
     #     correlated=False   real (n=18): 3 correct, 4 WRONG commits
     #     correlated=True    real (n=18): 2 correct, 1 wrong commit
-    assert wrong_commits(True) == 1
-    assert wrong_commits(False) == 4
+    #
+    # And then back to zero -- not by adjusting a number, but by two fixes
+    # measured separately: unrecorded findings no longer discount observed
+    # ones, and a presentation-triggered pericarditis workup (ESC 2015,
+    # Class I) makes the loop ask for the effusion it had never asked for.
+    #
+    #     correlated=False   real (n=18): 4 correct, 3 WRONG commits
+    #     correlated=True    real (n=18): 4 correct, 0 wrong commits
+    assert wrong_commits(True) == 0
+    assert wrong_commits(False) == 3
 
 
 def _superseded_test_decisive_tests_do_not_repair(kb, cases):
@@ -1146,6 +1154,56 @@ def test_mandatory_workup_triggers_on_presentation_not_posterior(kb):
     assert PE_WORKUP.outstanding(answered) == ()
 
     assert not PE_WORKUP.is_triggered([Finding("fever", Polarity.PRESENT)])
+
+
+def test_pericarditis_workup_asks_for_the_effusion_the_selector_never_would():
+    """The third presentation-triggered workup, and the case it was written on.
+
+    A real pericarditis (PMC13305284) was committed as pneumonia at 78%, then
+    93%, without the pericardial effusion ever being asked for: pericarditis
+    sat at 4% when the loop decided, and a myopic selector does not spend a
+    turn on a diagnosis it has dismissed. That is the blind spot the PE and
+    ACS workups exist for, and there was no such rule for pericarditis.
+
+    This one is transcribed from ESC 2015 -- ECG and echocardiography are
+    Class I in every case of suspected acute pericarditis -- with pleuritic
+    pain or a rub as the presentation that raises the suspicion. It was
+    written after seeing the case it fixes, which is exactly when to be
+    suspicious, so the test also pins what keeps it on the right side of
+    that line: the rule reads the presentation and never the posterior, and
+    with it off the case is wrong again. Its effect on the fixtures, the
+    hard cases and the held-out split is nil; the next pericarditis chosen
+    by rule is the real test.
+    """
+    from dxagent.guidelines import PERICARDITIS_WORKUP
+    from dxagent.datasets import REAL_CASES
+
+    presenting = [Finding("pleuritic_pain", Polarity.PRESENT)]
+    assert PERICARDITIS_WORKUP.is_triggered(presenting)
+    assert set(PERICARDITIS_WORKUP.outstanding(presenting)) == {
+        "exam:ecg_st_changes", "exam:ecg_pr_depression",
+        "imaging:pericardial_effusion",
+    }
+    assert not PERICARDITIS_WORKUP.is_triggered([Finding("fever", Polarity.PRESENT)])
+
+    kb = build_knowledge_base(correlated=True)
+    case = next(c for c in REAL_CASES if c.case_id == "pmc-13305284")
+    real = dict(uninformative_turns_still_count=False,
+                unanswered_actions_still_cost=False)
+
+    with_rule = DiagnosticAgent(kb=kb, limits=LoopLimits(**real)).run(case)
+    without = DiagnosticAgent(
+        kb=kb, limits=LoopLimits(require_workup=False, **real)
+    ).run(case)
+
+    asked = {s.action.target for s in with_rule.steps}
+    assert "imaging:pericardial_effusion" in asked
+    assert with_rule.verdict is Verdict.COMMITTED
+    assert with_rule.prediction == "pericarditis"
+
+    assert "imaging:pericardial_effusion" not in {s.action.target for s in without.steps}
+    assert without.verdict is Verdict.COMMITTED
+    assert without.prediction == "community_acquired_pneumonia"
 
 
 def _superseded_test_workup_orders_the_test_the_posterior_would_not(kb, cases):
@@ -3255,10 +3313,11 @@ def test_reading_unlisted_findings_as_atypical_buys_rank_and_costs_safety():
                 bad += outcome.prediction != case.diagnosis
         return bad
 
-    # At n=18 the shipped backoff commits one wrong (the pericarditis read as
-    # pneumonia; see real_cases.py) and the atypical backoff four. The trade
-    # this test records is the *difference*, and it is as wide as it was.
-    assert wrong_commits(False) == 1, "the shipped backoff's one wrong commit"
+    # At n=18 the shipped backoff commits nothing wrong (it did, once, until
+    # the pericarditis workup and the unknown-finding fix; see real_cases.py)
+    # and the atypical backoff three. The trade this test records is the
+    # *difference*, and it is as wide as it was.
+    assert wrong_commits(False) == 0, "the shipped backoff commits nothing wrong"
     assert wrong_commits(True) > wrong_commits(False), (
         "if this stops being true the trade-off has changed and the default "
         "is worth revisiting -- re-measure rather than flipping the flag"
@@ -3312,9 +3371,9 @@ def test_completing_the_grid_buys_rank_and_costs_one_wrong_commit():
     off_wrong, off_rank = measure(False)
     on_wrong, on_rank = measure(True)
 
-    # At n=18: shipped 1 wrong, mean rank 3.11; complete grid 2 wrong, mean
-    # rank 2.17. Same trade as at n=10, one wrong commit further along.
-    assert off_wrong == 1, "the shipped grid's one wrong commit (n=18)"
+    # At n=18: shipped 0 wrong, mean rank 2.33; complete grid 3 wrong, mean
+    # rank 2.06. Same trade as at n=10.
+    assert off_wrong == 0, "the shipped grid commits nothing wrong (n=18)"
     assert on_wrong > off_wrong, "completing the grid trades an abstention away"
     assert on_rank < off_rank, "and buys ranking with it"
 

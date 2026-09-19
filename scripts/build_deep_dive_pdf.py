@@ -810,11 +810,12 @@ story += [table(_rows, [5.6 * cm, 3.2 * cm, 3.1 * cm, FULLW - 11.9 * cm],
 
 story += [Spacer(1, 0.25 * cm)]
 story += [Paragraph(
-    f"<b>{F.real_committed_wrong} wrong commit &mdash; that is the number to look "
+    f"<b>{F.real_committed_wrong} wrong commits &mdash; that is the number to look "
     "at.</b> Calibrated abstention is the claim, so the count that matters is not how "
     f"many it answered ({F.real_committed_correct} of {F.real_total}) but how many it "
     "answered wrongly. For the first ten patients that number was zero, and the "
-    "documents said so. The second pass took it away.", S["body"])]
+    "documents said so. The second pass took it away, and getting it back cost three "
+    "separate fixes and a caveat.", S["body"])]
 story += [quote(
     "A 23-year-old woman, a week of pleuritic chest pain, tachycardic, white count "
     "13.0, a &ldquo;pulmonary infiltrate&rdquo; on chest imaging, CT negative for "
@@ -824,7 +825,7 @@ story += [quote(
     "cardiomegaly or PR depression &mdash; the three findings that decide the case "
     "&mdash; so pneumonia explained everything it could see, and the gate's sixth "
     "condition, which asks whether the findings are explained by <i>something</i>, "
-    "was satisfied. Section 8 describes this failure in the abstract. This is it on a "
+    "was satisfied. Section 8 describes this failure in the abstract. This was it on a "
     "real patient, and the rule was to keep whatever came.", RED)]
 story += [Paragraph(
     "Nothing about the extraction is strained: &ldquo;infiltrate&rdquo; was mapped to "
@@ -833,6 +834,29 @@ story += [Paragraph(
     "a statement about ten patients whose deciding findings happened to be in the "
     "vocabulary. One patient whose deciding finding is not was enough to end it.",
     S["small"])]
+story += [KeepTogether([Paragraph(
+    "What it took to get that case right, and why to distrust it", S["h2"]), row([
+    card("1 &nbsp; Vocabulary", [
+        "Effusion and PR depression added as concepts, sourced for pericarditis, "
+        "with 21 invented rival cells because a concept only one disease lists is "
+        "inert. Coverage <i>fell</i> to 38%. With both findings visible, pericarditis "
+        "rose from 2% to 15%. Not enough, and the loop never asked for either."],
+        AMBER_BG, AMBER),
+    card("2 &nbsp; A weighting defect", [
+        "Findings asked for and never recorded were counting as correlated partners "
+        "and discounting the ones that were observed. Fixed: real-case mean rank "
+        "3.22 to 2.50, one more correct commit &mdash; and this case went to "
+        "<b>93%</b> pneumonia, because the wrong answer's evidence stopped being "
+        "discounted too."], BLUE_BG, BLUE),
+    card("3 &nbsp; A workup the mechanism lacked", [
+        "ESC 2015: ECG and echocardiography are Class I in suspected pericarditis. "
+        "A third presentation-triggered workup, armed by pleuritic pain, asks for "
+        "both. The case now commits correctly at 92%.",
+        "<font color='#a4243b'>Written after seeing the case it fixes. It transcribes "
+        "a guideline, reads the presentation and never the posterior, and moves no "
+        "other set. The next pericarditis chosen by rule is the real test.</font>"],
+        RED_BG, RED),
+])])]
 
 story += [KeepTogether([Paragraph("How the eighteen were chosen", S["h2"]), row([
     card("The extraction protocol", [
@@ -854,8 +878,9 @@ story += [KeepTogether([Paragraph("How the eighteen were chosen", S["h2"]), row(
         "order</b>, each accepted or rejected on four stated criteria, every rejection "
         "logged with its letter. All eight were added before any touched the model.",
         "<font color='#5d6b7a'>27 rejections, mostly mimics and in-patient events "
-        "that were never a presentation. Result: 0 correct, 1 wrong, 7 escalations "
-        "with the truth ranked first in four.</font>"], PLUM_BG, PLUM),
+        "that were never a presentation. Result, under the vocabulary of the time: "
+        "0 correct, 1 wrong, 7 escalations with the truth ranked first in four.</font>"],
+        PLUM_BG, PLUM),
 ])])]
 story += [Spacer(1, 0.2 * cm)]
 _esc = [r for _, _, r in F.real_rows if r.startswith("Escalated")]
@@ -865,7 +890,7 @@ _stuck = len(_esc) - _red - _budget
 story += [Paragraph(
     f"Of {len(_esc)} escalations, {_red} stop because a time-critical diagnosis is "
     f"still above the red-flag tolerance and {_stuck + _budget} because the top "
-    "hypothesis is stuck between about 27% and 53% against a 65% floor with nothing "
+    "hypothesis is stuck between about 27% and 65% against a 65% floor with nothing "
     "informative left to ask. That last column used to read differently. The packet appends a "
     "note when a workup item was sought and not recorded &mdash; <i>D-dimer, not "
     "available</i> on most of these &mdash; and the engines once put the blocker "
@@ -919,11 +944,12 @@ story += [Spacer(1, 0.2 * cm)]
 story += [row([
     card("Confident errors the gate cannot catch", [
         "Condition 6 asks whether the findings are explained by <i>something</i>. In a "
-        "masquerade they are. It has happened on a real patient: a pericarditis "
-        "committed as pneumonia at 78%. Two missing concepts were added and sourced; "
-        "with both findings visible pericarditis rises from 2% to 15% and the case is "
-        "<b>still wrong</b> &mdash; and the loop never asks for either, because a "
-        "myopic selector does not investigate a diagnosis at 4%."], PLUM_BG, PLUM),
+        "masquerade they are. It happened on a real patient: a pericarditis "
+        "committed as pneumonia at 78%, then 93%. What finally caught it was not a "
+        "threshold but a presentation-triggered workup that asks for the echo a "
+        "myopic selector never would, because pericarditis sat at 4% when the loop "
+        "decided. <b>The gate still cannot see a masquerade; it can only be made to "
+        "look.</b>"], PLUM_BG, PLUM),
     card("Calibration is not fitted at all", [
         "The scaler refuses below 30 labelled cases, correctly. The calibration split "
         "is three, so the temperature is the untouched default.",
@@ -986,12 +1012,13 @@ story += [row([
         f"{F.invented} of {F.total} likelihoods invented, {PARAMS.total} further "
         "parameters invented, reported on every run, with a regression test that "
         "fails when the documents drift from the live figure."], GREEN_BG, GREEN),
-    card("It mostly refuses rather than guesses", [
-        f"{F.real_committed_wrong} wrong commit across {F.real_total} real patients "
+    card("It refuses rather than guesses", [
+        f"{F.real_committed_wrong} wrong commits across {F.real_total} real patients "
         f"and 5 deliberately hard ones, against "
         f"{F.real_total - F.real_committed_correct - F.real_committed_wrong} escalations "
-        "that each name what was sought and not obtained. The one is written up, not "
-        "explained away."],
+        "that each name what was sought and not obtained. The one wrong commit there "
+        "was is written up, with the three fixes it took and why to distrust the "
+        "last of them."],
         GREEN_BG, GREEN),
 ])]
 story += [Spacer(1, 0.2 * cm)]
