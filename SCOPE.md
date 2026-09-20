@@ -70,8 +70,14 @@ The evidence that most moves each diagnosis, as currently encoded:
 | Acute pulmonary oedema | pulmonary oedema on CXR, raised BNP, orthopnoea, leg swelling, raised JVP | fever, raised WCC, consolidation on CXR |
 | COPD exacerbation | productive cough, rest dyspnoea, smoking history, hypoxia | pulmonary oedema on CXR, sudden onset, raised JVP |
 | Asthma exacerbation | rest dyspnoea, sudden onset | pulmonary oedema on CXR, raised BNP, crackles |
-| Pericarditis | raised troponin, fever, pleuritic pain | consolidation on CXR, crackles, productive cough |
+| Pericarditis | fever, pleuritic pain | raised troponin, consolidation on CXR, crackles, productive cough |
 | Panic attack | sudden onset, palpitations, tachycardia | CTPA filling defect, hypoxia, productive cough |
+
+One row moved after being written: raised troponin was under "raises" for
+pericarditis on the strength of a Merck sentence, until a 351-patient cohort
+measured it at 16%. Relative to a differential where infarction and embolism
+claim it hard, it lowers pericarditis — the clinically right way round — and
+the audit in `plausibility_check.py` is what caught the table being stale.
 
 **This table means something narrower than it looks, and the difference
 matters.** "Raises it" here is *relative to the other seven candidates*, not
@@ -121,11 +127,11 @@ contradicted, all four for that reason:
   correcting it cost.
 
 **Most of these numbers are still invented, and which ones are not is
-recorded.** 39% of the 177 likelihoods carry a citation — 9 from DDXPlus, 13
-from the Merck Manual's narrative text, 47 from published cohorts and
+recorded.** 41% of the 177 likelihoods carry a citation — 7 from DDXPlus, 11
+from the Merck Manual's narrative text, 55 from published cohorts and
 StatPearls. The fraction fell from 42% when two pericardial concepts were
-added with invented rival cells, and recovered a point on a pneumonia
-sourcing pass; see WRITEUP.md §5.
+added with invented rival cells, and recovered on a pneumonia pass and a
+tachycardia-column pass; see WRITEUP.md §5.
 `scripts/sensitivity.py` reports the split and `dxagent.provenance` tracks it
 per number. See *Constraints*.
 
@@ -218,7 +224,7 @@ here holds symptoms, signs, laboratory results and imaging findings, and
 nothing in scope reasons about medication. That is a scope fact rather than a
 substitution.
 
-**The likelihood tables are still mostly invented — 108 of 177.** UMLS was
+**The likelihood tables are still mostly invented — 104 of 177.** UMLS was
 probed and found unusable for this purpose — mostly translations and billing
 crosswalks, and its one clinical relation mixes symptoms, risk factors and
 treatment complications without distinguishing them. HPO supplies concepts but

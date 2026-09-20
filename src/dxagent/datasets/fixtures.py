@@ -732,8 +732,14 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
             "was 0.853, the same gap as pleuritic pain in embolism",
         ),
         low=0.49,
-        high=0.61,
-        note="a real cohort replaces the simulator, as Miniati did for embolism",
+        high=0.84,
+        note="a real cohort replaces the simulator, as Miniati did for embolism. "
+             "A second cohort disagrees: EBRAHIMZADEH-2015 records sputum in 354 "
+             "of 420 radiographic pneumonias (84.3%). Two studies, two "
+             "definitions (expectoration among expert-confirmed admissions "
+             "against sputum among radiographic cases), no way to prefer one "
+             "without a judgement; the value stays with the stricter diagnosis "
+             "and the band now spans both",
     ),
     ("community_acquired_pneumonia", "leg_swelling"): measured(
         0.04,
@@ -1089,6 +1095,9 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         ),
         low=0.50,
         high=None,
+        note="CERIANI-2026 counts ST elevation specifically in 121 of 351 "
+             "(34.5%); ST elevation is one of the changes this concept "
+             "covers, so that is a floor on the cell, not a replacement",
     ),
     # The same chapter names PR-segment depression as one of the two most
     # characteristic ECG findings, and gives no separate frequency for it.
@@ -1118,6 +1127,134 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
             "pericardial inflammation often leads to fluid accumulation "
             "within the pericardial sac, resulting in a pericardial effusion",
         ),
+        note="a 351-patient referral cohort (CERIANI-2026, 93% recurrent "
+             "pericarditis) reports an effusion in 278 of 351 (79%), timing "
+             "relative to the first attack not stated; recorded here, not "
+             "adopted, because a recurrent-disease referral population is not "
+             "the presentation this cell describes -- the rest-dyspnoea lesson",
+    ),
+    # The tachycardia column, and what one pass at sourcing it found
+    # ----------------------------------------------------------------------
+    # Six of eight cells were invented, and it is the finding the real cases
+    # record most often (17 of 19). One search per disease for an open-access
+    # cohort reporting heart rate above 100 as a count. Three found, at the
+    # threshold; two not found (asthma, panic attack), left invented with the
+    # attempt recorded. The same papers sourced or bounded seven other cells
+    # on the way, which is the usual shape of this work: a cohort table
+    # sources a row, not a cell.
+    ("community_acquired_pneumonia", "exam:tachycardia"): measured(
+        0.55,
+        Citation(
+            "EBRAHIMZADEH-2015",
+            "Ebrahimzadeh A et al., Iran J Radiol 2015;12(1):e13547, Table 2",
+            "tachycardia (heart rate >= 100 beats per minute) in 231 of 420 "
+            "adults with acute respiratory symptoms and new consolidation on "
+            "chest radiograph (55.0%, 95% CI 49.6-59.4)",
+        ),
+        low=0.50,
+        high=0.59,
+        note="the study's cutoff is >= 100 and this project's is > 100; one "
+             "beat, listed in the deviations. The case definition is "
+             "radiographic, not expert-panel",
+    ),
+    ("community_acquired_pneumonia", "fever"): measured(
+        0.68,
+        Citation(
+            "EBRAHIMZADEH-2015",
+            "Ebrahimzadeh A et al., Iran J Radiol 2015;12(1):e13547, Table 2",
+            "fever (body temperature >= 38C) in 285 of 420 patients with "
+            "radiographic pneumonia (67.9%, 95% CI 62.9-73.2); DDXPlus's "
+            "simulated rate, felt or measured, was 0.694",
+        ),
+        low=0.63,
+        high=0.73,
+        note="a measured temperature agreeing with the simulator's felt-or-"
+             "measured rate to within a point; the cohort takes the tier",
+    ),
+    ("copd_exacerbation", "exam:tachycardia"): measured(
+        0.35,
+        Citation(
+            "GARCIA-SANZ-2012",
+            "Garcia-Sanz MT et al., Multidiscip Respir Med 2012;7:6, Table 1",
+            "heart rate > 100 in 82 of 238 patients assessed in the emergency "
+            "department for COPD exacerbation (34.5%)",
+        ),
+        low=0.29,
+        high=0.41,
+        note="inside the [0.25, 0.50] bound the 437-patient admission cohort "
+             "gave by quartiles, and at this project's own threshold",
+    ),
+    ("acute_coronary_syndrome", "exam:tachycardia"): measured(
+        0.23,
+        Citation(
+            "LAN-2025",
+            "Lan W et al., BMC Cardiovasc Disord 2025, MIMIC-III, Table 1",
+            "admission heart rate >= 100 bpm in 347 of 1510 patients with "
+            "acute myocardial infarction (23%)",
+        ),
+        low=0.21,
+        high=0.25,
+        note="population caveat stated: MIMIC-III is an intensive-care "
+             "database, so these are infarctions admitted to critical care, "
+             "not the emergency presentation of any acute coronary syndrome. "
+             "Cutoff >= 100 against this project's > 100; in the deviations",
+    ),
+    ("asthma_exacerbation", "dyspnoea_at_rest"): measured(
+        0.91,
+        Citation(
+            "SCHNYDER-2022",
+            "Schnyder D et al., Respiration 2022, Table 2",
+            "dyspnea in 145 of 160 adults presenting to a Swiss hospital "
+            "with a physician-diagnosed asthma exacerbation (90.6%)",
+        ),
+        low=0.85,
+        high=0.94,
+        note="'dyspnea' as recorded, read as this concept the way the "
+             "pneumonia cell already reads the same word",
+    ),
+    ("asthma_exacerbation", "wheeze_subjective"): measured(
+        0.71,
+        Citation(
+            "SCHNYDER-2022",
+            "Schnyder D et al., Respiration 2022, Table 2",
+            "wheezing at clinical presentation in 114 of 160 adults with a "
+            "physician-diagnosed asthma exacerbation (71.3%); DDXPlus's "
+            "simulated rate was 0.868",
+        ),
+        low=0.64,
+        high=0.78,
+        note="a real cohort replaces the simulator, as Miniati did for embolism",
+    ),
+    # Pericarditis, from the 351-patient Open Heart cohort found while looking
+    # for its heart rate (which it does not report). Referral population,
+    # 93% recurrent; the first-attack figures are still the presentation.
+    ("pericarditis", "fever"): measured(
+        0.59,
+        Citation(
+            "CERIANI-2026",
+            "Ceriani E et al., Open Heart 2026, PMC13007150, Table 1",
+            "fever at first attack in 146 of 249 patients with pericarditis "
+            "(58.6%); the Merck phrase 'fever, chills, and weakness are "
+            "common' had placed it at 0.60",
+        ),
+        low=0.52,
+        high=0.65,
+        note="a count that agrees with the narrative to within a point and "
+             "takes the tier; referral population caveat",
+    ),
+    ("pericarditis", "lab:raised_troponin"): measured(
+        0.16,
+        Citation(
+            "CERIANI-2026",
+            "Ceriani E et al., Open Heart 2026, PMC13007150, Table 2",
+            "troponin elevation in 55 of 351 patients with pericarditis "
+            "(15.7%: 25 of 121 with ST elevation, 30 of 230 without); the "
+            "Merck phrase 'troponin is often elevated' had placed it at 0.55",
+        ),
+        low=0.12,
+        high=0.20,
+        note="the narrative was off by a factor of three; same shape as the "
+             "rest-dyspnoea correction. Referral population caveat",
     ),
 }
 

@@ -2698,3 +2698,41 @@ implemented and measured at ceilings of 0.2 and 1.0 on every set. No
 verdict changed; mean rank moved 1.30 -> 1.20 and 2.42 -> 2.37; cost up one
 to two units; Brier within noise. Off by default. The parameter pin caught
 the ceiling as the fifty-first invented number, and it stays counted.
+
+## One column at a time: tachycardia, and what a cohort table sources on the way
+
+Six of eight cells invented in the finding the real cases record most often.
+One search per disease for an open-access cohort reporting heart rate above
+100 as a count:
+
+    pneumonia     0.60 -> 0.55   231/420   Ebrahimzadeh 2015, radiographic CAP, >=100
+    COPD          0.45 -> 0.35   82/238    García-Sanz 2012, ED exacerbations, >100
+    infarction    0.45 -> 0.23   347/1510  Lan 2025, MIMIC-III (intensive care), >=100
+    asthma, panic               not found; invented, attempt recorded
+
+Seven other cells from the same papers: pneumonia fever 0.69 (simulator) ->
+0.68 (measured, agrees); asthma dyspnoea 0.65 -> 0.91 and wheeze 0.87 ->
+0.71 (Schnyder 2022, 160 adults); pericarditis fever 0.60 (narrative) ->
+0.59 (count); pericarditis troponin 0.55 (narrative "often") -> 0.16 (55 of
+351, Ceriani 2026). Recorded and not adopted: an effusion rate of 79% and an
+ST-elevation count of 34.5% from a 93%-recurrent referral cohort; a second
+pneumonia cohort's sputum at 84% against the 55% already sourced, which now
+sets the band rather than the value. A pericarditis white-count bound joined
+the audit.
+
+The troponin correction moved a direction claim: SCOPE.md had "raised
+troponin raises pericarditis" from the Merck sentence; at 16% against a
+differential where infarction and embolism claim it, it lowers. The audit
+caught the table being stale; the claim moved, not the number.
+
+    fixtures       6 -> 7 commits, 0 wrong
+    hard cases     5/5, 4 -> 5 commits, 0 wrong
+    real (n=19)    4 -> 6 correct, 0 wrong (the SLE pericarditis, the second pneumonia)
+    held-out       ECE 0.286 -> 0.260, coverage 43% -> 57%
+    likelihoods    177, 108 -> 104 invented, 41%
+
+Three fixture-level pins moved with it and were re-pinned with the reasoning:
+the weighted weakened arm carries fx-009 again; the decisive-test arm now
+loses fx-005; the unweighted shipped arm commits one wrong on the fixtures
+rather than two, and one on the real cases rather than none. Sourced cells
+change what every arm does, and the pins record it rather than resist it.

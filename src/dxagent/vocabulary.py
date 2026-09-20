@@ -582,6 +582,11 @@ def deviations_from_operational_definitions(kb) -> list[tuple[str, str, str]]:
             "NT-proBNP at 350 ng/L rather than the 300 named above",
         ("community_acquired_pneumonia", "exam:hypoxia"):
             "oxygen saturation below 96% rather than the 95% named above",
+        ("community_acquired_pneumonia", "exam:tachycardia"):
+            "heart rate at or above 100 rather than above 100",
+        ("acute_coronary_syndrome", "exam:tachycardia"):
+            "heart rate at or above 100 rather than above 100, in an "
+            "intensive-care population",
     }
     out = []
     for (label, concept), note in known.items():

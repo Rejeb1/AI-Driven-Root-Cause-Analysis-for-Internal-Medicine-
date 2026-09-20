@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 108 of its 177 likelihoods are invented, no
+an unfinished feature — because 104 of its 177 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -131,18 +131,19 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**108 of 177 likelihoods are invented.** That is the number, stated on its own
+**104 of 177 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project. It was 89 of
 153 until the pericardial columns were added (§5): two concepts the real cases
 showed were missing, two sourced cells for pericarditis, and 21 invented rival
 cells without which the new concepts would discriminate nothing. Coverage went
 *down*, from 42% to 38%, and that is the honest direction — the count now
 includes claims the model needs to make. A pneumonia sourcing pass (§5) then
-took it to 39%.
+took it to 39%, and a pass on the tachycardia column (§5) to 41%.
 
-The remaining 69 carry a citation: 9 counted from the DDXPlus simulator, 47
-from published cohorts and StatPearls, and 13 converted from Merck Manual
-narrative phrases.
+The remaining 73 carry a citation: 7 counted from the DDXPlus simulator, 55
+from published cohorts and StatPearls, and 11 converted from Merck Manual
+narrative phrases. Both simulator and narrative counts fall as real cohorts
+replace them.
 The eight disease priors are separately sourced, 8 of 8, and reported on their
 own line rather than folded in — merging them would let a sourced likelihood
 table hide unsourced priors inside one flattering percentage.
@@ -390,7 +391,7 @@ celebrate.
 ### Nothing was checking the numbers themselves
 
 Every test in this project checks outputs. The knowledge base is inputs, and
-for most of its life nothing looked at it: 108 of 177 likelihoods are invented,
+for most of its life nothing looked at it: 104 of 177 likelihoods are invented,
 and the only scrutiny they got was whichever ones happened to change a case.
 
 Reading each column sorted, against what the diseases actually do, found five
@@ -815,7 +816,50 @@ Measured on every set: commits unchanged at 4 correct, 0 wrong; held-out
 ECE 0.335 → 0.286, Brier 0.159 → 0.170; real-case mean rank 2.33 → 2.50,
 because the second pneumonia lost her first place — a pneumonia that
 expectorates only half the time is a weaker explanation of a productive
-cough. 177 likelihoods, 108 invented, 39% sourced.
+cough. 177 likelihoods, 108 invented, coverage 39% at that point.
+
+### One column at a time: tachycardia
+
+The finding the real cases record most often (17 of 19) had six of eight
+cells invented. One search per disease for an open-access cohort reporting
+heart rate above 100 as a count, taken at the threshold or with the
+deviation listed:
+
+    pneumonia     0.60 -> 0.55   231/420, radiographic pneumonia (Ebrahimzadeh 2015), >=100
+    COPD          0.45 -> 0.35   82/238, ED exacerbations (García-Sanz 2012), >100
+    infarction    0.45 -> 0.23   347/1510, MIMIC-III (Lan 2025), >=100 -- an intensive-care
+                                 population, stated as such
+    asthma, panic               not found; left invented, the attempt recorded
+
+The papers found for their heart rate sourced or bounded seven other cells
+on the way, which is the normal shape of this work — a cohort table is a
+row, not a cell: pneumonia fever from the simulator's 0.69 to a measured
+0.68 that agrees; asthma dyspnoea 0.65 → 0.91 and wheeze from the
+simulator's 0.87 → 0.71 (Schnyder 2022, 160 adult presentations);
+pericarditis fever from a Merck phrase at 0.60 to a count of 0.59, and
+pericarditis **troponin from "often elevated" at 0.55 to 55 of 351, 0.16**
+(Ceriani 2026) — the narrative off by a factor of three, the same shape as
+the rest-dyspnoea correction. A white-count bound for pericarditis joined
+the audit; an effusion figure of 79% in that referral cohort (93% recurrent
+disease) and an ST-elevation count of 34.5% were recorded as notes, not
+adopted, for population and concept mismatch. And a second pneumonia cohort
+put sputum at 84% against the 55% taken two days earlier from the
+expert-confirmed cohort: two studies, two definitions, no way to prefer one
+without a judgement, so the value stays with the stricter diagnosis and the
+band now spans both.
+
+The troponin correction tripped the direction audit: SCOPE.md's table had
+listed raised troponin under "raises pericarditis", a claim written from the
+Merck sentence. Against a differential where infarction and embolism claim
+troponin hard, 16% lowers it — the clinically right way round — and the
+claim moved, not the number.
+
+Measured on every set, cells sourced without looking at any case: fixtures
+6 → 7 commits, none wrong; hard cases 5 of 5 with 5 commits, none wrong;
+real patients **4 → 6 correct, 0 wrong**, the SLE pericarditis and the
+second pneumonia now committing; held-out ECE 0.286 → 0.260, coverage 43%
+→ 57%. Three fixture-level pins moved with it and are re-pinned with the
+reasoning. 177 likelihoods, 104 invented, coverage 41%.
 
 **And this pass took down a claim §4 relied on.** The case for correlation
 weighting rested on real patients: "three wrong commits against none, and

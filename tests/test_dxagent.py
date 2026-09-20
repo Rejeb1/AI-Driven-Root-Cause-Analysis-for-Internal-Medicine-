@@ -665,17 +665,32 @@ def test_due_diligence_prevents_turn_zero_commit(kb, cases):
 
 
 def test_flip_action_is_silent_once_nothing_can_change_the_answer(kb, cases):
-    """A settled differential must not keep ordering tests forever."""
-    selector = InformationGainSelector(kb)
-    agent = DiagnosticAgent(kb=kb)
-    case = cases[1]  # the decisive imaging case
-    outcome = agent.run(case)
+    """A settled differential must not keep ordering tests forever.
 
+    This used to assert that no flip remained on fx-002 after the loop
+    committed, which was a fact about the knowledge base of the day: once
+    asthma's dyspnoea and wheeze cells were sourced, orthopnoea present would
+    move that case from embolism to asthma at exactly the 5% floor, and the
+    assertion failed on a number that had merely become true. The property
+    is termination, so that is what is pinned: with the decisive-test rule
+    on, the loop asks whatever marginal question exists and still commits
+    within its budget, rather than chasing reversals.
+    """
+    case = cases[1]  # the decisive imaging case
+    outcome = DiagnosticAgent(
+        kb=kb, limits=LoopLimits(require_decisive_tests=True)
+    ).run(case)
+    assert outcome.verdict is Verdict.COMMITTED
+    assert outcome.prediction == case.diagnosis
+    assert len(outcome.steps) < LoopLimits().max_turns
+
+    # And once every question the rule could ask has been asked, it is
+    # silent: the floor on outcome probability is what keeps it from asking
+    # for results it believes will not happen.
     state = CaseState(case_id=case.case_id, presenting_complaint=case.presenting_complaint)
     state.asked.update(s.action.target for s in outcome.steps)
     state.asked.update(case.initial_findings)
-
-    assert selector.flip_action(state, outcome.differential) is None
+    assert InformationGainSelector(kb).flip_action(state, outcome.differential) is None
 
 
 def test_flip_action_ignores_outcomes_it_believes_will_not_happen(kb, cases):
@@ -784,11 +799,15 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
         kb=build_knowledge_base(correlated=True),
         limits=LoopLimits(require_decisive_tests=False, require_workup=False),
     )
+    # After the tachycardia column was sourced (tachycardia in pneumonia 0.60
+    # -> 0.55, in COPD 0.45 -> 0.35, in infarction 0.45 -> 0.23) the weighted
+    # arm carries fx-009 again on its own. The paragraph below is kept as the
+    # record of the reasoning that held between the two changes.
     assert [
         case.case_id
         for case in cases
         if aware.run(case).differential.top.label != case.diagnosis
-    ] == ["fx-009", "fx-010"]
+    ] == ["fx-010"]
     # fx-009 is no longer recoverable on this arm by any mechanism. Its
     # troponin and its BNP are both normal, and both of those likelihoods for
     # pulmonary embolism have since been sourced upward -- 0.25 to 0.53 and
@@ -814,11 +833,17 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
         kb=build_knowledge_base(correlated=True),
         limits=LoopLimits(require_decisive_tests=True, require_workup=False),
     )
+    # ... and after the tachycardia column, the decisive rule loses fx-005,
+    # the COPD exacerbation, on this arm: with COPD's tachycardia at a
+    # measured 0.35 the case sits closer to pneumonia, and the rule's extra
+    # test tips it. The shipped configuration still escalates it correctly
+    # ranked first. Two arms, two answers, on the same ten cases -- the
+    # reason the fixture count judges no mechanism, restated.
     assert [
         case.case_id
         for case in cases
         if decisive.run(case).differential.top.label != case.diagnosis
-    ] == ["fx-010"]
+    ] == ["fx-005", "fx-010"]
 
 
 def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
@@ -973,7 +998,11 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     # found this is the same one that produced the claim. Correlation stays
     # on for the reason it was added, not for a gap that is not there.
     assert wrong_commits(True) == 0
-    assert wrong_commits(False) == 0
+    # ... and after the tachycardia column was sourced, one wrong commit
+    # came back on the unweighted arm (the first-pass pericarditis, read as
+    # acute coronary syndrome). Zero against one; the number moves with the
+    # knowledge base and is pinned as measured, not as a claim.
+    assert wrong_commits(False) == 1
 
     # Where the safety difference lives now: the fixtures. Without the
     # weighting, four facets of one picture counted as four findings sharpen
@@ -989,7 +1018,10 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
         )
 
     assert fixture_wrong_commits(True) == 0
-    assert fixture_wrong_commits(False) == 2
+    # Two, then one after the tachycardia column was sourced: the unweighted
+    # arm now commits fx-009 as COPD rather than pneumonia, and gets fx-010
+    # right. Still a wrong commit the weighting prevents.
+    assert fixture_wrong_commits(False) == 1
 
 
 def _superseded_test_decisive_tests_do_not_repair(kb, cases):
@@ -2401,7 +2433,7 @@ def test_the_threshold_dependent_concepts_say_what_they_mean():
     assert not missing, f"threshold-dependent concepts with no definition: {missing}"
 
     deviations = deviations_from_operational_definitions(kb)
-    assert len(deviations) == 4, (
+    assert len(deviations) == 6, (
         "a sourced cell now uses a different cutoff, or one was repaired: "
         f"{deviations}"
     )
@@ -3511,9 +3543,14 @@ def test_the_escalation_reason_leads_with_the_gate_not_the_loop_status():
     outcomes = [agent.run(c) for c in REAL_CASES]
     escalated = [o.escalation for o in outcomes if o.escalation is not None]
     assert escalated
+    boilerplate = ("no remaining action", "turn limit reached", "cost budget exhausted")
     for packet in escalated:
         first = packet.reason.split(";")[0]
-        assert "below threshold" in first or "not excluded" in first, packet.reason
+        # Any gate reason may lead -- confidence, margin, a red flag, or the
+        # evidence-fit condition, which first fired on a real case once the
+        # asthma cells were sourced -- but never the loop-status boilerplate
+        # and never the workup note.
+        assert not first.startswith(boilerplate), packet.reason
         assert "sought but not available" not in first
 
 
@@ -3664,7 +3701,13 @@ def test_the_cheap_diligence_rule_is_measured_and_off():
     off = [DiagnosticAgent(kb=kb).run(c) for c in cases]
     used = lambda outs: any("cheap and never asked" in s.action.rationale for o in outs for s in o.steps)
     assert used(on) and not used(off)
-    assert [o.prediction for o in on] == [o.prediction for o in off]
+    # It changes no verdict wrongly. After the tachycardia column was sourced
+    # it began withholding one correct fixture commit (fx-004, the acute
+    # coronary syndrome, escalates while it asks its cheap questions) -- a
+    # cost with no offsetting gain, and one more reason it ships off.
+    wrong = lambda outs: sum(o.prediction not in (None, c.diagnosis) for o, c in zip(outs, cases))
+    assert wrong(on) == wrong(off) == 0
+    assert sum(o.prediction is not None for o in on) <= sum(o.prediction is not None for o in off)
 
 
 def test_the_openai_compatible_adapter_speaks_the_wire_format_and_needs_no_key():

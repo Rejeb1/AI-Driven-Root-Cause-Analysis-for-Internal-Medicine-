@@ -112,7 +112,12 @@ CLAIMS: tuple[tuple[str, str, str], ...] = (
     ("asthma_exacerbation", "imaging:cxr_pulmonary_oedema", "lowers"),
     ("asthma_exacerbation", "lab:raised_bnp", "lowers"),
     ("asthma_exacerbation", "exam:crackles", "lowers"),
-    ("pericarditis", "lab:raised_troponin", "raises"),
+    # "raises" until a 351-patient cohort measured troponin elevation in 16%
+    # of pericarditis (CERIANI-2026) against a Merck sentence that had placed
+    # it at 0.55; relative to a differential where infarction and embolism
+    # claim it hard, a raised troponin now argues against pericarditis, which
+    # is the clinically right way round. The claim moved, not the number.
+    ("pericarditis", "lab:raised_troponin", "lowers"),
     ("pericarditis", "fever", "raises"),
     ("pericarditis", "pleuritic_pain", "raises"),
     ("pericarditis", "imaging:cxr_consolidation", "lowers"),
@@ -217,6 +222,10 @@ QUARTILE_BOUNDS: tuple[tuple[str, str, float, float, str, str], ...] = (
      "PMC6307152 Table 2, 437 hospitalised COPD exacerbations, admission",
      "leucocytes median 10.1, IQR 7.7-14 x10^9/L; the 11 cutoff sits between "
      "the median and Q3"),
+    ("pericarditis", "lab:raised_wcc", 0.25, 0.50,
+     "PMC13007150 Table 2, 351 pericarditis patients at first attack",
+     "white cell count median 9.6-10.4, IQR to 12.0-13.0 x10^9/L; the 11 "
+     "cutoff sits between the median and Q3 in both arms"),
     # Not written, and recorded: the same table has admission temperature at
     # median 36.4 with Q3 37.0, so fewer than a quarter were febrile on
     # measurement. That bounds measured fever, and this project's fever
