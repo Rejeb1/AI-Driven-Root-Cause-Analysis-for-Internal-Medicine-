@@ -274,6 +274,7 @@ textarea:focus {
 .v-stats { display: flex; gap: 26px; margin-top: 24px; flex-wrap: wrap; }
 .v-stat .n { font-size: 25px; font-weight: 750; letter-spacing: -.5px; }
 .v-stat .l { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--dim); font-weight: 700; }
+.policy-note { font-size: .82rem; color: var(--dim); border-left: 2px solid var(--stroke); padding-left: .7rem; margin: .4rem 0 .9rem; }
 .unresolved {
   margin-top: 22px; padding: 14px 17px; border-radius: 13px;
   background: rgba(251,191,36,.07); border: 1px solid rgba(251,191,36,.22);
@@ -306,6 +307,13 @@ footer { text-align: center; color: var(--dim); font-size: 11.5px; padding: 0 24
       differential re-ranks after every answer, showing which evidence moved it and why
       it chose that question. It ends by committing with cited evidence, or escalating
       and naming exactly what it could not resolve.
+    </p>
+    <p class="policy-note">
+      Budget policy here is the live one: <b>Not known</b> still spends the turn and the
+      test's cost, because in a consultation an unavailable result is still a result
+      you waited for. The case-report evaluation (<code>eval_real_cases.py</code>) uses
+      the other policy — a finding a report never mentions was never tested, so it is
+      free — which is why the same case can escalate here and commit there.
     </p>
     <textarea id="complaint" placeholder="e.g. 64-year-old woman, sudden shortness of breath and sharp chest pain, worse lying flat"></textarea>
     <div class="examples" id="examples"></div>

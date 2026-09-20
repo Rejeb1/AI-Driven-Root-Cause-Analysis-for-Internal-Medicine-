@@ -281,6 +281,10 @@ def create_session(req: StartRequest) -> dict:
         diagnosis="unknown",
         initial_findings=(),
     )
+    # The live policy, stated on the page: an unknown answer still spends the
+    # turn and the cost, unlike eval_real_cases.py, where a finding a report
+    # never mentions was never tested and is free. Same loop, two policies,
+    # and the same case can escalate here and commit there.
     limits = LoopLimits()
     agent = DiagnosticAgent(
         kb=kb,
