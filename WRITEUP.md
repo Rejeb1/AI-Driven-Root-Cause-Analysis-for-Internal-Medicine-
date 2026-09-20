@@ -842,6 +842,26 @@ weighting stays on, for the gate's calibration on the fixtures and as the
 principled correction — not for a real-patient gap that the only
 instrument able to see it now says is not there.
 
+Two more things about that justification, because it now rests on ten
+invented cases and should be looked at hard. First, no third instrument
+exists: the hard cases show no difference either way, the real records are
+too thin for redundancy to accumulate, and DDXPlus samples evidence
+independently given the pathology, so it has no dependence to correct and
+the earlier DESIGN.md measurement showing correction makes it slightly
+*worse* is the expected result. Second, the fixture effect does not depend
+on the invented magnitudes. Every weight set uniformly to 0.10, 0.30, 0.50
+or 0.95 removes both wrong commits just as the declared 0.70–0.85 do; what
+the magnitude changes is how much the loop still commits — at 0.10 the
+fixtures keep eight correct commits against six, with a better held-out
+Brier (0.141 against 0.170) and the real cases five correct against four,
+none wrong anywhere. That is a real observation and it is not acted on:
+choosing a magnitude from a sweep over ten cases is fitting the knowledge
+base to its own benchmark, and the measured phi values — the one non-tuned
+alternative — agree with the declared ones on every verdict. So: the
+mechanism is robust to its values; its values are still invented; and the
+lighter setting is recorded here as the thing a larger case set should
+decide.
+
 ### A configuration inconsistency found while writing this, and fixed
 
 `scripts/run_eval.py` built its knowledge base **without** correlation
