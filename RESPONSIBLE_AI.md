@@ -236,7 +236,12 @@ assumptions reports self-consistency as accuracy:
 Every number in this project comes from the Bayesian proposer and the
 knowledge-base fallback the single-pass baseline uses in place of an LLM —
 never from the Claude Opus 4.x-class model the brief mandates, and never
-through AgentClinic, the evaluation harness the brief names. Both are
+through AgentClinic, the evaluation harness the brief names. One exception,
+added late: the single-pass baseline has now been run once with a local
+3B model through Ollama (WRITEUP.md §7), chosen over a hosted free tier
+precisely because nothing leaves the machine, so the privacy claims above
+hold with it in place. It is a substitute, not the mandated model, and the
+run says so in its own header. Both are
 missing for reasons that would not resolve with more time on this machine:
 no API credit existed for the mandated model at any point in the project, and
 AgentClinic needs its own key plus a code fork to accept this agent rather

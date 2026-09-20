@@ -68,7 +68,9 @@ python3 scripts/synthesize.py --provider gemini --per-disease 2 --out cases.json
 
 `--provider anthropic` (the default) uses the brief's mandated model and needs
 `ANTHROPIC_API_KEY`; `--provider gemini` needs `GEMINI_API_KEY` and a free key
-from [aistudio.google.com](https://aistudio.google.com). Gemini is a documented
+from [aistudio.google.com](https://aistudio.google.com); `--provider ollama`
+uses a local model through [Ollama](https://ollama.com) — free, offline, no
+key, nothing leaves the machine. Either substitute is a documented
 deviation from the mandated stack, not an equivalent — a run says so, and each
 case records which model wrote it.
 
@@ -116,7 +118,8 @@ rather than assumed away.
 ```bash
 pip install -e ".[stack]"                # LangGraph, BGE-M3, Qdrant
 python3 scripts/run_eval.py --grounded   # cite retrieved guideline passages
-python3 scripts/run_eval.py --llm        # add an LLM proposer (needs ANTHROPIC_API_KEY)
+python3 scripts/run_eval.py --llm        # local model via Ollama: consensus proposer + the LLM single-pass baseline
+python3 scripts/run_eval.py --llm --provider anthropic   # the mandated model, needs ANTHROPIC_API_KEY
 ```
 
 LangGraph is used automatically once installed. Retrieval is opt-in because the

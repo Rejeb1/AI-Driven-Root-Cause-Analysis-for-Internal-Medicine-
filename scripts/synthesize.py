@@ -74,27 +74,26 @@ def main() -> int:
         print("\n--dry-run: nothing generated.")
         return 0
 
-    env_var = "ANTHROPIC_API_KEY" if args.provider == "anthropic" else "GEMINI_API_KEY"
-    if not os.environ.get(env_var):
+    from dxagent.llm import from_provider
+
+    env_var = {"anthropic": "ANTHROPIC_API_KEY", "gemini": "GEMINI_API_KEY"}.get(args.provider)
+    if env_var and not os.environ.get(env_var):
         print(
             f"\n{env_var} is not set, so there is no model to generate with.\n"
-            "Run with --dry-run to see the plan, or set the key.\n"
-            "Nothing was written."
+            "Run with --dry-run to see the plan, set the key, or use "
+            "--provider ollama for a local model.\nNothing was written."
         )
         return 1
 
-    if args.provider == "gemini":
-        from dxagent.llm import GeminiLLM
-
+    llm = from_provider(args.provider, args.model)
+    if args.provider == "ollama" and not llm.available():
+        print(f"\nno Ollama server at {llm.base_url}. Nothing was written.")
+        return 1
+    if args.provider != "anthropic":
         print(
-            "\nusing Gemini, not the brief's mandated model -- record this "
-            "substitution in the write-up."
+            f"\nusing {args.provider}:{getattr(llm, 'model', '?')}, not the "
+            "brief's mandated model -- record this substitution in the write-up."
         )
-        llm = GeminiLLM()
-    else:
-        from dxagent.llm import AnthropicLLM
-
-        llm = AnthropicLLM()
 
     generator = CaseGenerator(llm, kb, seed=args.seed)
 

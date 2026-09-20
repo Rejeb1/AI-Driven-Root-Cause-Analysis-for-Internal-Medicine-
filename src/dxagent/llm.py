@@ -169,4 +169,118 @@ class GeminiLLM:
         raise RuntimeError("unreachable")  # pragma: no cover
 
 
-__all__ = ["AnthropicLLM", "GeminiLLM", "LLMClient", "NullLLM", "ScriptedLLM"]
+@dataclass
+class OpenAICompatibleLLM:
+    """Any server that speaks the OpenAI chat-completions format.
+
+    Written for Ollama -- a local model, no key, nothing leaves the machine,
+    which is the only configuration under which the privacy claims in
+    RESPONSIBLE_AI.md survive contact with a language model -- and it also
+    covers Groq, OpenRouter, Mistral and the rest, which use the same wire
+    format behind a key. Standard library only: the whole project runs with
+    nothing installed, and an adapter that needs a client package would be
+    the first thing to break that.
+
+    Still a deviation from the mandated model, recorded as one. Determinism
+    is requested (temperature 0) and not guaranteed: a local model's output
+    can vary with the build and the hardware, and the write-up must not
+    describe a run with this as reproducible without saying so.
+    """
+
+    base_url: str = "http://127.0.0.1:11434/v1"
+    model: str = "qwen2.5:7b"
+    api_key: str | None = None
+    temperature: float = 0.0
+    timeout: float = 300.0  # a 7B model on a laptop CPU is slow, not broken
+    # Ask the server to constrain the output to JSON. Ollama honours this;
+    # servers that do not simply ignore it, and the proposer's parser copes.
+    json_mode: bool = True
+
+    def complete(self, prompt: str, system: str = "", max_tokens: int = 1024) -> str:
+        import urllib.error
+        import urllib.request
+
+        body: dict = {
+            "model": self.model,
+            "messages": (
+                [{"role": "system", "content": system}] if system else []
+            ) + [{"role": "user", "content": prompt}],
+            "temperature": self.temperature,
+            "max_tokens": max_tokens,
+        }
+        if self.json_mode:
+            body["response_format"] = {"type": "json_object"}
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        request = urllib.request.Request(
+            f"{self.base_url.rstrip('/')}/chat/completions",
+            data=json.dumps(body).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except urllib.error.URLError as exc:
+            raise RuntimeError(
+                f"no OpenAI-compatible server at {self.base_url}: {exc.reason}. "
+                "For a local model: install Ollama, `ollama pull "
+                f"{self.model}`, and make sure `ollama serve` is running."
+            ) from exc
+        try:
+            return payload["choices"][0]["message"]["content"] or ""
+        except (KeyError, IndexError, TypeError) as exc:
+            raise RuntimeError(f"unexpected response shape: {payload!r:.200}") from exc
+
+    def available(self) -> bool:
+        """Whether the server answers at all. Cheap; used to skip, not to fail."""
+        import urllib.error
+        import urllib.request
+
+        try:
+            with urllib.request.urlopen(
+                f"{self.base_url.rstrip('/')}/models", timeout=3
+            ) as response:
+                return response.status == 200
+        except (urllib.error.URLError, OSError):
+            return False
+
+
+def ollama(model: str = "qwen2.5:7b") -> OpenAICompatibleLLM:
+    """A local Ollama model: free, offline, no key."""
+    return OpenAICompatibleLLM(model=model)
+
+
+def from_provider(provider: str, model: str | None = None) -> LLMClient:
+    """The client the scripts' ``--provider`` flag names.
+
+    ``ollama`` is the default everywhere a flag exists, because it is the one
+    option that needs neither a key nor a network and keeps the project's
+    "runs from a clean checkout" property.
+    """
+    if provider == "ollama":
+        return ollama(model or "qwen2.5:7b")
+    if provider == "anthropic":
+        return AnthropicLLM(model=model) if model else AnthropicLLM()
+    if provider == "gemini":
+        return GeminiLLM(model=model) if model else GeminiLLM()
+    if provider == "openai-compatible":
+        # Any hosted OpenAI-format API: base URL and key from the environment,
+        # so neither ever appears on a command line or in a shell history.
+        base = os.environ.get("LLM_BASE_URL")
+        if not base:
+            raise RuntimeError("LLM_BASE_URL is not set")
+        return OpenAICompatibleLLM(
+            base_url=base, model=model or os.environ.get("LLM_MODEL", ""),
+            api_key=os.environ.get("LLM_API_KEY"),
+        )
+    raise ValueError(f"unknown provider {provider!r}")
+
+
+PROVIDERS = ("ollama", "anthropic", "gemini", "openai-compatible")
+
+__all__ = [
+    "AnthropicLLM", "GeminiLLM", "LLMClient", "NullLLM", "OpenAICompatibleLLM",
+    "PROVIDERS", "ScriptedLLM", "from_provider", "ollama",
+]

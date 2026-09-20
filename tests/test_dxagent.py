@@ -3665,3 +3665,101 @@ def test_the_cheap_diligence_rule_is_measured_and_off():
     used = lambda outs: any("cheap and never asked" in s.action.rationale for o in outs for s in o.steps)
     assert used(on) and not used(off)
     assert [o.prediction for o in on] == [o.prediction for o in off]
+
+
+def test_the_openai_compatible_adapter_speaks_the_wire_format_and_needs_no_key():
+    """A local model behind the OpenAI chat format, with the standard library.
+
+    Pinned against a fake server rather than a real one so the suite still
+    runs from a clean checkout with nothing installed and nothing listening.
+    The request must carry the system and user messages, temperature 0 and
+    the JSON constraint; the response must come back as the message content;
+    no Authorization header without a key, and one with.
+    """
+    import json
+    import threading
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    from dxagent.llm import OpenAICompatibleLLM
+
+    seen: list[tuple[str, dict, dict]] = []
+
+    class Fake(BaseHTTPRequestHandler):
+        def do_POST(self):
+            body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            seen.append((self.path, dict(self.headers), body))
+            payload = {"choices": [{"message": {"content": '{"ranking": []}'}}]}
+            out = json.dumps(payload).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(out)))
+            self.end_headers()
+            self.wfile.write(out)
+
+        def do_GET(self):
+            self.send_response(200); self.send_header("Content-Length", "2")
+            self.end_headers(); self.wfile.write(b"{}")
+
+        def log_message(self, *_):  # keep the test output clean
+            pass
+
+    server = HTTPServer(("127.0.0.1", 0), Fake)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        base = f"http://127.0.0.1:{server.server_port}/v1"
+        llm = OpenAICompatibleLLM(base_url=base, model="fake")
+        assert llm.available()
+        assert llm.complete("hello", system="be brief", max_tokens=7) == '{"ranking": []}'
+        path, headers, body = seen[-1]
+        assert path == "/v1/chat/completions"
+        assert body["model"] == "fake"
+        assert body["messages"] == [
+            {"role": "system", "content": "be brief"},
+            {"role": "user", "content": "hello"},
+        ]
+        assert body["temperature"] == 0.0 and body["max_tokens"] == 7
+        assert body["response_format"] == {"type": "json_object"}
+        assert "Authorization" not in headers
+
+        keyed = OpenAICompatibleLLM(base_url=base, model="fake", api_key="k")
+        keyed.complete("x")
+        assert seen[-1][1]["Authorization"] == "Bearer k"
+    finally:
+        server.shutdown()
+
+    # Nothing listening: a clear message that says what to do, not a traceback.
+    dead = OpenAICompatibleLLM(base_url="http://127.0.0.1:1/v1", timeout=1)
+    assert not dead.available()
+    with pytest.raises(RuntimeError, match="ollama"):
+        dead.complete("x")
+
+
+def test_a_local_model_ranks_the_candidate_list_when_one_is_running():
+    """End to end through LLMProposer against whatever Ollama is serving.
+
+    Skipped when no server answers, so the suite never depends on one. When
+    it runs, it asks only that the model returns a parseable ranking over the
+    real candidate labels -- not that it is right. What a local model gets
+    right is measured in the evaluation scripts, not asserted here.
+    """
+    from dxagent.belief import LLMProposer
+    from dxagent.llm import ollama
+
+    llm = ollama("llama3.2:3b")
+    if not llm.available():
+        pytest.skip("no Ollama server on 127.0.0.1:11434")
+    kb = build_knowledge_base(correlated=True)
+    findings = [Finding("pleuritic_pain", Polarity.PRESENT), Finding("fever", Polarity.PRESENT)]
+    labels = {e.label for e in kb.diseases()}
+    # A 3B model occasionally returns a ranking the parser rejects; the
+    # proposer degrades to Bayes by design when that happens. Two attempts:
+    # the plumbing is what is under test, not the model's consistency.
+    for attempt in range(2):
+        proposer = LLMProposer(kb=kb, llm=llm)
+        differential = proposer.propose(findings, "sharp chest pain and fever")
+        if proposer.fallback is None:
+            break
+    assert proposer.fallback is None, "the model returned no usable ranking twice"
+    assert {h.label for h in differential.hypotheses} <= labels
+    assert abs(sum(h.probability for h in differential.hypotheses) - 1.0) < 0.05

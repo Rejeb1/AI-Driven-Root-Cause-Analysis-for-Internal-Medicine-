@@ -1017,9 +1017,20 @@ empty row.
 - **The mandated model never ran live.** No API credit existed for the project's
   duration. The LLM layer has been a swappable Protocol since week 1 for exactly
   this reason, and the default model id points at the current Opus-tier release
-  — but that default has never been called. Every number in this project comes
-  from the Bayesian proposer and a knowledge-base fallback, never from the
-  mandated model.
+  — but that default has never been called. What *has* run, late and as a
+  documented substitute, is a local model: `OpenAICompatibleLLM` in `llm.py`
+  talks to Ollama with the standard library, no key, nothing leaving the
+  machine, and `run_eval.py --llm` now runs the brief's single-pass baseline
+  with it. On the held-out seven with `llama3.2:3b` handed the complete
+  record: top-1 42.9%, top-5 71.4%, MRR 0.571 — below the retrieval-only
+  baseline (57.1%) and the loop (71.4% on 41% of the evidence). A 3B model
+  is a lower bound on what the mandated model would do, the run is not
+  reproducible in the way the rest of this project is (a local model's
+  output varies with build and hardware), and the row is reported for what
+  it is: the first time that baseline held a model rather than a stand-in.
+  Putting the same model *inside* the loop (`--llm-in-loop`) works and costs
+  a call per turn — over an hour on this hardware — so it was not run to
+  completion and no number is claimed for it.
 - **AgentClinic never ran.** It needs its own API key plus a fork to accept this
   agent in place of its own — not a configuration change, and not attempted.
 - **UMLS relations** — probed, found unusable, documented above.

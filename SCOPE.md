@@ -305,7 +305,10 @@ Replicate API key to drive its own doctor/patient simulation loop, and using
 it properly means forking its code to accept this project's agent in place of
 its own — not a configuration change, and not attempted. The mandated model
 has not run live at all: no API credit was available for the project's
-duration. The LLM layer (`dxagent.llm.LLMClient`) has been a swappable
+duration. A local substitute has (Ollama, `llama3.2:3b`, through an
+OpenAI-compatible adapter that needs no key), for the single-pass baseline
+only; WRITEUP.md §7 carries the numbers and the caveats. The LLM layer
+(`dxagent.llm.LLMClient`) has been a swappable
 Protocol since week 1 for exactly this reason — `AnthropicLLM`'s default
 model id now points at the current Opus-tier release as the honest current
 equivalent of what the brief specifies, but that default has never actually

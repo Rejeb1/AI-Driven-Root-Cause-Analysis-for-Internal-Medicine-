@@ -53,6 +53,38 @@ def have(module: str) -> bool:
     return find_spec(module) is not None
 
 
+def make_llm(args):
+    """The client ``--provider`` names, or None with the reason printed.
+
+    Ollama is the default: free, offline, no key, and the only option under
+    which the privacy section of RESPONSIBLE_AI.md still holds with a model
+    in the loop. It is still a deviation from the mandated model and the
+    report header says which model actually ran.
+    """
+    import os
+
+    from dxagent.llm import from_provider
+
+    if args.provider == "anthropic" and not os.environ.get("ANTHROPIC_API_KEY"):
+        print("  --llm given but ANTHROPIC_API_KEY is unset; skipping")
+        return None
+    if args.provider == "gemini" and not os.environ.get("GEMINI_API_KEY"):
+        print("  --llm given but GEMINI_API_KEY is unset; skipping")
+        return None
+    llm = from_provider(args.provider, args.model)
+    if args.provider == "ollama" and not llm.available():
+        print(f"  --llm given but no Ollama server at {llm.base_url}; skipping")
+        return None
+    return llm
+
+
+def describe_llm(args) -> str:
+    from dxagent.llm import from_provider
+
+    llm = from_provider(args.provider, args.model)
+    return f"{args.provider}:{getattr(llm, 'model', '?')}"
+
+
 def build_proposer(kb, args):
     """Assemble the proposer stack the flags ask for.
 
@@ -64,23 +96,19 @@ def build_proposer(kb, args):
     """
     proposer = BayesianProposer(kb)
 
-    if args.llm:
-        import os
-
-        if not os.environ.get("ANTHROPIC_API_KEY"):
-            print("  --llm given but ANTHROPIC_API_KEY is unset; skipping")
-        else:
+    if args.llm and args.llm_in_loop:
+        llm = make_llm(args)
+        if llm is not None:
             from dxagent.belief import LLMProposer
-            from dxagent.llm import AnthropicLLM
 
             # Consensus rather than replacement: belief.py exists to expose
             # disagreement between a transparent posterior and a model's
             # clinical intuition, and averaging them would destroy the signal
             # the gate reads.
             proposer = ConsensusProposer(
-                primary=proposer, secondary=LLMProposer(kb, AnthropicLLM())
+                primary=proposer, secondary=LLMProposer(kb, llm)
             )
-            print("  proposer: consensus (Bayesian + LLM)")
+            print(f"  proposer: consensus (Bayesian + {describe_llm(args)})")
 
     if args.grounded:
         if not (have("qdrant_client") and have("sentence_transformers")):
@@ -135,22 +163,16 @@ def baseline_comparison(kb, test_cases, result, args=None) -> str:
     # same Bayesian KB reasoner minus the loop, which is a different and
     # weaker comparison than the brief asks for. Report which one actually ran
     # rather than let "single-pass" quietly mean two different things.
-    if args is not None and args.llm:
-        import os
+    llm = make_llm(args) if args is not None and args.llm else None
+    if args is not None and args.llm and llm is None:
+        print("  single-pass baseline falls back to the KB reasoner")
+    if llm is not None:
+        from dxagent.belief import LLMProposer
 
-        if not os.environ.get("ANTHROPIC_API_KEY"):
-            print("  --llm given but ANTHROPIC_API_KEY is unset; "
-                  "single-pass baseline falls back to the KB reasoner")
-            rows.append(("single-pass (KB, no loop)", SinglePassBaseline(kb)))
-        else:
-            from dxagent.belief import LLMProposer
-            from dxagent.llm import AnthropicLLM
-
-            llm_proposer = LLMProposer(kb=kb, llm=AnthropicLLM())
-            rows.append((
-                "single-pass (LLM, no loop)",
-                SinglePassBaseline(kb, proposer=llm_proposer),
-            ))
+        rows.append((
+            f"single-pass LLM ({describe_llm(args).split(':', 1)[1]})"[:32],
+            SinglePassBaseline(kb, proposer=LLMProposer(kb=kb, llm=llm)),
+        ))
     else:
         rows.append(("single-pass (KB, no loop)", SinglePassBaseline(kb)))
 
@@ -288,7 +310,26 @@ def main() -> int:
     parser.add_argument(
         "--llm",
         action="store_true",
-        help="add an LLM proposer alongside the Bayesian one (needs ANTHROPIC_API_KEY)",
+        help="run the single-pass baseline as the brief specifies it, with a "
+             "real model (one call per case); see --llm-in-loop",
+    )
+    parser.add_argument(
+        "--llm-in-loop",
+        action="store_true",
+        help="also put the model inside the loop as a consensus proposer -- one "
+             "call per turn, roughly ten times the cost of the baseline alone",
+    )
+    parser.add_argument(
+        "--provider",
+        choices=("ollama", "anthropic", "gemini", "openai-compatible"),
+        default="ollama",
+        help="which model serves --llm; ollama (default) is local, free and "
+             "needs no key",
+    )
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="model name for the provider (default: qwen2.5:7b for ollama)",
     )
     parser.add_argument(
         "--no-baselines",
