@@ -1052,6 +1052,34 @@ empty row.
   turn" — neither a block nor an agreement — and the fallback count is
   exposed.
 
+  **The job a model should have had — extraction — was built and measured,
+  and the answer is no, not with these models.** `dxagent/extraction.py`
+  puts the extraction rules from `real_cases.py` in front of a model and
+  enforces the enforceable part mechanically: every finding must carry a
+  passage found verbatim in the source or it is dropped, the discussion
+  section is cut so a literature review's percentages are never seen, and a
+  finding reported with two polarities across chunks is a conflict for the
+  human. `scripts/extract_case.py` turns a PMC id into a `Case(...)` draft
+  with every quote beside its finding and every rejection with its reason.
+  Measured on the SLE pericarditis against the hand extraction of seven
+  findings:
+
+      llama3.2:3b   3 recovered, 2 missed, 2 wrong polarity, 17 invented, 23 rejected by quote
+      qwen2.5:7b    3 recovered, 4 missed, 0 wrong polarity,  6 invented,  2 rejected by quote
+
+  The quote check works: every fabricated sentence ("Fever was not
+  reported") was caught. What it cannot catch is a real sentence quoted for
+  a finding it does not mention. The 3B model read silence as absence
+  seventeen times, each time citing an unrelated line; the 7B model did it
+  less and worse — *raised BNP: present* and *raised D-dimer: present*,
+  quoting "elevated inflammatory markers, including erythrocyte
+  sedimentation rate", tests the report never ran. That is the
+  confidently-wrong data point the extraction rules exist to prevent, with
+  a genuine citation attached. Reviewing nine proposals to keep three is not
+  less work than reading the report. The path stays, tested, as a draft
+  generator with mandatory review; it does not replace the hand extraction,
+  and no case in the set came from it.
+
   The same model *inside* the loop (`--llm-in-loop`, one call per turn, about
   an hour on this hardware) was also run once on the held-out seven, as a
   consensus proposer beside the Bayesian one:

@@ -118,7 +118,8 @@ rather than assumed away.
 ```bash
 pip install -e ".[stack]"                # LangGraph, BGE-M3, Qdrant
 python3 scripts/run_eval.py --grounded   # cite retrieved guideline passages
-python3 scripts/run_eval.py --llm        # local model via Ollama: consensus proposer + the LLM single-pass baseline
+python3 scripts/run_eval.py --llm        # local model via Ollama: the LLM single-pass baseline (--llm-repeats N for the spread)
+python3 scripts/extract_case.py PMC12708975   # draft a real case from a report; every finding carries a verbatim quote, a human checks
 python3 scripts/run_eval.py --llm --provider anthropic   # the mandated model, needs ANTHROPIC_API_KEY
 ```
 

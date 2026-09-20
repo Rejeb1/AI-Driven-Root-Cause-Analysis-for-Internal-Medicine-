@@ -3818,3 +3818,79 @@ def test_no_second_opinion_is_not_agreement():
     assert gate.evaluate(d, disagreement=float("nan")).should_commit == \
         gate.evaluate(d, disagreement=0.0).should_commit
     assert not gate.evaluate(d, disagreement=0.9).should_commit
+
+
+def test_extraction_keeps_only_findings_the_source_can_be_quoted_for():
+    """A model proposes; a string search filters; a human decides.
+
+    The failure mode of model extraction is a plausible finding the text does
+    not contain, so every finding must carry a passage found verbatim in the
+    source or it is dropped. Measured on the SLE pericarditis with a 3B
+    model: every fabricated negative ("Fever was not reported") was caught
+    by this; what it cannot catch is a real sentence quoted for a finding it
+    does not mention, which is the human's job and is said so.
+    """
+    import json
+
+    from dxagent.extraction import case_section, chunk, extract_findings, quote_in_text
+    from dxagent.llm import ScriptedLLM
+
+    text = ("Case presentation\nA 40-year-old man presented with fever measured at 38.5C "
+            "and a dry cough. Heart rate was 88 beats per minute. Lungs were clear to "
+            "auscultation.\n\nDiscussion\nFever occurs in 70% of pneumonias and "
+            "haemoptysis in 50%.")
+    concepts = {"fever": "fever", "productive_cough": "productive cough",
+                "exam:tachycardia": "tachycardia", "exam:crackles": "crackles",
+                "haemoptysis": "haemoptysis"}
+
+    # The discussion is cut, so its population figures are never seen.
+    assert "70%" not in case_section(text)
+
+    responses = [json.dumps({"findings": [
+        {"concept": "fever", "polarity": "present", "quote": "fever measured at 38.5C"},
+        {"concept": "productive_cough", "polarity": "absent", "quote": "a dry cough"},
+        {"concept": "exam:tachycardia", "polarity": "absent", "quote": "Heart rate was 88 beats per minute"},
+        {"concept": "exam:crackles", "polarity": "absent", "quote": "Lungs were clear to auscultation"},
+        # fabricated: no such sentence
+        {"concept": "haemoptysis", "polarity": "absent", "quote": "Haemoptysis was not reported."},
+        # paraphrased, not verbatim
+        {"concept": "fever", "polarity": "present", "quote": "he had a temperature of 38.5"},
+        # not a concept
+        {"concept": "hypoxia", "polarity": "absent", "quote": "Lungs were clear"},
+        # bad polarity
+        {"concept": "fever", "polarity": "not stated", "quote": "fever measured at 38.5C"},
+    ]})]
+    result = extract_findings(text, ScriptedLLM(responses=responses), concepts)
+
+    assert result.features == {"fever": True, "productive_cough": False,
+                               "exam:tachycardia": False, "exam:crackles": False}
+    reasons = {(r.concept, r.reason) for r in result.rejected}
+    assert ("haemoptysis", "quote not found verbatim in the source") in reasons
+    assert ("hypoxia", "not a vocabulary concept") in reasons
+    assert any(c == "fever" and "polarity" in why for c, why in reasons)
+    assert result.chunks == 1
+
+    # Whitespace and case are forgiven in a quote; nothing else is.
+    assert quote_in_text("lungs  were CLEAR to\nauscultation", text)
+    assert not quote_in_text("lungs were normal", text)
+    assert not quote_in_text("was", text)  # too short to mean anything
+
+    # Not JSON: rejected as such, and the run continues.
+    bad = extract_findings(text, ScriptedLLM(responses=["nope"]), concepts)
+    assert bad.accepted == [] and bad.rejected[0].reason == "response was not JSON"
+
+    # Chunks overlap, and a finding reported with two polarities across
+    # chunks is a conflict the human resolves, not one the code resolves.
+    pieces = chunk("x" * 12000, size=5000, overlap=400)
+    assert len(pieces) == 3 and pieces[1][:400] == pieces[0][-400:]
+    # An overlap that would step backwards is capped, not obeyed: this call
+    # used to loop forever and stalled the suite for an afternoon.
+    assert len(chunk("y" * 2000, size=300, overlap=400)) < 20
+    two = [json.dumps({"findings": [{"concept": "fever", "polarity": "present", "quote": "fever measured at 38.5C"}]}),
+           json.dumps({"findings": [{"concept": "fever", "polarity": "absent", "quote": "fever measured at 38.5C"}]})]
+    long_text = text.replace(
+        "\n\nDiscussion", ("filler sentence about nothing. " * 200) + "\n\nDiscussion"
+    )
+    conflicted = extract_findings(long_text, ScriptedLLM(responses=two), concepts, chunk_size=300)
+    assert "fever" not in conflicted.features
+    assert any("conflicts" in r.reason for r in conflicted.rejected)
