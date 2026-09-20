@@ -979,9 +979,13 @@ story += [table([
      "Published decision rules substitute for which findings support which cause, and "
      "likelihood ratios for strength. Grading the chain has <b>no substitute and is "
      "not delivered</b>."],
-    ["The mandated model, run live", "No API credit for the project's duration. The LLM "
-     "layer has been a swappable Protocol since week 1 for exactly this reason, and "
-     "that default has never been called."],
+    ["The mandated model, run live", "No API credit for the project's duration; that "
+     "default has never been called. What did run, late, is a <b>local substitute</b>: "
+     "a 3B model through Ollama, free, offline, no key. The brief's single-pass baseline "
+     "with it scores 28&ndash;71% top-1 across five runs of the same seven cases "
+     "&mdash; a local model split across CPU and GPU is not reproducible run to run, "
+     "so the row is reported as a spread. Inside the loop it changes no ranking and "
+     "makes the gate decline more, including cases it had right."],
     ["AgentClinic as the harness", "Needs its own API key plus a fork to accept this "
      "agent in place of its own. Not a configuration change, and not attempted."],
     ["UMLS relations", "Probed and found unusable: overwhelmingly translations, ICD "

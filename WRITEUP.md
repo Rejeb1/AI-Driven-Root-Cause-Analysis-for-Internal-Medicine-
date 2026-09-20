@@ -1029,9 +1029,28 @@ empty row.
   output varies with build and hardware), and the row is reported for what
   it is: the first time that baseline held a model rather than a stand-in.
   Run a second time an hour later, same model, same seven cases, temperature
-  0 requested: **28.6%**. That spread — 42.9% against 28.6% on seven cases —
-  is the reproducibility caveat showing up in the numbers, and the baseline
-  is reported as the pair, not either figure alone.
+  0 requested: **28.6%**. Then, after adding a fixed seed to every request,
+  three more runs back to back: 57.1%, 71.4%, 71.4%, with different picks
+  each time. Five runs of one row on one set of seven cases: **28.6% to
+  71.4%.** The seed is not the cause — a model split 20/80 across CPU and
+  GPU does not produce bit-identical logits, and at temperature 0 the
+  near-ties flip. This cannot be fixed on this hardware, only measured:
+  `run_eval.py --llm-repeats N` now runs the row N times and prints the
+  spread, and no single-run LLM figure in this document is a result.
+
+  Measuring the model's disagreement with the posterior at full evidence on
+  thirteen cases: median total variation 0.37, against a gate threshold of
+  0.40 that was set before any second proposer existed. So the fifth
+  condition fires on roughly a third of decisions with this model — which is
+  the coverage drop below, explained — and it is not adjusted, because
+  choosing it now would be tuning to thirteen cases. The measurement also
+  found a defect: three of the thirteen read exactly 0.00, which was not
+  agreement but the model returning an unusable ranking, the proposer
+  falling back to Bayes, and the consensus comparing Bayes with Bayes. The
+  gate saw perfect agreement on turns with no second opinion. A fallback
+  turn now reports NaN, which the gate treats as "no consensus proposer this
+  turn" — neither a block nor an agreement — and the fallback count is
+  exposed.
 
   The same model *inside* the loop (`--llm-in-loop`, one call per turn, about
   an hour on this hardware) was also run once on the held-out seven, as a

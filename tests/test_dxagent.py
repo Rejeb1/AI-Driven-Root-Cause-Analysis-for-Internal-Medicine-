@@ -3739,9 +3739,10 @@ def test_a_local_model_ranks_the_candidate_list_when_one_is_running():
     """End to end through LLMProposer against whatever Ollama is serving.
 
     Skipped when no server answers, so the suite never depends on one. When
-    it runs, it asks only that the model returns a parseable ranking over the
-    real candidate labels -- not that it is right. What a local model gets
-    right is measured in the evaluation scripts, not asserted here.
+    it runs, it asks only that the plumbing holds: the server answers and the
+    proposer produces a well-formed differential from whatever came back.
+    Whether the model's ranking was usable, let alone right, is measured in
+    the evaluation scripts as a spread over runs, not asserted here.
     """
     from dxagent.belief import LLMProposer
     from dxagent.llm import ollama
@@ -3752,14 +3753,68 @@ def test_a_local_model_ranks_the_candidate_list_when_one_is_running():
     kb = build_knowledge_base(correlated=True)
     findings = [Finding("pleuritic_pain", Polarity.PRESENT), Finding("fever", Polarity.PRESENT)]
     labels = {e.label for e in kb.diseases()}
-    # A 3B model occasionally returns a ranking the parser rejects; the
-    # proposer degrades to Bayes by design when that happens. Two attempts:
-    # the plumbing is what is under test, not the model's consistency.
-    for attempt in range(2):
-        proposer = LLMProposer(kb=kb, llm=llm)
-        differential = proposer.propose(findings, "sharp chest pain and fever")
-        if proposer.fallback is None:
-            break
-    assert proposer.fallback is None, "the model returned no usable ranking twice"
+
+    # The plumbing: the real server answers with text, and the proposer turns
+    # whatever it says into a well-formed differential -- either the model's
+    # ranking or, when the model's answer is unusable, the Bayesian one. A
+    # 3B model does return unusable rankings sometimes; that is the model's
+    # quality, measured in the evaluation scripts as a spread, and a test
+    # that fails on it is a test of the weather. This one fails only if the
+    # server is unreachable mid-run or the proposer raises, neither of which
+    # is the model's mood.
+    text = llm.complete("Reply with a JSON object containing one key, ok, set to true.",
+                        max_tokens=20)
+    assert text.strip()
+    proposer = LLMProposer(kb=kb, llm=llm)
+    differential = proposer.propose(findings, "sharp chest pain and fever")
     assert {h.label for h in differential.hypotheses} <= labels
     assert abs(sum(h.probability for h in differential.hypotheses) - 1.0) < 0.05
+    assert proposer.last_verbalised_confidence != proposer.last_verbalised_confidence or         0.0 <= proposer.last_verbalised_confidence <= 1.0
+
+
+def test_no_second_opinion_is_not_agreement():
+    """A consensus turn where the model's answer was unusable must not read
+    as perfect agreement.
+
+    LLMProposer falls back to the Bayesian posterior when the model returns
+    nothing usable, by design. ConsensusProposer then compared Bayes against
+    Bayes and reported zero disagreement -- and the gate's fifth condition
+    saw the two proposers agreeing perfectly on a turn where there was no
+    second opinion at all. Three of thirteen measured turns with a 3B model
+    were exactly 0.00 for this reason. The disagreement is now NaN on such a
+    turn, the gate treats NaN as "no consensus proposer this turn" (neither
+    blocks nor counts as agreement), and the fallback count is exposed.
+    """
+    from dxagent.belief import BayesianProposer, ConsensusProposer, LLMProposer
+    from dxagent.gate import AbstentionGate
+    from dxagent.llm import ScriptedLLM
+
+    kb = build_knowledge_base(correlated=True)
+    findings = [Finding("pleuritic_pain", Polarity.PRESENT)]
+
+    # First call: garbage. Second call: a real ranking that disagrees.
+    llm = ScriptedLLM(responses=[
+        "not json at all",
+        ScriptedLLM.ranking([("panic_attack", 0.9), ("pericarditis", 0.1)]),
+    ])
+    consensus = ConsensusProposer(primary=BayesianProposer(kb), secondary=LLMProposer(kb, llm))
+
+    consensus.propose(findings, "chest pain")
+    assert consensus.secondary.last_was_fallback
+    assert consensus.last_disagreement != consensus.last_disagreement  # NaN
+    assert consensus.secondary_fallbacks == 1 and consensus.turns == 1
+
+    consensus.propose(findings, "chest pain")
+    assert not consensus.secondary.last_was_fallback
+    assert consensus.last_disagreement > 0.40
+    assert consensus.secondary_fallbacks == 1 and consensus.turns == 2
+
+    # The gate: NaN neither blocks nor counts. A confident, grounded, red-flag
+    # free differential passes with NaN exactly as it would with 0.0, and is
+    # blocked by a real disagreement above the threshold.
+    gate = AbstentionGate(kb=kb, min_confidence=0.5, min_margin=0.1)
+    d = Differential.from_scores({"panic_attack": 0.9, "pericarditis": 0.1},
+                                 grounding={"panic_attack": kb.get("panic_attack").citations})
+    assert gate.evaluate(d, disagreement=float("nan")).should_commit == \
+        gate.evaluate(d, disagreement=0.0).should_commit
+    assert not gate.evaluate(d, disagreement=0.9).should_commit

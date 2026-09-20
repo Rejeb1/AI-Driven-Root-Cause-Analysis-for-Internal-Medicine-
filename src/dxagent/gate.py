@@ -417,7 +417,11 @@ class AbstentionGate:
                 confidence,
             )
 
-        if disagreement > self.max_disagreement:
+        # NaN means no second opinion this turn, which is the situation with
+        # no consensus proposer at all: it neither blocks nor counts as
+        # agreement. A comparison with NaN is False, so this is explicit
+        # rather than relied upon.
+        if disagreement == disagreement and disagreement > self.max_disagreement:
             return GateDecision(
                 False,
                 f"proposers disagree (total variation {disagreement:.2f} > "

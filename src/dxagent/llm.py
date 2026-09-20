@@ -195,6 +195,12 @@ class OpenAICompatibleLLM:
     # Ask the server to constrain the output to JSON. Ollama honours this;
     # servers that do not simply ignore it, and the proposer's parser copes.
     json_mode: bool = True
+    # Temperature 0 was only half of determinism: without a seed, Ollama's
+    # sampler still varied between runs, and the single-pass baseline moved
+    # from 42.9% to 28.6% on identical input an hour apart. A fixed seed
+    # makes a local model repeat itself on the same build and hardware;
+    # across builds and machines it still may not, and that caveat stands.
+    seed: int | None = 0
 
     def complete(self, prompt: str, system: str = "", max_tokens: int = 1024) -> str:
         import urllib.error
@@ -210,6 +216,8 @@ class OpenAICompatibleLLM:
         }
         if self.json_mode:
             body["response_format"] = {"type": "json_object"}
+        if self.seed is not None:
+            body["seed"] = self.seed
         headers = {"Content-Type": "application/json"}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"

@@ -236,6 +236,15 @@ class LLMProposer:
     # returned one, so "never stated" is distinguishable from "stated zero".
     last_verbalised_confidence: float = float("nan")
 
+    # Whether the most recent ``propose`` came from the model or from the
+    # Bayesian fallback. Set per call, because ``fallback`` is built once and
+    # then persists, so its existence says only that the model failed at
+    # least once, not that it failed this time. ConsensusProposer reads this:
+    # a fallback compared against the Bayesian primary is Bayes against
+    # Bayes, and reporting that as zero disagreement told the gate the two
+    # proposers agreed perfectly on a turn where there was no second opinion.
+    last_was_fallback: bool = False
+
     def propose(self, findings: list[Finding], complaint: str = "") -> Differential:
         labels = [e.label for e in self.kb.diseases()]
         prompt = self._render(labels, findings, complaint)
@@ -248,6 +257,7 @@ class LLMProposer:
             # Degrade to the statistical posterior and let the gate see the
             # resulting confidence for what it is.
             scores = {}
+        self.last_was_fallback = not scores
         if not scores:
             if self.fallback is None:
                 self.fallback = BayesianProposer(self.kb)
@@ -351,12 +361,25 @@ class ConsensusProposer:
 
     primary: Proposer
     secondary: Proposer
+    # NaN when the secondary had no opinion this turn (it fell back to the
+    # statistical posterior), so that "no second opinion" is distinguishable
+    # from "the second opinion agreed". Three of thirteen measured turns with
+    # a 3B model were exactly 0.00 for that reason, and read as agreement.
     last_disagreement: float = 0.0
     last_labels_agree: bool = True
+    # How often the secondary has had no opinion, for the report.
+    secondary_fallbacks: int = 0
+    turns: int = 0
 
     def propose(self, findings: list[Finding], complaint: str = "") -> Differential:
         a = self.primary.propose(findings, complaint)
         b = self.secondary.propose(findings, complaint)
+        self.turns += 1
+        if getattr(self.secondary, "last_was_fallback", False):
+            self.secondary_fallbacks += 1
+            self.last_disagreement = float("nan")
+            self.last_labels_agree = True
+            return a
         self.last_disagreement = _total_variation(a, b)
         self.last_labels_agree = a.top.label == b.top.label
         return a

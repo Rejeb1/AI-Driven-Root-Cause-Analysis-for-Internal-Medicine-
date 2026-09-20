@@ -194,7 +194,24 @@ def baseline_comparison(kb, test_cases, result, args=None) -> str:
             f"{ranking.mrr:>8.3f}{recall:>9}{evidence:>10.1f}"
         )
 
+    repeats = getattr(args, "llm_repeats", 1) if args is not None else 1
     for name, baseline in rows:
+        if llm is not None and name.startswith("single-pass LLM") and repeats > 1:
+            # A local model split across CPU and GPU is not bit-reproducible
+            # even seeded at temperature 0: five runs of this row on the same
+            # seven cases scored 28.6% to 71.4%. One number from one run is
+            # therefore not a result. The row is repeated and reported as a
+            # spread, and the spread is the finding.
+            runs = [run_agent(baseline, test_cases) for _ in range(repeats)]
+            tops = sorted(ranking_metrics(o, truths).top1 for o in runs)
+            lines.append(row(name, runs[len(runs) // 2], complete))
+            lines.append(
+                f"    top-1 over {repeats} runs: min {tops[0]:.1%}, "
+                f"median {tops[len(tops) // 2]:.1%}, max {tops[-1]:.1%} "
+                "-- the row above is the median run; a local model is not "
+                "reproducible run to run"
+            )
+            continue
         lines.append(row(name, run_agent(baseline, test_cases), complete))
 
     by_id = {case.case_id: case for case in test_cases}
@@ -330,6 +347,13 @@ def main() -> int:
         "--model",
         default=None,
         help="model name for the provider (default: qwen2.5:7b for ollama)",
+    )
+    parser.add_argument(
+        "--llm-repeats",
+        type=int,
+        default=1,
+        help="run the single-pass LLM baseline this many times and report the "
+             "spread; a local model is not reproducible run to run",
     )
     parser.add_argument(
         "--no-baselines",
