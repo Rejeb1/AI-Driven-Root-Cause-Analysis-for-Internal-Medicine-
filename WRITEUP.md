@@ -1028,9 +1028,31 @@ empty row.
   reproducible in the way the rest of this project is (a local model's
   output varies with build and hardware), and the row is reported for what
   it is: the first time that baseline held a model rather than a stand-in.
-  Putting the same model *inside* the loop (`--llm-in-loop`) works and costs
-  a call per turn — over an hour on this hardware — so it was not run to
-  completion and no number is claimed for it.
+  Run a second time an hour later, same model, same seven cases, temperature
+  0 requested: **28.6%**. That spread — 42.9% against 28.6% on seven cases —
+  is the reproducibility caveat showing up in the numbers, and the baseline
+  is reported as the pair, not either figure alone.
+
+  The same model *inside* the loop (`--llm-in-loop`, one call per turn, about
+  an hour on this hardware) was also run once on the held-out seven, as a
+  consensus proposer beside the Bayesian one:
+
+      top-1 / MRR          71.4% / 0.833   (Bayesian loop alone: 71.4% / 0.833)
+      ECE / Brier          0.274 / 0.167   (0.286 / 0.170)
+      gate coverage        28.6%           (42.9%), selective accuracy 100% both
+      evidence seen        12.1 of 27      (11.1)
+
+  Same ranking, calibration a hundredth better, and the gate commits on
+  fewer cases — the proposer-disagreement condition finally has a second
+  proposer to disagree with. The hard cases say the same thing more
+  sharply: 5 of 5 ranked first either way, but the consensus commits on 2
+  (both correct) where the Bayesian loop commits on 4, the myopericarditis
+  escalating at 95% and the silent ischaemia at 88% because the model's own
+  ranking disagreed with the posterior enough to trip condition 5. Not a
+  reproducible number for the same reason as the baseline, and not an
+  argument for the model: on this evidence a 3B model in the loop changes
+  what the loop *declines*, not what it gets right — and it declines things
+  it had right.
 - **AgentClinic never ran.** It needs its own API key plus a fork to accept this
   agent in place of its own — not a configuration change, and not attempted.
 - **UMLS relations** — probed, found unusable, documented above.
