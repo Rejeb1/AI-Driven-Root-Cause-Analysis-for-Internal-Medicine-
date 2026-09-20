@@ -2518,3 +2518,183 @@ ordering claim understates the error it catches.
 
 The claim stays red. The note beside it now says all of this, so the next
 person does not spend the same six searches.
+
+
+## Eight more real patients, chosen by a rule, and the first wrong commit
+
+Ten real cases was the weakest number in the project. A second pass added
+one per diagnosis under a rule written down before any full text was read:
+one title-restricted PMC query per condition, candidates taken in order,
+four acceptance criteria, every rejection logged with its letter. Twenty-seven
+rejections, most of them mimics or in-patient events that were never a
+presentation. All eight were added before any touched the model.
+
+    second pass (n=8)     0 correct, 1 WRONG, 7 escalated (truth first in 4)
+    all real (n=18)       2 correct, 1 wrong, 15 escalated
+
+The wrong one: a 23-year-old woman, a week of pleuritic pain, tachycardic,
+white count 13.0, a pulmonary infiltrate, CT negative for embolism —
+committed as pneumonia at 78%. Pericarditis, on tissue, after a large
+pericardial effusion was drained. The vocabulary had no concept for an
+effusion, cardiomegaly or PR depression, so pneumonia explained everything
+the model could see and the gate's sixth condition was satisfied. The
+confident error the gate was always documented as unable to catch, on a
+real patient. Kept, per the rule.
+
+Three tests pinned zero wrong commits on the real cases. Every comparison
+they encode held in direction at n=18 (shipped 1 wrong against 4, 4 and 2
+for the rejected alternatives); the pins moved to the measured counts. Two
+extraction rulings recorded for the next pass: a CT with no infiltrate is
+not a chest-radiograph negative, and "otherwise unremarkable" is not a
+negative for any specific sign. The second withdrew a case that had been
+accepted.
+
+## The pericardial columns, and what a concept costs
+
+Effusion and PR depression added as concepts, two of the four ESC
+diagnostic criteria, with the pericarditis cells sourced from StatPearls
+(effusion through the rubric's "often"; PR depression at the chapter's own
+"more than half" for ECG change rather than the rubric's 0.85 for
+"characteristic", since a component cannot outrun the whole). Cardiomegaly
+not added: no frequency verifiable, and a cell invented to fix one known
+case is tuning.
+
+A concept only one disease lists is inert: the backoff for every other
+disease is the marginal over the *describers*, so effusion at 0.55 for
+pericarditis alone would have been 0.55 for pneumonia too. Each concept
+therefore carries seven invented rival cells. The same defect had been
+sitting on `exam:friction_rub` all along — pericarditis was its only
+describer, a sourced 0.60 was every rival's backoff, and the sign the
+hard-case docstring says separates myopericarditis from infarction had
+never moved anything. Seven more cells, at the values the off-by-default
+grid completion had already argued for.
+
+    likelihoods           153 -> 176, invented 89 -> 110, coverage 42% -> 38%
+    parameters outside    47 -> 50 (two costs, one correlation pairing)
+    ordering claims       20 -> 23, comparisons 65 -> 86
+    fx-h02 (myopericarditis)   escalated 79% -> committed correctly 96%
+    the real pericarditis      still committed as pneumonia, 78%
+
+With both findings handed to the reasoner, pericarditis 2% -> 15%. Not
+enough against an infiltrate weighted 18:1 — and in the loop neither
+finding was ever asked for. Vocabulary was necessary and not sufficient.
+
+## Unrecorded findings were discounting the recorded ones
+
+The redundancy weighting was computed over every finding in the state,
+including those asked and never recorded. An unknown answer contributes a
+likelihood of exactly 1.0 — nothing — yet counted as a correlated partner:
+a present consolidation was discounted for a fever nobody measured, and PR
+depression was weighted 0.56 because the ST-segment question had come back
+unrecorded. Only findings with a known polarity now take part.
+
+    fixtures, hard, held-out      unchanged
+    real mean rank of truth       3.22 -> 2.50, one more correct commit
+    the real pericarditis         78% -> 93% pneumonia
+
+The wrong commit got worse because the wrong answer's evidence stopped being
+discounted too. Same arithmetic in both directions; both kept.
+
+## The workup the mechanism was missing, written after the case
+
+Pericarditis sat at 4% when the loop decided, and a myopic selector does not
+spend a turn on a diagnosis it has dismissed — the blind spot the PE and ACS
+workups exist for, with no such rule for pericarditis. ESC 2015 makes ECG
+and echocardiography Class I in suspected pericarditis; a third
+presentation-triggered workup, armed by pleuritic pain or a rub, asks for
+both. On the case the ECG returned PR depression at turn nine, pericarditis
+went live, and the selector ordered the echocardiogram itself two turns
+later.
+
+    real (n=18)           4 correct, 0 wrong, 14 escalated
+    other sets            unchanged in every verdict
+    cost, rule alone      fixtures 21.7 -> 23.2, hard 15.6 -> 18.0, real 17.6 -> 17.5
+
+The first cost figure written for this rule was +33%; it compared all
+workups off against all on and charged the PE and ACS D-dimers and CT
+angiograms to the pericarditis rule. Measured alone: +7%, and without it
+the fixtures carry a wrong commit (fx-009, an embolism committed as
+pneumonia at 68%) that the rule's ECG prevents by keeping the loop asking.
+A staged version — ECG first, echo only on a positive — saved nothing and
+was not kept.
+
+Written after seeing the case it fixes, which is when to be most
+suspicious. What keeps it on the right side: it transcribes a Class I
+recommendation, reads the presentation and never the posterior, is neither
+a threshold nor a cell value, moves no other verdict, and with it off the
+case is wrong again (a test runs both directions).
+
+**Tested on a pericarditis it had not seen.** Same query, same criteria,
+continued from candidate 4; candidate 5 accepted and added before running.
+Positional pain is not recorded as pleuritic under the module's own rule,
+and a prolonged PR interval is not PR depression, so the rule could arm only
+on the rub. The loop asked for the rub on its own at turn 11, the rule
+ordered the ECG at turn 12 instead of the selector's turn 20, and the other
+required items were findings the report never had. Escalated, pericarditis
+first at 60%, identical with the rule off. Fired as designed, changed
+nothing; neither validation nor refutation. Real cases now nineteen:
+4 correct, 0 wrong, 15 escalated.
+
+## One pneumonia sourcing pass, and the correlation claim it took down
+
+Fifteen of eighteen real cases escalated on the pneumonia / oedema / COPD
+tie, and the cells doing that work were invented. The cohort already cited
+for pneumonia's rest dyspnoea (PMC11141191, 265 confirmed among 954
+admitted) has a Table 1 nobody had read further.
+
+    productive cough      0.85 (DDXPlus) -> 0.55   a cohort replaces the simulator
+    leg swelling          0.05 -> 0.04
+    smoking history       unlisted -> 0.74         first cell outside COPD/asthma
+    hypoxia               0.45 -> 0.61             study cutoff 96%, ours 95%; a deviation
+
+The hypoxia column was called structurally unsourceable because cohorts
+enrol on saturation; this one enrolled on suspected infection, so for
+pneumonia it is not circular. Refused with reasons: two bidirectional
+cutoffs, an auscultation finding broader than crackles, and a
+measured-at-admission fever of 29% against a cell defined as measured or
+reported. COPD: the only open-access cohort gives medians and quartiles;
+the file refuses quartile point estimates, so the bounds went into the
+audit (`QUARTILE_BOUNDS`) and both invented COPD cells sit inside them.
+
+    commits               unchanged, 4 correct 0 wrong
+    held-out              ECE 0.335 -> 0.286, Brier 0.159 -> 0.170
+    real mean rank        2.33 -> 2.50 (the second pneumonia lost first place)
+    likelihoods           177, 108 invented, 39%
+
+And the claim above that "without correlation weighting the real patients
+draw three wrong commits against none, and that gap has held through every
+sourcing pass" stopped being true here. The unweighted configuration now
+commits nothing wrong on the real cases either (5 correct, 0 wrong against
+the shipped 4, 0): the three were being driven by the invented
+productive-cough cell. Re-measured three ways on every set — off, declared,
+measured phi — the justification moved to the fixtures: without weighting
+the loop commits on every held-out case (coverage 100% against 43%) and
+gets two of the ten wrong against none. That effect does not depend on the
+magnitudes: every weight set uniformly to 0.10 removes both wrong commits
+too, keeps eight correct against six, and gives a better held-out Brier
+(0.141 against 0.170). Not acted on — choosing a magnitude from a sweep over
+ten cases is fitting the knowledge base to its benchmark — and recorded as
+the thing a larger case set should decide. The measured phi values change
+no verdict and stay unadopted.
+
+## What a commit now says it did not look at
+
+No posterior-conditioned criterion can investigate what the posterior has
+dismissed, and the pericarditis case needed two findings together, so no
+single-test criterion would have fired. What can be general is disclosure:
+the ordering claims say which findings define each disease, and every
+commit now reports the rivals one of whose defining findings was observed
+present while the rest were never asked — a partial signature, read from
+the findings and the asked set, never the posterior. On the old vocabulary
+the pericarditis commit would have read *pericarditis: pleuritic pain
+present; effusion, PR depression, rub never asked*. Eleven of fourteen
+commits carry such a rival; it orders nothing and blocks nothing.
+`ORDERING_CLAIMS` moved into the package so one list serves the audit and
+the loop.
+
+The one action that follows without reading the posterior — ask a *cheap*
+unexamined defining finding, history or bedside, never a test — was
+implemented and measured at ceilings of 0.2 and 1.0 on every set. No
+verdict changed; mean rank moved 1.30 -> 1.20 and 2.42 -> 2.37; cost up one
+to two units; Brier within noise. Off by default. The parameter pin caught
+the ceiling as the fifty-first invented number, and it stays counted.
