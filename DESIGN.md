@@ -2955,6 +2955,25 @@ honest substitute for the mandated model, and that much runtime isn't
 worth it for a secondary path. WRITEUP.md corrected to state what was
 actually tested rather than repeat an untested explanation.
 
+## lab:raised_wcc, closed: 2 of 8 sourced, 6 of 8 declined, one reason
+
+Last three checked: panic (mean/SD, and chronic panic disorder between
+attacks -- wrong population as well as wrong shape), pericarditis (one
+review states WCC is "supportive yet nonspecific", no number at all,
+weaker than even a mean/SD), asthma (nothing relevant found in any
+search -- COPD, paediatric and prediction-model cohorts only).
+
+Column closed: 2/8 sourced (pneumonia, ACS), 6/8 declined (oedema, COPD,
+PE, panic, pericarditis, asthma) for one structural reason across
+~20 cohorts/reviews checked total -- raised WCC is reported as a mean,
+median, per-unit odds ratio or bare qualitative remark almost
+everywhere; a threshold-crossing proportion, the shape this project can
+use, showed up in exactly 2 of them. Not expected to find a seventh by
+searching the same pattern further. 177 likelihoods, 99 invented, 44%
+(unchanged). 174 tests pass, comment-only fixtures.py + WRITEUP.md
+changes (also fixed a "3 of 8 sourced" arithmetic slip from two commits
+ago, should have read 2 of 8).
+
 ## lab:raised_wcc, resumed after the outage: COPD and PE both declined
 
 NCBI's search recovered; resumed rather than left queued. COPD: 4

@@ -1491,11 +1491,28 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
 # embolism: two searches (PMC12942291's biomarker-outcome tables, general
 # leukocytosis queries) turn up only medians and per-unit odds ratios for
 # in-hospital outcomes, never a proportion at presentation. Both decline
-# on the same basis as oedema. Column now: 3 of 8 sourced (pneumonia, ACS),
-# 3 of 8 declined (oedema, COPD, pulmonary embolism) for the identical
-# reason -- this finding is reported as a summary statistic almost
-# everywhere, not a threshold count -- and asthma, panic and pericarditis
-# not yet attempted.
+# on the same basis as oedema.
+#
+# The last three, and the column closed. Panic: one hit (PMC7177570,
+# hematologic indices in panic disorder) gives a mean +/- SD, and it is
+# chronic panic disorder between episodes, not the acute attack this
+# concept means -- wrong shape and wrong population both. Pericarditis:
+# the one relevant hit (PMC12667649, a 2025 review of inflammatory
+# biomarkers in pericarditis) is weaker than a mean/SD -- it states that
+# "white blood cell count add[s] supportive yet nonspecific information"
+# with no number attached at all. Asthma: nothing relevant surfaced --
+# every search returned COPD, paediatric, or exacerbation-prediction
+# cohorts that do not report WCC for adult acute asthma presentations.
+# All three decline.
+#
+# Column closed at 2 of 8 sourced (pneumonia, ACS), 6 of 8 declined
+# (oedema, COPD, pulmonary embolism, panic, pericarditis, asthma) for
+# what is now clearly one structural reason rather than six separate
+# ones: raised WCC is reported in the literature that turns up as a
+# mean, a median, a per-unit odds ratio, or a qualitative remark almost
+# everywhere, and as a proportion crossing a stated threshold in
+# exactly two cohorts out of roughly twenty checked across this column.
+# Further searching this column is not expected to find a seventh.
 
 # Load-bearing numbers that no source can supply, and the reason is structural
 # ---------------------------------------------------------------------------

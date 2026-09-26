@@ -1259,13 +1259,27 @@ leukocytosis queries) turned up nothing but medians, means, and per-unit
 odds ratios — never a proportion crossing a stated threshold. One COPD
 paper uses a `>=15×10⁹/L` cutoff inside a mortality regression and still
 never states how many patients crossed it, an odds ratio standing in for
-a base rate the same way oedema's did. `lab:raised_wcc` now stands at 2 of
-8 sourced (pneumonia, ACS), 3 of 8 declined (oedema, COPD, pulmonary
-embolism) for the identical reason, and 3 of 8 (asthma, panic,
-pericarditis) not yet attempted at all. This finding is
-reported as a summary statistic almost everywhere in the literature that
-turned up, not as a threshold count, which is a property of how WCC gets
-reported generally rather than of any one disease. 177 likelihoods, 99
+a base rate the same way oedema's did.
+
+The last three closed the column rather than left it open. Panic (one
+relevant hit, hematologic indices in panic disorder) gives a mean ± SD in
+the wrong population besides — chronic panic disorder between attacks,
+not the acute presentation this concept means. Pericarditis's one
+relevant hit, a 2025 review of inflammatory biomarkers in pericarditis,
+is weaker than a mean ± SD: it says WCC "adds supportive yet nonspecific
+information" with no number attached at all. Asthma turned up nothing
+relevant in any search — COPD, paediatric, and exacerbation-prediction
+cohorts, none reporting WCC for adult acute presentations.
+
+`lab:raised_wcc` closes at 2 of 8 sourced (pneumonia, ACS) and 6 of 8
+declined (oedema, COPD, pulmonary embolism, panic, pericarditis, asthma)
+for what is now one structural reason rather than six separate ones:
+across roughly twenty cohorts and reviews checked for this column, raised
+WCC was reported as a mean, a median, a per-unit odds ratio, or a bare
+qualitative remark in all but two. A threshold-crossing proportion — the
+one shape this project can use without a distributional assumption — is
+the exception in this literature, not the norm. Further searching this
+specific column is not expected to find a seventh. 177 likelihoods, 99
 invented, 44%.
 
 ### A configuration inconsistency found while writing this, and fixed
