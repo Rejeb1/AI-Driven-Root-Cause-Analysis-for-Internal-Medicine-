@@ -2830,3 +2830,22 @@ Item 4 (11/19 escalate): not a bug to fix. Even a successful BNP source
 would only help cases where BNP was actually recorded in the source
 report; the gate declining on a silent record is it working, not a defect.
 Moves only with more of item 3's sourcing work, cell by cell.
+
+## The UMLS licence was free, and the two blocked concepts are resolved
+
+Standing item ("Two concepts have no UMLS CUI, waiting on a licence") was
+never actually blocked on anything but signup. User already had a UTS
+account; a key from it unblocked `build_umls_map.py` immediately.
+
+First run: 35/37 resolved, `exam:ecg_pr_depression` unresolved,
+`imaging:pericardial_effusion` resolved to the wrong sense (C0349077,
+"noninflammatory" subtype -- pericarditis effusions are typically
+inflammatory). Checked with `--suggest`, not accepted on the printed name
+alone: both concepts have a correct generic CUI (C0031039, C0429068) that
+sits in MTH rather than SNOMEDCT_US, so the SNOMEDCT_US-restricted search
+either skipped to a wrong subtype or found nothing. Pinned both in
+VERIFIED_CUI, same mechanism as the three pins already there. Second run:
+36/37 (only the genuinely-absent CTPA filling-defect concept left).
+`Vocabulary.umls_coverage`: 26/38 -> 28/38, live from the data file, no
+code change needed. SCOPE.md's concept count was stale by two findings
+independent of this (27 -> 29) and corrected at the same time.

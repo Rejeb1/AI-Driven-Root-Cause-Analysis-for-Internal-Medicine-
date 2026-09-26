@@ -1083,6 +1083,30 @@ studies — natriuretic peptides predicting mortality, no proportion
 elevated at any threshold — so pneumonia's cell has nothing to decline, it
 simply was not there.
 
+**The UMLS licence turned out not to be a blocker.** It was listed as
+"waiting on a licence" because nobody had submitted one — a UTS account is
+free, and once a key existed `build_umls_map.py` resolved 35 of 37
+concepts on the first run. The two that had been sitting unresolved for a
+whole "structural, unfixable" category of the gap list — `exam:ecg_pr_depression`
+and `imaging:pericardial_effusion` — turned out to need a second pass, not
+a bigger one. The first attempt at `imaging:pericardial_effusion` resolved
+to `C0349077`, "Pericardial effusion - noninflammatory" — a specific
+subtype, and the wrong one: pericarditis effusions are typically
+inflammatory. `exam:ecg_pr_depression` resolved to nothing at all. Checking
+with `--suggest` rather than accepting the printed name showed why: the
+correct generic concept for each (`C0031039` "Pericardial effusion",
+`C0429068` "PR depression") lives only in UMLS's MTH source, not
+SNOMEDCT_US, and the script restricts every search to SNOMEDCT_US to avoid
+exactly the kind of cross-language noise `umls_probe.py` found. That
+restriction is right for every other concept and wrong for these two.
+Pinned both by hand, the same mechanism already used for three other
+concepts search could not reach cleanly. Second run: 36 of 37, the one
+remaining gap (`imaging:ctpa_filling_defect`) genuinely absent from UMLS
+rather than unresolved. Coverage moved from 26/38 to 28/38, reported live
+by `Vocabulary.umls_coverage` with no code change. SCOPE.md's concept
+count was independently stale by two findings and corrected at the same
+time.
+
 **11 of 19 real cases still escalate, and that is not something to fix by
 finding more cells.** It looked, going in, like item 3's BNP search might
 double as a fix for this — the pneumonia/oedema/COPD triad on thin records

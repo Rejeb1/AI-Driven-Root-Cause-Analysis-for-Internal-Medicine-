@@ -162,6 +162,20 @@ VERIFIED_CUI: dict[str, tuple[str, str]] = {
     # SNOMED models onset as a contextual qualifier. Searching T080 alone found
     # nothing because the qualifier is rooted in MTH rather than SNOMEDCT_US.
     "sudden_onset": ("C1272517", "Sudden onset (contextual qualifier)"),
+    # The generic concept (C0031039) is rooted in MTH, not SNOMEDCT_US, so the
+    # SNOMEDCT_US-restricted search skipped past it to the first SNOMED atom
+    # that matched the string: C0349077 "Pericardial effusion -
+    # noninflammatory", a specific subtype wrong for this use -- pericarditis
+    # effusions are typically inflammatory/exudative, the opposite sense.
+    # `--suggest "Pericardial effusion"` ranks the generic concept first and
+    # confirms no better SNOMEDCT_US-native concept exists for the plain
+    # finding.
+    "imaging:pericardial_effusion": ("C0031039", "Pericardial effusion"),
+    # Same failure, no false-friend this time: C0429068 "PR depression" is
+    # rooted in MTH only, so the SNOMEDCT_US-restricted search found nothing
+    # at all rather than a wrong subtype. `--suggest "PR depression"` returns
+    # exactly one candidate, this one.
+    "exam:ecg_pr_depression": ("C0429068", "PR depression"),
 }
 
 # Concepts UMLS does not contain, verified with `--suggest`, which falls back to

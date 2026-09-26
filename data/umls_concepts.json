@@ -18,6 +18,12 @@
       "snomed_ct": "75252003",
       "umls_preferred_name": "Inspiratory crackles"
     },
+    "exam:ecg_pr_depression": {
+      "search_term": "PR segment depression",
+      "cui": "C0429068",
+      "snomed_ct": "251245007",
+      "umls_preferred_name": "PR depression"
+    },
     "exam:ecg_st_changes": {
       "search_term": "ST segment changes",
       "cui": "C0232326",
@@ -77,6 +83,12 @@
       "cui": "C0034063",
       "snomed_ct": "19242006",
       "umls_preferred_name": "Pulmonary Edema"
+    },
+    "imaging:pericardial_effusion": {
+      "search_term": "Pericardial effusion",
+      "cui": "C0031039",
+      "snomed_ct": "373945007",
+      "umls_preferred_name": "Pericardial effusion"
     },
     "lab:raised_bnp": {
       "search_term": "B-type natriuretic peptide above reference range",

@@ -164,14 +164,24 @@ physician-curated cases. Substitutes:
 **The mandated ontology layer, delivered in halves.** Section 6 specifies UMLS,
 SNOMED CT and RxNorm for "authoritative concepts and relations".
 
-*Concepts* — delivered, 34 of 35. `scripts/build_umls_map.py` resolves 26 of
-the 27 findings and all 8 conditions to a UMLS CUI and a SNOMED CT code,
+*Concepts* — delivered, 36 of 37. `scripts/build_umls_map.py` resolves 28 of
+the 29 findings and all 8 conditions to a UMLS CUI and a SNOMED CT code,
 restricted to SNOMEDCT_US and to the semantic types appropriate to each kind of
 concept. Every concept carries them alongside its HPO identifier, and
 `Vocabulary.umls_coverage` reports how many are bound rather than assuming all
 are. HPO is kept as well rather than replaced: it supplies the hierarchy this
 vocabulary already uses, and SNOMED CT is what a clinical system would
 exchange.
+
+Getting the last two took a licensed key and a manual pin each, not just a
+key: `imaging:pericardial_effusion` and `exam:ecg_pr_depression` both have a
+correct generic UMLS concept (`C0031039`, `C0429068`), but each is rooted in
+MTH rather than SNOMEDCT_US, so the SNOMEDCT_US-restricted search that
+resolves every other concept either matched a wrong specific subtype
+(a noninflammatory-effusion concept for the first, wrong clinical sense for a
+pericarditis workup) or nothing at all. `--suggest` surfaced the generic
+concept both times, checked by eye, pinned the same way as the three
+approximations already in the script.
 
 The one unresolved finding is `imaging:ctpa_filling_defect`, and it is absent
 rather than unexamined: UMLS has filling-defect concepts for the ureter, kidney

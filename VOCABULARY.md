@@ -15,7 +15,7 @@ Output: `data/vocabulary.json` — pin this in version control.
 
 | | Status |
 |---|---|
-| **Nodes** — findings with stable ids, synonyms, hierarchy | Works. 31/38 concepts mapped, including labs and ECG. The two added after the real-case second pass — `imaging:pericardial_effusion` (HP:0001698) and `exam:ecg_pr_depression` (no HPO term) — carry no UMLS CUI yet: `build_umls_map.py` has their search terms and needs a licensed key to run. 26/38 carry a CUI. |
+| **Nodes** — findings with stable ids, synonyms, hierarchy | Works. 31/38 concepts mapped, including labs and ECG. **28/38 now carry a UMLS CUI.** The two added after the real-case second pass — `imaging:pericardial_effusion` (HP:0001698) and `exam:ecg_pr_depression` (no HPO term) — were the last ones blocked on a key; both resolved once one was available, and both needed a manual pin rather than the plain search: the generic concept for each (`C0031039` "Pericardial effusion", `C0429068` "PR depression") is rooted in MTH, not SNOMEDCT_US, so the SNOMEDCT_US-restricted search either skipped to a wrong specific subtype (a noninflammatory-effusion concept, the wrong clinical sense for a pericarditis workup) or found nothing at all. `--suggest` surfaced the generic concept both times; pinned in `VERIFIED_CUI` in `build_umls_map.py`, same mechanism as the three pins already there. |
 | **Edges** — disease→finding relations | **Unusable for this project.** |
 
 The edge problem is not a coverage gap to be patched; it is a domain mismatch.
@@ -92,6 +92,8 @@ Flagged rather than silently accepted:
 
 HPO is filling the slot UMLS/SNOMED was meant to occupy. It is a reasonable
 substitute for findings, but it is not a clinical terminology and it will not
-cover diagnoses, procedures, or drugs. **Submitting the UMLS licence remains the
-critical path.** The `Concept` record is shaped to take a second identifier per
-concept, so adding UMLS CUIs later is an additive change, not a rewrite.
+cover diagnoses, procedures, or drugs. The `Concept` record is shaped to take a
+second identifier per concept, so adding UMLS CUIs was an additive change, not
+a rewrite -- which is what actually happened once a UTS key was available: a
+free licence, not the blocker the "critical path" framing above implied. See
+the nodes row above for what changed and how.
