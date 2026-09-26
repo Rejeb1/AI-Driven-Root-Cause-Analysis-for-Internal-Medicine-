@@ -1362,6 +1362,20 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
 # rational-clinical-examination review specific to crackles, rather than a
 # disease-cohort table, which is what this file's other columns have used
 # and which these six diseases do not seem to report crackles or fever in.
+#
+# That different angle, tried once, on the column blocked below (BNP): a
+# systematic review of natriuretic peptides in COPD (PMC5223538) reports
+# "proportion elevated" at a stated threshold for two AECOPD cohorts --
+# Lee, BNP > 88 pg/mL, 39% elevated; Gariani, BNP > 500 pg/mL, 30% elevated
+# -- real, threshold-matched proportions, unlike the mean/SD data declined
+# above. Neither matches the 100 pg/mL cutoff already sourced for oedema's
+# cell (Wang 2005, below), so taking either would build the exact
+# mismatched-threshold column that cell's own comment already refuses. A
+# search for the pneumonia equivalent (PMC7073979) found only prognostic
+# studies -- natriuretic peptides predicting mortality, not a proportion
+# elevated at any stated cutoff. Both cells stay invented for the reason
+# already given, now with two more studies checked and rejected against
+# it rather than left unchecked.
 
 # Load-bearing numbers that no source can supply, and the reason is structural
 # ---------------------------------------------------------------------------

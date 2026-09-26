@@ -1046,6 +1046,56 @@ project has defined. The mechanism is kept for what it demonstrably does
 on the fixtures, not for a real-patient argument that has run out of
 patients to point to.
 
+### Three open items, tried: one fixed, one searched and declined, one not a bug
+
+A standing "what's missing" list carried three items forward. Tried in
+order:
+
+**A general engine-parity check now exists.** The recursion-limit bug two
+sessions ago was found by accident — the one combination that triggered it
+(real cases, the real-case budget flags) had never been run through both
+engines before. `test_the_two_engines_agree_on_every_case_under_every_configuration`
+is the systematic version: every case this project has (fixtures and real,
+37 total), every `LoopLimits` configuration the project actually
+constructs somewhere (the bare default, the real-case flags
+`eval_real_cases.py` and the web UI use, and the two flags exercised in the
+correlation test), and both knowledge bases — 118 case/configuration pairs
+in one test. Zero mismatches the day this was written. If a future change
+to either engine produces one, this is the test that reports it instead of
+a silent `GraphRecursionError` found by accident later.
+
+**BNP was searched for pneumonia and COPD, and correctly declined.** It
+looked like the strongest remaining lead: the project already has oedema's
+`lab:raised_bnp` sourced from Wang 2005 at a BNP > 100 pg/mL threshold, and
+BNP is the textbook discriminator between cardiac and pulmonary dyspnoea —
+exactly the pneumonia/oedema/COPD confusion behind most of the escalations
+below. A systematic review of natriuretic peptides in COPD (PMC5223538)
+turned up real, threshold-matched proportions for two AECOPD cohorts (Lee,
+BNP > 88 pg/mL, 39% elevated; Gariani, BNP > 500 pg/mL, 30% elevated) — not
+the mean/SD-only data this project has declined before, an actual
+proportion at a stated cutoff. Neither cutoff is 100 pg/mL. Taking either
+would build precisely the mismatched-threshold column this project's own
+comment already refuses: a heart-failure value measured on one assay at
+one cutoff sitting in the same table as a COPD value measured on a
+different one. Declined on that basis, not on the basis that nothing was
+found. A parallel search for pneumonia (PMC7073979) found only prognostic
+studies — natriuretic peptides predicting mortality, no proportion
+elevated at any threshold — so pneumonia's cell has nothing to decline, it
+simply was not there.
+
+**11 of 19 real cases still escalate, and that is not something to fix by
+finding more cells.** It looked, going in, like item 3's BNP search might
+double as a fix for this — the pneumonia/oedema/COPD triad on thin records
+is exactly what a discriminating lab value would help. It didn't pan out,
+for the reason above. But the honest second half of this item is that even
+a successful BNP source would not have "fixed" the escalation count in any
+simple sense: real case reports often don't mention BNP at all, so a
+sourced cell only helps the subset of cases where the finding was actually
+recorded. Declining to guess when the record is silent is the abstention
+gate doing its job, not a defect the gate should be tuned away from. What
+would actually move this number is more of the same sourcing work item 3
+represents — cell by cell, as cohorts turn up — not a mechanism change.
+
 ### A configuration inconsistency found while writing this, and fixed
 
 `scripts/run_eval.py` built its knowledge base **without** correlation

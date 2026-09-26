@@ -2805,3 +2805,28 @@ to it. This is also why the troponin sourcing pass moved the wrong
 commit's confidence but never its verdict: troponin is inside a group, so
 its value is a lever on magnitude in both arms, not on which candidate
 wins -- pleuritic pain already decided that.
+
+## Three open items: one fixed, one declined, one not a bug
+
+Item 5 (no systematic engine-parity check) is now fixed:
+`test_the_two_engines_agree_on_every_case_under_every_configuration` runs
+both engines against all 37 fixture+real cases under every `LoopLimits`
+config the project actually constructs (shipped, real-case, counted,
+decisive) and both knowledge bases -- 118 pairs, zero mismatches. The
+general version of the one-case regression test the recursion-limit bug
+left behind.
+
+Item 3 (102 invented cells): searched BNP for pneumonia and COPD, since
+oedema's is already sourced and BNP is the textbook cardiac-vs-pulmonary
+discriminator for exactly this triad. Found real proportion-elevated data
+for COPD (PMC5223538: Lee 88 pg/mL->39%, Gariani 500 pg/mL->30%) -- but
+neither matches the 100 pg/mL threshold oedema's cell already uses, so
+taking either builds the mismatched-threshold column this file's own
+comment already refuses. Declined correctly, not left unchecked. Pneumonia
+search (PMC7073979) found only prognostic (mortality) BNP studies, nothing
+with a threshold at all.
+
+Item 4 (11/19 escalate): not a bug to fix. Even a successful BNP source
+would only help cases where BNP was actually recorded in the source
+report; the gate declining on a silent record is it working, not a defect.
+Moves only with more of item 3's sourcing work, cell by cell.

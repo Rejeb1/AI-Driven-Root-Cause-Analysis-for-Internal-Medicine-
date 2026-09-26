@@ -4008,3 +4008,51 @@ def test_graph_recursion_limit_scales_with_free_uninformative_turns():
     loop2 = DiagnosticAgent(kb=kb, limits=counted).run(same_kb_case)
     graph2 = GraphAgent(kb=kb, limits=counted).run(same_kb_case)
     assert graph2.verdict == loop2.verdict
+
+
+def test_the_two_engines_agree_on_every_case_under_every_configuration():
+    """The general check the recursion-limit bug showed this project didn't
+    have. That bug existed because the combination that triggered it --
+    real cases, the real-case budget flags -- had never been run through
+    both engines before; the previous test pins the one case that surfaced
+    it. This test is the systematic version: every case this project has
+    (fixtures and real), every configuration this project actually
+    constructs a ``LoopLimits`` with (`shipped` is the bare default;
+    `real` is what ``eval_real_cases.py`` and the web UI use; `counted` and
+    `decisive` are the two flags exercised in
+    ``test_correlation_pays_and_decisive_tests_still_do_not``), and both
+    knowledge bases. 118 case/configuration pairs, zero mismatches the day
+    this was written -- if a change to either engine ever produces one,
+    this is the test that will say so instead of a silent
+    ``GraphRecursionError`` three sessions later.
+    """
+    from dxagent.datasets import REAL_CASES
+    from dxagent.graph import GraphAgent
+
+    configs = {
+        "shipped": LoopLimits(),
+        "real": LoopLimits(
+            uninformative_turns_still_count=False,
+            unanswered_actions_still_cost=False,
+        ),
+        "counted": LoopLimits(uninformative_turns_still_count=True),
+        "decisive": LoopLimits(require_decisive_tests=True),
+    }
+    all_cases = list(build_cases()) + list(REAL_CASES)
+
+    mismatches = []
+    for correlated in (False, True):
+        kb = build_knowledge_base(correlated=correlated)
+        for config_name, limits in configs.items():
+            for case in all_cases:
+                loop = DiagnosticAgent(kb=kb, limits=limits).run(case)
+                graph = GraphAgent(kb=kb, limits=limits).run(case)
+                if (graph.verdict, graph.prediction) != (loop.verdict, loop.prediction):
+                    mismatches.append(
+                        f"correlated={correlated} config={config_name} "
+                        f"case={case.case_id}: loop=({loop.verdict.value},"
+                        f"{loop.prediction}) graph=({graph.verdict.value},"
+                        f"{graph.prediction})"
+                    )
+
+    assert not mismatches, "engines disagree:\n" + "\n".join(mismatches)
