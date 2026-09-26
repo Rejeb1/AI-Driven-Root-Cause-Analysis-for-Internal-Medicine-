@@ -749,9 +749,10 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
 
     This arm switches off the workup floor, the decisive-test rule and
     correlation weighting -- everything that exists to catch a masquerade --
-    and one case fails: fx-009, a pulmonary embolism read as pneumonia. **The
-    shipped configuration gets all ten**, which is the number that describes
-    the system; this one describes what the safety machinery is carrying.
+    and two cases now fail: fx-009 and fx-010. **The shipped configuration
+    gets all ten**, which is the number that describes the system; this one
+    describes what the safety machinery is carrying, and the count moves
+    with every sourcing pass -- see the paragraph below.
 
     The count here has moved every time the knowledge base has: two failures
     on invented numbers, none after the Merck likelihoods, one once the
@@ -786,6 +787,10 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
     # workup floor, no decisive-test rule, no correlation weighting. The
     # shipped configuration gets all ten; see the docstring.
     #
+    # After the crackles column was sourced (pneumonia's crackles 0.80 ->
+    # 0.42), fx-009 failed on this weakened arm again too -- crackles absent
+    # no longer argues as strongly against pneumonia, which was previously
+    # carrying part of this arm's weight without a source behind it.
     assert wrong == ["fx-009", "fx-010"], f"unexpected failures: {wrong}"
 
     # Correlation weighting alone no longer rescues it. It used to, and the
@@ -799,15 +804,15 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
         kb=build_knowledge_base(correlated=True),
         limits=LoopLimits(require_decisive_tests=False, require_workup=False),
     )
-    # After the tachycardia column was sourced (tachycardia in pneumonia 0.60
-    # -> 0.55, in COPD 0.45 -> 0.35, in infarction 0.45 -> 0.23) the weighted
-    # arm carries fx-009 again on its own. The paragraph below is kept as the
-    # record of the reasoning that held between the two changes.
+    # After the tachycardia column was sourced the weighted arm carried
+    # fx-009 again on its own; after crackles it does too, for the same
+    # reason as the unweighted arm above. The paragraph below is kept as the
+    # record of the reasoning that held between the changes.
     assert [
         case.case_id
         for case in cases
         if aware.run(case).differential.top.label != case.diagnosis
-    ] == ["fx-010"]
+    ] == ["fx-009", "fx-010"]
     # fx-009 is no longer recoverable on this arm by any mechanism. Its
     # troponin and its BNP are both normal, and both of those likelihoods for
     # pulmonary embolism have since been sourced upward -- 0.25 to 0.53 and
@@ -997,11 +1002,14 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     # an invented pneumonia cell was producing, and the measurement that
     # found this is the same one that produced the claim. Correlation stays
     # on for the reason it was added, not for a gap that is not there.
-    assert wrong_commits(True) == 0
-    # ... and after the tachycardia column was sourced, one wrong commit
-    # came back on the unweighted arm (the first-pass pericarditis, read as
-    # acute coronary syndrome). Zero against one; the number moves with the
-    # knowledge base and is pinned as measured, not as a claim.
+    # And after the crackles column was sourced, the shipped arm itself
+    # carries a wrong commit again: pmc-13070269, an ACS with fever and
+    # pleuritic pain, now reads as pneumonia at 78% once absent crackles
+    # argues less strongly against pneumonia (the invented 0.80 had been
+    # doing that job too hard). The unweighted arm's wrong commit changed
+    # case too. Both numbers are pinned as measured, not as claims, and
+    # both move again the next time a cell in this differential is sourced.
+    assert wrong_commits(True) == 1
     assert wrong_commits(False) == 1
 
     # Where the safety difference lives now: the fixtures. Without the
@@ -1998,6 +2006,9 @@ def test_correlation_survives_the_sourcing_that_removed_its_prop():
     # to lift with.
     assert (plain_rank, aware_rank) == (4, 3), "correlation still moves the rank"
     assert aware_p > 4 * plain_p, f"a lift, not a nudge: {plain_p:.3f} -> {aware_p:.3f}"
+    # Re-measured after crackles: ranks unchanged, probabilities moved
+    # (0.046 -> 0.218, was different before). The mechanism is stable across
+    # three sourcing passes now; the magnitudes it acts on keep changing.
 
     # Pinned so a later move is noticed.
     assert plain_p < 0.10 < aware_p < 0.50
@@ -2037,8 +2048,12 @@ def test_correlation_survives_the_sourcing_that_removed_its_prop():
     # frozen evidence set, and the loop still declines to commit rather than
     # committing to something wrong. Pinned at third so that a change moving
     # it is noticed.
+    # After the crackles correction, fx-009's own top hypothesis is COPD
+    # rather than pneumonia -- COPD's tachycardia was also sourced down,
+    # bringing it closer -- and pulmonary embolism sits fifth rather than
+    # third. Escalation is what this test protects, and it still escalates.
     labels = [h.label for h in outcome.differential.hypotheses]
-    assert labels.index("pulmonary_embolism") + 1 == 3
+    assert labels.index("pulmonary_embolism") + 1 == 5
 
 
 # --------------------------------------------------------------------------
@@ -3391,11 +3406,11 @@ def test_reading_unlisted_findings_as_atypical_buys_rank_and_costs_safety():
                 bad += outcome.prediction != case.diagnosis
         return bad
 
-    # At n=18 the shipped backoff commits nothing wrong (it did, once, until
-    # the pericarditis workup and the unknown-finding fix; see real_cases.py)
-    # and the atypical backoff three. The trade this test records is the
-    # *difference*, and it is as wide as it was.
-    assert wrong_commits(False) == 0, "the shipped backoff commits nothing wrong"
+    # The shipped backoff has carried 0, then 1 wrong commit as sourcing
+    # moved (see the correlation test above for the current one); the
+    # atypical backoff carries 3. The trade this test records is the
+    # *difference* between the two, not either absolute count.
+    assert wrong_commits(False) == 1, "the shipped backoff's current wrong commit"
     assert wrong_commits(True) > wrong_commits(False), (
         "if this stops being true the trade-off has changed and the default "
         "is worth revisiting -- re-measure rather than flipping the flag"
@@ -3449,9 +3464,10 @@ def test_completing_the_grid_buys_rank_and_costs_one_wrong_commit():
     off_wrong, off_rank = measure(False)
     on_wrong, on_rank = measure(True)
 
-    # At n=18: shipped 0 wrong, mean rank 2.33; complete grid 3 wrong, mean
-    # rank 2.06. Same trade as at n=10.
-    assert off_wrong == 0, "the shipped grid commits nothing wrong (n=18)"
+    # Shipped now carries 1 wrong (measured above); complete grid carries 2.
+    # Same trade, re-measured: completing the grid still costs more than it
+    # is already costing, and buys rank with it.
+    assert off_wrong == 1, "the shipped grid's current wrong commit"
     assert on_wrong > off_wrong, "completing the grid trades an abstention away"
     assert on_rank < off_rank, "and buys ranking with it"
 
@@ -3643,19 +3659,25 @@ def test_a_commit_discloses_the_rivals_it_never_examined():
     assert "pericarditis" not in {r.label for r in unexamined_signatures(
         cleared, {f.concept for f in cleared}, "community_acquired_pneumonia")}
 
-    # Both engines carry it on a real commit, identically.
+    # Both engines carry it on a real commit, identically. pmc-6129844
+    # (the case this disclosure was written for) no longer demonstrates it:
+    # once the pericarditis workup arms on pleuritic pain, which this case
+    # has, its ECG and effusion questions are asked as a matter of course,
+    # so nothing about pericarditis is left unexamined by the time it
+    # commits. pmc-3670566 (pulmonary oedema) now shows the same property on
+    # a rival the workup does not reach.
     kb = build_knowledge_base(correlated=True)
     from dxagent.datasets import REAL_CASES
     from dxagent.graph import GraphAgent
 
-    case = next(c for c in REAL_CASES if c.case_id == "pmc-6129844")
+    case = next(c for c in REAL_CASES if c.case_id == "pmc-3670566")
     real = LoopLimits(uninformative_turns_still_count=False,
                       unanswered_actions_still_cost=False)
     loop = DiagnosticAgent(kb=kb, limits=real).run(case)
     graph = GraphAgent(kb=kb, limits=real).run(case)
     assert loop.verdict is Verdict.COMMITTED
     assert loop.unexamined == graph.unexamined
-    assert {r.label for r in loop.unexamined} >= {"pericarditis"}
+    assert {r.label for r in loop.unexamined} >= {"community_acquired_pneumonia"}
     # An escalation carries none; its packet names what it sought instead.
     escalated = next(
         o for o in (DiagnosticAgent(kb=kb, limits=real).run(c) for c in REAL_CASES)
@@ -3937,3 +3959,46 @@ def test_extraction_keeps_only_findings_the_source_can_be_quoted_for():
     conflicted = extract_findings(long_text, ScriptedLLM(responses=two), concepts, chunk_size=300)
     assert "fever" not in conflicted.features
     assert any("conflicts" in r.reason for r in conflicted.rejected)
+
+
+def test_graph_recursion_limit_scales_with_free_uninformative_turns():
+    """A real case silently failed as a LangGraph recursion error, not an
+    escalation, and it took a sourcing pass that made one finding less
+    discriminating to surface it.
+
+    ``state.turn`` increments on every graph step regardless of whether the
+    answer was informative; ``still_outstanding`` only compares
+    ``informative_turns`` against ``max_turns`` when
+    ``uninformative_turns_still_count`` is False. So with that flag off -- the
+    real-case configuration -- the reference loop can legitimately spend one
+    step per remaining vocabulary concept before candidates run out, which is
+    far more than ``max_turns`` steps. The fixed ``4 * max_turns + 10``
+    recursion limit did not know that, and pmc-3670566 hit it: LangGraph
+    raised ``GraphRecursionError`` where the reference loop just kept going
+    and committed correctly. The failure looked like a graph bug, which is
+    exactly what the removed comment predicted it would look like.
+    """
+    from dxagent import DiagnosticAgent, LoopLimits, Verdict
+    from dxagent.datasets import REAL_CASES, build_knowledge_base
+    from dxagent.graph import GraphAgent
+
+    kb = build_knowledge_base(correlated=True)
+    real = LoopLimits(uninformative_turns_still_count=False,
+                      unanswered_actions_still_cost=False)
+    case = next(c for c in REAL_CASES if c.case_id == "pmc-3670566")
+
+    loop = DiagnosticAgent(kb=kb, limits=real).run(case)
+    graph = GraphAgent(kb=kb, limits=real).run(case)
+
+    assert loop.verdict is Verdict.COMMITTED
+    assert graph.verdict == loop.verdict
+    assert graph.prediction == loop.prediction
+
+    # When uninformative turns still count, the old fixed bound is exactly
+    # right and unchanged -- this is not a blanket increase, only a fix for
+    # the configuration that needed it.
+    counted = LoopLimits(uninformative_turns_still_count=True)
+    same_kb_case = next(c for c in REAL_CASES if c.case_id == "pmc-4672113")
+    loop2 = DiagnosticAgent(kb=kb, limits=counted).run(same_kb_case)
+    graph2 = GraphAgent(kb=kb, limits=counted).run(same_kb_case)
+    assert graph2.verdict == loop2.verdict

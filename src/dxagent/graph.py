@@ -263,9 +263,26 @@ class GraphAgent:
         }
         # Four nodes per turn plus a margin, so LangGraph's own recursion guard
         # never fires before the loop's turn limit does. If it ever did, the
-        # failure would look like a graph bug rather than an exhausted budget.
+        # failure would look like a graph bug rather than an exhausted budget --
+        # which is exactly what happened once ``uninformative_turns_still_count``
+        # was False and a real case had few decisive findings: ``state.turn``
+        # increments on every step regardless of informativeness, but the
+        # still-outstanding check compares ``informative_turns`` (not
+        # ``turn``) against ``max_turns`` when that flag is off, so the loop
+        # can legitimately run one step per remaining vocabulary concept
+        # before it exhausts candidates -- far more than ``max_turns`` -- and
+        # the fixed multiplier below silently cut a real case off with a
+        # LangGraph recursion error rather than a budget-exhausted escalation.
+        # The true bound is the vocabulary size, not the turn limit, whenever
+        # uninformative turns are free.
+        concepts = len({c for e in self.kb.diseases() for c in e.features})
+        turn_bound = (
+            max(self.limits.max_turns, concepts)
+            if not self.limits.uninformative_turns_still_count
+            else self.limits.max_turns
+        )
         final = graph.invoke(
-            initial, {"recursion_limit": 4 * self.limits.max_turns + 10}
+            initial, {"recursion_limit": 4 * turn_bound + 10}
         )
         outcome = final.get("outcome")
         if outcome is None:  # pragma: no cover - defensive

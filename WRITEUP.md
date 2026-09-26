@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 104 of its 177 likelihoods are invented, no
+an unfinished feature — because 103 of its 177 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -131,14 +131,14 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**104 of 177 likelihoods are invented.** That is the number, stated on its own
+**103 of 177 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project. It was 89 of
 153 until the pericardial columns were added (§5): two concepts the real cases
 showed were missing, two sourced cells for pericarditis, and 21 invented rival
 cells without which the new concepts would discriminate nothing. Coverage went
 *down*, from 42% to 38%, and that is the honest direction — the count now
 includes claims the model needs to make. A pneumonia sourcing pass (§5) then
-took it to 39%, and a pass on the tachycardia column (§5) to 41%.
+took it to 39%, a pass on the tachycardia column (§5) to 41%, and one cell recovered from the same search (§5) to 42%.
 
 The remaining 73 carry a citation: 7 counted from the DDXPlus simulator, 55
 from published cohorts and StatPearls, and 11 converted from Merck Manual
@@ -391,7 +391,7 @@ celebrate.
 ### Nothing was checking the numbers themselves
 
 Every test in this project checks outputs. The knowledge base is inputs, and
-for most of its life nothing looked at it: 104 of 177 likelihoods are invented,
+for most of its life nothing looked at it: 103 of 177 likelihoods are invented,
 and the only scrutiny they got was whichever ones happened to change a case.
 
 Reading each column sorted, against what the diseases actually do, found five
@@ -859,7 +859,17 @@ Measured on every set, cells sourced without looking at any case: fixtures
 real patients **4 → 6 correct, 0 wrong**, the SLE pericarditis and the
 second pneumonia now committing; held-out ECE 0.286 → 0.260, coverage 43%
 → 57%. Three fixture-level pins moved with it and are re-pinned with the
-reasoning. 177 likelihoods, 104 invented, coverage 41%.
+reasoning. 177 likelihoods, 103 invented, coverage 42%.
+
+### One cell at a time: crackles
+
+The search for tachycardia cohorts happened to surface one, PLOS ONE 2026 (PMC12962476), a straight cohort of 380 adults hospitalized with diagnosed community-acquired pneumonia — not a case-control design, the population match this project prefers over the pneumonia cohort already in use. Its Table 1 reports crackles present in 161 of 380 (42.4%), replacing an invented 0.80 that, measured against an actual admission cohort, turns out to have been closer to a textbook-severity figure than an observed one. The same table's Fever row (56.1%) disagrees with the cohort already sourced for that cell (67.9%, measured temperature); rather than pick one, the value stays with the measured-threshold study and the band widens to cover the reported-symptom one, the same treatment given to the productive-cough conflict.
+
+This one cell cost the project its clean run. Absent crackles had been arguing hard against pneumonia at the invented 0.80; at a measured 0.42 it barely argues at all, and one real case — an ACS presenting with fever, pleuritic pain and a raised troponin, crackles absent — now reads as pneumonia at 78% instead of escalating. The finding is kept for the same reason every other correction in this project has been kept: it replaces a guess with a measurement, and a knowledge base that changes what it commits to when a cell moves is doing exactly what it is supposed to do. Real patients: 6 correct, **1 wrong**, one fewer than the sourced ideal and the honest number.
+
+Fixing this case properly is not a cell fix — pericarditis's own friction rub, ECG and effusion cells are all sourced and none of them apply to an ACS differential; nothing about *this* rival is wrong. What would help is a cell this project does not have: P(raised troponin | ACS) versus P(raised troponin | pneumonia with cardiac strain), which needs a study built around exactly that confusion rather than one more general cohort table. Recorded as the next open question rather than patched around.
+
+One structural bug surfaced on the way, unrelated to any cell value: `GraphAgent`'s LangGraph recursion limit was fixed at `4 * max_turns + 10`, sized for a configuration where every turn counts toward `max_turns`. The real-case configuration turns that off — an unknown answer is free — so the reference loop can legitimately spend one step per remaining vocabulary concept, far more than `max_turns`, before it runs out of candidates. One real case (a pulmonary oedema, committed correctly by the reference loop) hit that fixed ceiling and raised `GraphRecursionError` in the graph engine instead of committing — silently, because nothing exercises the two engines against the real cases under that configuration. The limit now scales to the vocabulary size when uninformative turns are free, and a regression test pins both engines agreeing on that case.
 
 **And this pass took down a claim §4 relied on.** The case for correlation
 weighting rested on real patients: "three wrong commits against none, and

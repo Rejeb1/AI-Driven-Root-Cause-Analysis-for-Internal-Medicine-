@@ -162,7 +162,7 @@ marketing:
 
 ### The dominant risk is the knowledge base, and it is measured
 
-104 of 177 likelihoods are invented, and so are 51 further model parameters
+103 of 177 likelihoods are invented, and so are 51 further model parameters
 that no coverage figure used to count: six correlation weights, twenty-nine
 acquisition costs, five gate thresholds, three loop budget limits and seven
 selector constants. They decide which questions get asked and when the loop

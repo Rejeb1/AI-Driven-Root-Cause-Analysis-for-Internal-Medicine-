@@ -2729,7 +2729,7 @@ caught the table being stale; the claim moved, not the number.
     hard cases     5/5, 4 -> 5 commits, 0 wrong
     real (n=19)    4 -> 6 correct, 0 wrong (the SLE pericarditis, the second pneumonia)
     held-out       ECE 0.286 -> 0.260, coverage 43% -> 57%
-    likelihoods    177, 108 -> 104 invented, 41%
+    likelihoods    177, 108 -> 103 invented, 42%
 
 Three fixture-level pins moved with it and were re-pinned with the reasoning:
 the weighted weakened arm carries fx-009 again; the decisive-test arm now

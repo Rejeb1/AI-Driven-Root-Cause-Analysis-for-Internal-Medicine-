@@ -1166,10 +1166,35 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
             "radiographic pneumonia (67.9%, 95% CI 62.9-73.2); DDXPlus's "
             "simulated rate, felt or measured, was 0.694",
         ),
-        low=0.63,
+        low=0.56,
         high=0.73,
         note="a measured temperature agreeing with the simulator's felt-or-"
-             "measured rate to within a point; the cohort takes the tier",
+             "measured rate to within a point; the cohort takes the tier. A "
+             "second cohort disagrees the other way this time: LEBANON-CAP-2026 "
+             "(380 hospitalized, expert-diagnosed CAP, no case-control mismatch) "
+             "records fever as a presenting symptom in 213 of 380 (56.1%), "
+             "against a mean admission temperature of 38.0C -- suggesting "
+             "'Fever' there is a self-reported symptom flag, not the measured "
+             "threshold Ebrahimzadeh applied. Same ambiguity the operational "
+             "definition already names. Value stays with the measured-threshold "
+             "study; the band widens to cover the reported-symptom one rather "
+             "than discard it",
+    ),
+    ("community_acquired_pneumonia", "exam:crackles"): measured(
+        0.42,
+        Citation(
+            "LEBANON-CAP-2026",
+            "Clinical outcomes in hospitalized CAP, PLOS ONE 2026, "
+            "PMC12962476, Table 1",
+            "rales/crackles present in 161 of 380 adults hospitalized with "
+            "community-acquired pneumonia (42.4%)",
+        ),
+        low=0.37,
+        high=0.47,
+        note="a straight cohort of diagnosed CAP patients, not a case-control "
+             "design -- the population match this project prefers. Replaces "
+             "an invented 0.80 that was, in hindsight, closer to a "
+             "textbook-severity figure than an admission-cohort one",
     ),
     ("copd_exacerbation", "exam:tachycardia"): measured(
         0.35,
