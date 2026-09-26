@@ -766,6 +766,38 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         note="the first cell for this concept outside COPD and asthma; the "
              "concept is ever-smoked, the Wells/PERC risk-factor sense",
     ),
+    # Searched for after pmc-13070269 -- an ACS with fever, pleuritic pain
+    # and a raised troponin, misread as pneumonia once crackles stopped
+    # arguing against it -- to see whether the number this differential
+    # actually needed existed. It does, and it makes the case worse, not
+    # better, which is why it is taken anyway.
+    ("community_acquired_pneumonia", "lab:raised_troponin"): measured(
+        0.285,
+        Citation(
+            "SIMSEK-2026",
+            "Prognostic value of cardiac troponin I in hospitalized CAP, "
+            "Medicine (Baltimore) 2026, PMC13200960, Table 1",
+            "troponin I >= 19.8 ng/L (the assay's own 99th-percentile upper "
+            "reference limit -- matches this project's threshold exactly, "
+            "no deviation) in 140 of 491 patients hospitalized with "
+            "confirmed community-acquired pneumonia (28.5%), recent acute "
+            "cardiac events and alternative diagnoses excluded",
+        ),
+        low=0.25,
+        high=0.32,
+        note="pneumonia raises troponin through type 2 myocardial injury -- "
+             "systemic stress and demand ischaemia, not thrombosis -- which "
+             "the paper states outright. The invented 0.08 undersold this by "
+             "more than three-fold and was quietly doing real work: it made "
+             "a raised troponin read as strong evidence against pneumonia "
+             "when the mechanism for it existing has nothing to do with "
+             "coronary disease. This is the cell pmc-13070269 needed sourced "
+             "in the direction that helps it, and it is not this one -- with "
+             "pneumonia's troponin corrected upward, troponin-present "
+             "discriminates ACS from pneumonia less, not more. Taken anyway: "
+             "choosing not to source a number because of what it will do to "
+             "one case is the tuning this project exists to refuse.",
+    ),
     ("community_acquired_pneumonia", "exam:hypoxia"): measured(
         0.61,
         Citation(

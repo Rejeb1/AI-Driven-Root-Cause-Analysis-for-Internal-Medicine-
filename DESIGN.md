@@ -2754,3 +2754,25 @@ The other four searches returned nothing: no cohort reporting crackles or
 fever as a discrete finding for ACS, asthma, pericarditis or panic attack.
 All six stay invented; the searches and reasons are recorded in
 fixtures.py so the next attempt does not repeat them.
+
+## The cell the wrong commit needed, taken in the direction that hurts
+
+pmc-13070269 (ACS, fever, pleuritic pain, raised troponin, crackles
+absent) misread as pneumonia pointed at P(raised troponin | pneumonia),
+invented at 0.08. Sourced: 140 of 491 confirmed CAP patients (Simsek
+2026), troponin I >= 19.8 ng/L, the assay's own 99th-percentile URL,
+matching this project's threshold exactly -- 28.5%, undersold more than
+three-fold. Mechanism stated in the paper: type 2 myocardial injury from
+systemic stress, not coronary disease.
+
+Taken even though it makes the case worse (troponin-present now
+discriminates ACS from pneumonia less; the wrong commit moves 78% -> 85%),
+because declining to source a number based on what it does to one case is
+the tuning this project refuses. 177 likelihoods, 102 invented, 42%.
+
+Re-measured correlation weighting the same day: real cases now tie at one
+wrong commit either way, on different patients (unweighted misreads the
+pericarditis this project's own workup was built for; weighted misreads
+this ACS). The fixture effect is unchanged. Held-out ECE flipped which arm
+looks better, on seven cases -- reported, not trusted; Brier still favours
+weighted.

@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 103 of its 177 likelihoods are invented, no
+an unfinished feature — because 102 of its 177 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -131,7 +131,7 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**103 of 177 likelihoods are invented.** That is the number, stated on its own
+**102 of 177 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project. It was 89 of
 153 until the pericardial columns were added (§5): two concepts the real cases
 showed were missing, two sourced cells for pericarditis, and 21 invented rival
@@ -391,7 +391,7 @@ celebrate.
 ### Nothing was checking the numbers themselves
 
 Every test in this project checks outputs. The knowledge base is inputs, and
-for most of its life nothing looked at it: 103 of 177 likelihoods are invented,
+for most of its life nothing looked at it: 102 of 177 likelihoods are invented,
 and the only scrutiny they got was whichever ones happened to change a case.
 
 Reading each column sorted, against what the diseases actually do, found five
@@ -859,7 +859,7 @@ Measured on every set, cells sourced without looking at any case: fixtures
 real patients **4 → 6 correct, 0 wrong**, the SLE pericarditis and the
 second pneumonia now committing; held-out ECE 0.286 → 0.260, coverage 43%
 → 57%. Three fixture-level pins moved with it and are re-pinned with the
-reasoning. 177 likelihoods, 103 invented, coverage 42%.
+reasoning. 177 likelihoods, 102 invented, coverage 42%.
 
 ### One cell at a time: crackles
 
@@ -892,6 +892,40 @@ All six stay invented, with the search and the reason recorded in
 sign's likelihood ratio from a rational-clinical-examination review, rather
 than one more disease-cohort table these five apparently do not report
 crackles or fever in.
+
+### The cell pmc-13070269 actually needed, taken in the direction that hurts
+
+The wrong commit itself pointed at a number: an ACS with fever, pleuritic
+pain and a raised troponin, misread as pneumonia, is a case where
+P(raised troponin | pneumonia) is doing real work, and it was invented at
+0.08. A search for troponin in confirmed CAP found a clean match — a
+491-patient retrospective cohort (Şimşek 2026), troponin I at or above
+19.8 ng/L, which the paper states is the assay's own 99th-percentile
+upper reference limit, matching this project's threshold with no
+deviation to record. 140 of 491, **28.5%**, against the invented 0.08 —
+undersold by more than three-fold. The mechanism is stated in the paper:
+pneumonia raises troponin through systemic stress and type 2 myocardial
+injury, not coronary disease, and a cohort excluding recent acute cardiac
+events and alternative diagnoses is measuring exactly that.
+
+Sourcing it makes pmc-13070269 worse, not better. With troponin more
+common in pneumonia than the invented cell claimed, a raised troponin
+discriminates ACS from pneumonia *less*, and the wrong commit moves from
+78% to **85%**. Taken anyway. The alternative — declining to source a
+number because of what it will do to one case — is the tuning this
+project exists to refuse, stated plainly in the comment beside the cell
+in `fixtures.py` rather than left for a reader to notice on their own.
+177 likelihoods, 102 invented, 42%.
+
+What this means for the wrong commit: it is not a knowledge-base gap
+anymore, at least not in the cells this pass could reach. Pericarditis's
+signs don't apply to an ACS differential and were never the issue.
+What would actually separate these two diagnoses is a study built around
+the specific confusion — troponin in confirmed ACS against troponin in
+pneumonia with cardiac strain, as a joint comparison rather than two
+separate cohort tables — and general searches for either disease alone do
+not turn that up. Recorded as the open question, not as something the next
+search on this pattern is likely to close.
 
 **And this pass took down a claim §4 relied on.** The case for correlation
 weighting rested on real patients: "three wrong commits against none, and
@@ -937,6 +971,38 @@ alternative — agree with the declared ones on every verdict. So: the
 mechanism is robust to its values; its values are still invented; and the
 lighter setting is recorded here as the thing a larger case set should
 decide.
+
+**Re-measured again after tachycardia and crackles were sourced, and the
+real-case story changed shape a second time.** It is no longer "weighting
+prevents a wrong commit": both arms now commit exactly one real patient
+wrong, and they are different patients. Unweighted misreads pmc-5841117 —
+the positional, sit-forward-relieved pericarditis this project's own
+pericarditis workup was built around — as acute coronary syndrome.
+Weighted misreads pmc-13070269, the ACS the crackles correction exposed
+(§5), as pneumonia. Correlation weighting still catches the case it was
+originally measured on; it no longer prevents a net wrong commit on this
+set, because a different, unrelated cell moved and produced a different
+error in the other diagnostic direction.
+
+The fixture story is unchanged and still clean: unweighted commits one
+fixture wrong (fx-009) that weighted does not, at the cost of more turns
+and a lower coverage. That is the effect this section's fixture-values
+paragraph above describes, and it still holds as measured.
+
+Held-out calibration on the same seven cases flipped which arm looks
+better on ECE (weighted 0.251, unweighted 0.135; Brier still favours
+weighted, 0.174 against 0.192) — worth reporting and not worth trusting:
+seven cases give ECE almost no bins to be calibrated within, and a flip
+driven by which handful of cases sit in which confidence bucket is noise
+dressed as a finding. Brier, which does not bin, still prefers the
+weighted arm and is the more honest number to read here.
+
+Net position, restated rather than left implicit: correlation weighting
+stays on for the fixtures, where its effect is real, sized, and
+reproduced across three measurements now. Its case for the real patients
+was never more than one anecdote wide, and that anecdote no longer nets
+in its favour. The mechanism is kept for what it demonstrably does, not
+for a real-patient argument that has now reversed twice.
 
 ### A configuration inconsistency found while writing this, and fixed
 

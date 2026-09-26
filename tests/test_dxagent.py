@@ -838,17 +838,18 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
         kb=build_knowledge_base(correlated=True),
         limits=LoopLimits(require_decisive_tests=True, require_workup=False),
     )
-    # ... and after the tachycardia column, the decisive rule loses fx-005,
-    # the COPD exacerbation, on this arm: with COPD's tachycardia at a
-    # measured 0.35 the case sits closer to pneumonia, and the rule's extra
-    # test tips it. The shipped configuration still escalates it correctly
-    # ranked first. Two arms, two answers, on the same ten cases -- the
-    # reason the fixture count judges no mechanism, restated.
+    # ... and after crackles and pneumonia's troponin were both sourced, the
+    # decisive rule lost fx-005 back and picked up fx-009 instead of both:
+    # pneumonia's own numbers keep moving, and each move changes which
+    # fixture this arm's extra test happens to tip. Two arms, two answers,
+    # on the same ten cases, now for the fourth distinct reason -- the point
+    # the fixture count exists to make, restated with more evidence each
+    # time it is measured.
     assert [
         case.case_id
         for case in cases
         if decisive.run(case).differential.top.label != case.diagnosis
-    ] == ["fx-005", "fx-010"]
+    ] == ["fx-009", "fx-010"]
 
 
 def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
@@ -3464,12 +3465,17 @@ def test_completing_the_grid_buys_rank_and_costs_one_wrong_commit():
     off_wrong, off_rank = measure(False)
     on_wrong, on_rank = measure(True)
 
-    # Shipped now carries 1 wrong (measured above); complete grid carries 2.
-    # Same trade, re-measured: completing the grid still costs more than it
-    # is already costing, and buys rank with it.
+    # Shipped and complete-grid now tie at 1 wrong each, after pneumonia's
+    # troponin was sourced upward on the shipped side and no longer leaves a
+    # clean gap for completing the grid to open. What survives from the
+    # original trade is the rank half only: completing the grid still
+    # sharpens the true diagnosis's position (2.42 -> 2.11) without adding a
+    # net wrong commit on this measurement. That is a weaker result than the
+    # one this test was written to protect, and it is reported as the
+    # weaker result rather than propped up with a stale assertion.
     assert off_wrong == 1, "the shipped grid's current wrong commit"
-    assert on_wrong > off_wrong, "completing the grid trades an abstention away"
-    assert on_rank < off_rank, "and buys ranking with it"
+    assert on_wrong == off_wrong, "the wrong-commit gap has closed, not widened"
+    assert on_rank < off_rank, "the rank gain is the only part of the trade left standing"
 
     # No cell is left to fall back on once the grid is complete.
     kb = build(correlated=True, complete_grid=True)
