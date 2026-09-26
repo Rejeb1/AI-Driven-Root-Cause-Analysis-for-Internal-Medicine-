@@ -798,6 +798,31 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
              "choosing not to source a number because of what it will do to "
              "one case is the tuning this project exists to refuse.",
     ),
+    # Perturbation analysis (WRITEUP.md "There is no single-cell fix...")
+    # ruled this out as a lever for any currently-escalating real case, but
+    # sourcing continues on its own merits -- it is the most invented column
+    # left (8 of 8 diseases) and one of the most commonly recorded findings
+    # in any real report. lab:raised_wcc for pneumonia, first cell in it.
+    ("community_acquired_pneumonia", "lab:raised_wcc"): measured(
+        0.744,
+        Citation(
+            "FURER-2011",
+            "Furer V et al., Prim Care Respir J 2011;20(3):276-81, PMC6549842",
+            "21% of patients with bacteraemic community-acquired "
+            "pneumococcal pneumonia presented with a normal WBC count "
+            "(16.7% of children, 25.6% of adults) -- 74.4% of adults raised",
+        ),
+        note="the adult figure is used (this project's population); the "
+             "cohort is bacteraemic pneumococcal pneumonia specifically, a "
+             "more invasive subset of CAP rather than CAP overall, a "
+             "population caveat rather than a reason to decline. Four "
+             "other searches for this cell (general CAP cohorts, a "
+             "diagnostic-accuracy review) found only mean/SD leukocyte "
+             "counts, the same mean-not-proportion refusal already applied "
+             "to temperature and D-dimer; this is the one that reported a "
+             "threshold-crossing proportion instead. No exact N recoverable "
+             "beyond the abstract (full text is PDF-only), so no band.",
+    ),
     ("community_acquired_pneumonia", "exam:hypoxia"): measured(
         0.61,
         Citation(

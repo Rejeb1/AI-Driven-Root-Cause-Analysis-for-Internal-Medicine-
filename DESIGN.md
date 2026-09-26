@@ -2885,3 +2885,17 @@ Revises the "moves with more sourcing, cell by cell" claim two entries
 up: that was optimism, not measurement. This is a ceiling on single-cell
 sourcing, not a backlog of citations waiting to be found. No fixtures.py
 change, no test re-pin -- pure analysis, not a knowledge-base edit.
+
+## Sourcing continues anyway: lab:raised_wcc, pneumonia cell
+
+Not a lever for the 11 escalations (measured above) but still worth
+sourcing for general accuracy -- most-invented column (8/8 diseases), a
+commonly recorded real-world finding. Four searches found only mean/SD
+leukocyte counts (same non-proportion refusal as temperature, D-dimer);
+a fifth (Furer 2011, PMC6549842, "Absence of leukocytosis in
+bacteraemic pneumococcal pneumonia") reported the proportion directly:
+74.4% of adults raised (21% overall normal, 25.6% of adults). Taken at
+0.744 against the invented 0.80 -- a small correction. No effect on any
+wrong-commit count (confirms the perturbation finding: this cell has no
+leverage on the escalating cases either). 177 likelihoods, 100 invented,
+44%. 174 tests pass, coverage figures + PDFs updated.
