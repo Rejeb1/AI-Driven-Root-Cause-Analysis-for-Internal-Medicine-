@@ -2922,3 +2922,15 @@ WBC count" isn't stated in the accessible abstract, unlike this ACS
 cell which states its threshold explicitly and can be checked against
 this project's definition. 177 likelihoods, 99 invented, 44%
 (unrounded fraction moved, rounded percentage didn't). 174 tests pass.
+
+## pmc-13070269: checked whether any cell can at least de-confidence it
+
+Same perturbation method, weaker bar: not "commit correctly", just
+"escalate instead of confidently wrong". 9 cells (PE hypoxia/WCC, ACS ST
+changes, oedema fever/WCC, asthma WCC/troponin, pericarditis
+tachycardia/WCC) cross that bar at an extreme -- none flip to correct.
+All 9 need implausible values (PE hypoxia at 2% against a classically
+~50% real rate, ACS ST changes at 2% against a hallmark-finding rate,
+etc.) -- same probe-not-candidate shape as the escalating-case analysis.
+Closes item 1: no single sourced number moves this case either
+direction. Pure analysis, no fixtures.py change.

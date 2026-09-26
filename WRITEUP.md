@@ -1202,6 +1202,35 @@ eight cases with no leverage point, and the other three would either make
 things worse or need a value nothing would corroborate. The honest
 description of this gap is a ceiling, not a backlog.
 
+### The same question asked of pmc-13070269 itself, with a weaker bar
+
+The perturbation analysis above covered the 11 escalating cases; it never
+covered the one case that's worse than escalating — pmc-13070269, which
+commits confidently to the wrong disease. Worth a separate pass, and with
+a deliberately weaker bar than "commit correctly": does any single
+invented cell, at either extreme, at least turn the wrong commit into an
+honest escalation?
+
+Nine do. `pulmonary_embolism`'s hypoxia and WCC, `acute_coronary_syndrome`'s
+ST changes, `acute_pulmonary_oedema`'s fever and WCC, `asthma_exacerbation`'s
+WCC and troponin, `pericarditis`'s tachycardia and WCC — each, pushed to
+0.02 or 0.98, dilutes pneumonia's share of the posterior enough to drop
+below the gate's confidence threshold. None flip the case to a *correct*
+commit; the best any of them does is convert a confident wrong answer into
+an honest "I don't know."
+
+None is real. Every one needs the same kind of value the escalating-case
+analysis already ruled out: PE causing hypoxia in 2% of patients (PE
+classically causes it in something like half), ACS showing ST changes in
+2% (a hallmark finding, not a rare one), pulmonary oedema presenting with
+fever in 98% (fever is not a feature of cardiogenic oedema at all), and so
+on for the rest — extremes with no study behind them, probe values, not
+candidates. Checked so the record can say it was tried rather than assumed
+impossible: even the weaker bar of "escalate instead of confidently wrong"
+has no legitimate single-cell fix. This closes item 1 completely; nothing
+further from a single sourced number can move this case in either
+direction.
+
 ### The most-invented column, worked one cell at a time
 
 `lab:raised_wcc` is invented for all 8 diseases, the single largest
