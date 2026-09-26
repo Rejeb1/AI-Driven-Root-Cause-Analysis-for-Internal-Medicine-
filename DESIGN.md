@@ -2988,3 +2988,25 @@ Both declined on the same basis as oedema. Column: 2/8 sourced
 reason, 3/8 (asthma, panic, pericarditis) not yet attempted. 177
 likelihoods, 99 invented, 44% (unchanged -- no new sourced cell this
 pass). 174 tests pass, comment-only fixtures.py change.
+
+## A twentieth real case, for the calibration gap
+
+Item 6's only real fix (more real cases) tried once: PMC13562284, a
+59-year-old man 10 days post-PCI for real ACS, panic attacks from
+albendazole, resolved only after exhaustive negative cardiac/pulmonary
+workup. Picked hard-by-construction, same rule as the other panic cases.
+
+Unweighted commits it wrong (asthma, 75%) -- redundant negatives
+(crackles/wheeze/rub absent, ECG/troponin/BNP normal) sharpening a
+confident wrong answer the same mechanism as the fixture set's known
+failure. Weighted escalates correctly. Second unforced real-patient
+data point for correlation weighting after the write-up said that
+argument had run out of patients -- found by adding a case for an
+unrelated reason (calibration), not by looking for one.
+
+test_correlation_pays_and_decisive_tests_still_do_not re-pinned:
+wrong_commits(False) 1 -> 2, wrong_commits(True) unchanged at 1. Real
+cases now 7 correct, 1 wrong, 12 escalated of 20 (was 11 escalated of
+19; correct and wrong counts unchanged, only escalated moved +1).
+n=20 still too few for calibration -- one case is a first step, not a
+claim the gap is closed. 174 tests pass.

@@ -1282,6 +1282,34 @@ the exception in this literature, not the norm. Further searching this
 specific column is not expected to find a seventh. 177 likelihoods, 99
 invented, 44%.
 
+### A twentieth real case, added for the calibration gap — and an unforced piece of evidence for correlation weighting
+
+Item 6 on the standing gap list ("calibration never fitted, 19 patients
+too few") has one real fix: more real cases, extracted the same careful
+way as the existing 19. Added one — PMC13562284, a 59-year-old man ten
+days after PCI for a real acute coronary syndrome, started on albendazole
+for an incidental parasitic infection, who developed recurrent panic
+attacks (palpitations, chest pain, dyspnoea, fear of dying) resolved only
+after an exhaustive negative cardiac and pulmonary workup. Picked for the
+same reason as this project's other panic-attack cases: genuinely hard by
+construction, the same symptom set that would argue for a repeat cardiac
+event in a patient with a genuine recent cardiac history, not a clean
+win.
+
+One case does not move the calibration gap — n=20 is still too few, and
+saying otherwise would be exactly the kind of overclaim this section
+exists to refuse. What it did produce, unforced, is a second real
+data point for correlation weighting after the project's own record said
+that argument had "run out of patients to point to." Unweighted reads
+this case as asthma at 75% — the same redundant-negatives mechanism as
+the fixture set's known failure mode, four independent-looking findings
+(no crackles, no wheeze, no friction rub, normal ECG/troponin/BNP) that
+are facets of one clinical picture (a thoroughly negative organic
+workup) being counted four times over. Weighted escalates on it
+correctly. Real cases now stand at 7 correct, 1 wrong, 12 escalated of
+20 — the wrong commit and the correct count both unchanged from before
+this case, only the escalation count and this one data point are new.
+
 ### A configuration inconsistency found while writing this, and fixed
 
 `scripts/run_eval.py` built its knowledge base **without** correlation

@@ -1010,8 +1010,21 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     # doing that job too hard). The unweighted arm's wrong commit changed
     # case too. Both numbers are pinned as measured, not as claims, and
     # both move again the next time a cell in this differential is sourced.
+    #
+    # A twentieth real case (pmc-13562284, added for the calibration gap,
+    # not for this test) moved the unweighted count again, unforced: it is
+    # a panic attack with an exhaustively negative cardiac/pulmonary
+    # workup, and unweighted reads it as asthma at 75% -- redundant
+    # negatives (no crackles, no wheeze, no rub, normal ECG/troponin/BNP)
+    # sharpening a confident wrong answer the same way the fixture set's
+    # four-facets-of-one-picture failure does. Weighted escalates on it
+    # correctly. This is exactly the real-patient evidence the write-up
+    # said had "run out of patients to point to" after two earlier
+    # reversals -- found by adding a case for an unrelated reason, not by
+    # looking for one, which is the only way this kind of evidence is
+    # worth trusting.
     assert wrong_commits(True) == 1
-    assert wrong_commits(False) == 1
+    assert wrong_commits(False) == 2
 
     # Where the safety difference lives now: the fixtures. Without the
     # weighting, four facets of one picture counted as four findings sharpen
