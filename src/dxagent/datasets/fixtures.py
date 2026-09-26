@@ -1376,6 +1376,16 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
 # elevated at any stated cutoff. Both cells stay invented for the reason
 # already given, now with two more studies checked and rejected against
 # it rather than left unchecked.
+#
+# COPD crackles tried again too (invented at 0.30, the sixth of the six
+# crackles cells this file already declined once). Three more searches for
+# an AECOPD cohort reporting auscultation findings on admission -- Japanese
+# exacerbation cohort (PMC7720558, risk-factor study, no exam data),
+# general "COPD exacerbation physical examination" queries -- returned
+# either irrelevant cohorts or a search space now dominated by lung-sound
+# machine-learning papers rather than clinical tables. Same result as the
+# first pass: auscultation is reported in aggregate or not at all in what
+# turns up. Stays invented.
 
 # Load-bearing numbers that no source can supply, and the reason is structural
 # ---------------------------------------------------------------------------
