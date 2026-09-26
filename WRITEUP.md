@@ -871,6 +871,28 @@ Fixing this case properly is not a cell fix — pericarditis's own friction rub,
 
 One structural bug surfaced on the way, unrelated to any cell value: `GraphAgent`'s LangGraph recursion limit was fixed at `4 * max_turns + 10`, sized for a configuration where every turn counts toward `max_turns`. The real-case configuration turns that off — an unknown answer is free — so the reference loop can legitimately spend one step per remaining vocabulary concept, far more than `max_turns`, before it runs out of candidates. One real case (a pulmonary oedema, committed correctly by the reference loop) hit that fixed ceiling and raised `GraphRecursionError` in the graph engine instead of committing — silently, because nothing exercises the two engines against the real cases under that configuration. The limit now scales to the vocabulary size when uninformative turns are free, and a regression test pins both engines agreeing on that case.
 
+### Six more cells searched for, and not found
+
+After tachycardia and crackles, six invented cells remained the real cases
+ask about most: fever for acute coronary syndrome, pulmonary oedema, COPD,
+asthma and panic attack, and crackles for the same five minus oedema plus
+pericarditis. One search per gap. Two near-misses, both declined: COPD's
+temperature is reported (García-Sanz 2012, already cited for tachycardia) at
+28.0% above 37°C — a full degree below this project's 38°C threshold, which
+is a different clinical claim, not a rounding difference, and widening the
+definition to fit the data available is the fitting this project refuses.
+Pulmonary oedema's temperature is reported by a 2,246-patient Canadian
+registry (Ross 2024) as a mean and standard deviation, 36.2 ± 0.7°C — not a
+threshold count, and converting it to one needs the distributional
+assumption already refused for the D-dimer columns. The other four searches
+returned nothing: no cohort reporting crackles or fever as a discrete finding
+for acute coronary syndrome, asthma, pericarditis or panic attack turned up.
+All six stay invented, with the search and the reason recorded in
+`fixtures.py` so the next attempt starts from a different angle — a named
+sign's likelihood ratio from a rational-clinical-examination review, rather
+than one more disease-cohort table these five apparently do not report
+crackles or fever in.
+
 **And this pass took down a claim §4 relied on.** The case for correlation
 weighting rested on real patients: "three wrong commits against none, and
 that gap has held or widened through every sourcing pass." After this pass

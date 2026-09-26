@@ -1283,6 +1283,54 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
     ),
 }
 
+# Fever and crackles, continued: what a further search did not find
+# ---------------------------------------------------------------------------
+# After the tachycardia and crackles passes, six cells stayed invented on
+# purpose rather than by omission: fever for acute coronary syndrome, acute
+# pulmonary oedema, COPD, asthma and panic attack, and crackles for acute
+# coronary syndrome, COPD, asthma, pericarditis and panic attack. One search
+# per remaining gap, and what each one actually returned:
+#
+#   COPD fever   GARCIA-SANZ-2012 (already cited for tachycardia) does report
+#                temperature: 67 of 239 patients (28.0%) above 37C. Not taken
+#                -- the cutoff is a full degree below this project's 38C, and
+#                a degree at that boundary is not a rounding difference, it
+#                is a different clinical claim (low-grade temperature versus
+#                fever). Widening the definition to fit the data available is
+#                exactly the fitting this project refuses.
+#   Oedema fever LAN-2025 (MIMIC-III, already cited for tachycardia) does not
+#                report it. A second cohort, a 2,246-patient Canadian
+#                emergency-department acute-heart-failure registry
+#                (Ross et al., JACC Adv 2024, PMC11313032), reports admission
+#                temperature as 36.2 +/- 0.7C -- a mean and standard
+#                deviation, not a threshold count. Converting that to
+#                P(temperature >= 38C) needs a distributional assumption this
+#                file already refuses for exactly this reason (see the D-dimer
+#                quartile discussion above). The mean two standard deviations
+#                out is 37.6C, still under the threshold, which is a
+#                qualitative argument that the invented 0.10 is in the right
+#                range -- not a measurement, and not written as one.
+#   ACS fever, asthma fever, panic fever
+#                No open-access cohort found reporting a fever count
+#                specifically for the presentation (postinfarct fever papers
+#                describe a days-later complication, not the presentation,
+#                and are excluded on the same rule that excludes any later
+#                complication from a presentation cell).
+#   ACS crackles, COPD crackles, asthma crackles, pericarditis crackles,
+#   panic crackles
+#                No cohort found reporting crackles/rales as a discrete
+#                physical sign for any of these five, despite searching each
+#                by name. Auscultation findings are reported in aggregate
+#                ("abnormal auscultation") or not at all in the cohorts these
+#                searches turned up.
+#
+# All six stay invented. The record exists so the next pass does not repeat
+# these six searches expecting a different answer, and starts from a
+# different angle -- a textbook chapter's stated LR for the sign, or a
+# rational-clinical-examination review specific to crackles, rather than a
+# disease-cohort table, which is what this file's other columns have used
+# and which these six diseases do not seem to report crackles or fever in.
+
 # Load-bearing numbers that no source can supply, and the reason is structural
 # ---------------------------------------------------------------------------
 # `scripts/sensitivity.py` names four likelihoods that currently change a

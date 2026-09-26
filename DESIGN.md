@@ -2736,3 +2736,21 @@ the weighted weakened arm carries fx-009 again; the decisive-test arm now
 loses fx-005; the unweighted shipped arm commits one wrong on the fixtures
 rather than two, and one on the real cases rather than none. Sourced cells
 change what every arm does, and the pins record it rather than resist it.
+
+## Six more cells: what a further search did not find
+
+After tachycardia and crackles, six invented cells remained the real cases
+touch most: fever for ACS, oedema, COPD, asthma, panic; crackles for the
+same five minus oedema plus pericarditis. One search per gap.
+
+Two near-misses, declined: COPD temperature (García-Sanz 2012, already
+cited) reports 28.0% above 37C -- a degree below this project's 38C
+threshold, a different claim rather than a rounding gap. Oedema
+temperature (Ross 2024, 2,246-patient Canadian AHF registry) is a mean and
+SD, 36.2 +/- 0.7C, not a threshold count -- converting it needs the
+distributional assumption already refused for D-dimer.
+
+The other four searches returned nothing: no cohort reporting crackles or
+fever as a discrete finding for ACS, asthma, pericarditis or panic attack.
+All six stay invented; the searches and reasons are recorded in
+fixtures.py so the next attempt does not repeat them.
