@@ -1479,8 +1479,23 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
 # pneumonia's temperature and D-dimer. Declined on that basis. COPD and
 # pulmonary embolism were queued next but NCBI's E-utilities started
 # returning HTTP 500s and timeouts partway through this pass -- a service
-# outage, not a finding -- so both stay invented and queued for the next
-# pass rather than declared searched.
+# outage, not a finding.
+#
+# Resumed once the outage cleared. COPD: four searches (VIRAE study
+# PMC3379868, a troponin-in-COPD cohort PMC2718858, a mortality-predictor
+# cohort PMC7259855, a stable-phenotype study PMC7127861) all report
+# leukocytes as mean/median with SD or IQR, the same non-proportion shape
+# already declined twice above -- one even uses a >=15x10^9/L threshold in
+# a regression but never states the N crossing it, an odds ratio without a
+# base rate the same way oedema's leukocytosis figure was. Pulmonary
+# embolism: two searches (PMC12942291's biomarker-outcome tables, general
+# leukocytosis queries) turn up only medians and per-unit odds ratios for
+# in-hospital outcomes, never a proportion at presentation. Both decline
+# on the same basis as oedema. Column now: 3 of 8 sourced (pneumonia, ACS),
+# 3 of 8 declined (oedema, COPD, pulmonary embolism) for the identical
+# reason -- this finding is reported as a summary statistic almost
+# everywhere, not a threshold count -- and asthma, panic and pericarditis
+# not yet attempted.
 
 # Load-bearing numbers that no source can supply, and the reason is structural
 # ---------------------------------------------------------------------------

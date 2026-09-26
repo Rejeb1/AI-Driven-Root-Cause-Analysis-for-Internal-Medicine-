@@ -1246,10 +1246,27 @@ primary PCI with leukocytosis at admission (38.4%), against the invented
 0.25. Oedema was checked and declined (the Korean Acute Heart Failure
 registry gives leukocytosis only as a mortality odds ratio and WCC only
 as mean ± SD, the same non-proportion shape already refused elsewhere).
-COPD and pulmonary embolism are still queued — not searched-and-declined,
-just not reached before NCBI's E-utilities started returning HTTP 500s
-and timeouts partway through the pass, a service outage rather than a
-finding. 177 likelihoods, 99 invented, 44%.
+COPD and pulmonary embolism were queued at that point — not
+searched-and-declined, just not reached before NCBI's E-utilities started
+returning HTTP 500s and timeouts partway through the pass, a service
+outage rather than a finding.
+
+Resumed once the outage cleared, and both declined for the same reason as
+oedema. Four more COPD searches (a microbiology cohort, a troponin-in-COPD
+study, a mortality-predictor cohort, a stable-phenotype study) and two
+more for pulmonary embolism (a biomarker-outcome cohort, general
+leukocytosis queries) turned up nothing but medians, means, and per-unit
+odds ratios — never a proportion crossing a stated threshold. One COPD
+paper uses a `>=15×10⁹/L` cutoff inside a mortality regression and still
+never states how many patients crossed it, an odds ratio standing in for
+a base rate the same way oedema's did. `lab:raised_wcc` now stands at 2 of
+8 sourced (pneumonia, ACS), 3 of 8 declined (oedema, COPD, pulmonary
+embolism) for the identical reason, and 3 of 8 (asthma, panic,
+pericarditis) not yet attempted at all. This finding is
+reported as a summary statistic almost everywhere in the literature that
+turned up, not as a threshold count, which is a property of how WCC gets
+reported generally rather than of any one disease. 177 likelihoods, 99
+invented, 44%.
 
 ### A configuration inconsistency found while writing this, and fixed
 

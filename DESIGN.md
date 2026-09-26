@@ -2954,3 +2954,18 @@ Confirming fully needs several full-baseline runs as separate processes,
 honest substitute for the mandated model, and that much runtime isn't
 worth it for a secondary path. WRITEUP.md corrected to state what was
 actually tested rather than repeat an untested explanation.
+
+## lab:raised_wcc, resumed after the outage: COPD and PE both declined
+
+NCBI's search recovered; resumed rather than left queued. COPD: 4
+searches (VIRAE study PMC3379868, troponin-in-COPD PMC2718858,
+mortality-predictor PMC7259855, stable-phenotype PMC7127861), all
+mean/median +/- SD or IQR, one even uses a >=15x10^9/L threshold in a
+regression without ever stating the N crossing it. PE: 2 searches
+(PMC12942291's biomarker-outcome tables, general queries), same shape --
+medians and per-unit odds ratios, never a presentation proportion.
+Both declined on the same basis as oedema. Column: 2/8 sourced
+(pneumonia, ACS), 3/8 declined (oedema, COPD, PE) for the identical
+reason, 3/8 (asthma, panic, pericarditis) not yet attempted. 177
+likelihoods, 99 invented, 44% (unchanged -- no new sourced cell this
+pass). 174 tests pass, comment-only fixtures.py change.
