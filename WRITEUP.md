@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 102 of its 177 likelihoods are invented, no
+an unfinished feature — because 101 of its 177 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -131,7 +131,7 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**102 of 177 likelihoods are invented.** That is the number, stated on its own
+**101 of 177 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project. It was 89 of
 153 until the pericardial columns were added (§5): two concepts the real cases
 showed were missing, two sourced cells for pericarditis, and 21 invented rival
@@ -391,7 +391,7 @@ celebrate.
 ### Nothing was checking the numbers themselves
 
 Every test in this project checks outputs. The knowledge base is inputs, and
-for most of its life nothing looked at it: 102 of 177 likelihoods are invented,
+for most of its life nothing looked at it: 101 of 177 likelihoods are invented,
 and the only scrutiny they got was whichever ones happened to change a case.
 
 Reading each column sorted, against what the diseases actually do, found five
@@ -859,7 +859,7 @@ Measured on every set, cells sourced without looking at any case: fixtures
 real patients **4 → 6 correct, 0 wrong**, the SLE pericarditis and the
 second pneumonia now committing; held-out ECE 0.286 → 0.260, coverage 43%
 → 57%. Three fixture-level pins moved with it and are re-pinned with the
-reasoning. 177 likelihoods, 102 invented, coverage 42%.
+reasoning. 177 likelihoods, 101 invented, coverage 43%.
 
 ### One cell at a time: crackles
 
@@ -915,7 +915,7 @@ discriminates ACS from pneumonia *less*, and the wrong commit moves from
 number because of what it will do to one case — is the tuning this
 project exists to refuse, stated plainly in the comment beside the cell
 in `fixtures.py` rather than left for a reader to notice on their own.
-177 likelihoods, 102 invented, 42%.
+177 likelihoods, 101 invented, 43%.
 
 What this means for the wrong commit: it is not a knowledge-base gap
 anymore, at least not in the cells this pass could reach. Pericarditis's
@@ -1119,6 +1119,38 @@ recorded. Declining to guess when the record is silent is the abstention
 gate doing its job, not a defect the gate should be tuned away from. What
 would actually move this number is more of the same sourcing work item 3
 represents — cell by cell, as cohorts turn up — not a mechanism change.
+
+### The wrong commit's real lever was never troponin, and sourcing it made the case worse on purpose
+
+The mechanistic trace above (§"Re-measured again...") found that pleuritic
+pain, not troponin, decides pmc-13070269: a −2.30 nat penalty against ACS
+that no correlation group touches, invented at 0.10 and never checked. So
+it was checked. Hess EP et al. (Ann Emerg Med 2012;59(2):115-25) followed
+2,718 emergency-department chest-pain patients for 30-day cardiac events
+at three academic centres — sensitivity of pleuritic-quality pain for a
+true cardiac event was **6.5%**, lower than the invented 0.10, not higher.
+Two independent reviews cited in the same paper agree only in direction
+(pleuritic pain argues against ACS), at metrics — an LR and an odds ratio
+— that don't convert cleanly to a sensitivity, so the band stays narrow
+around Hess's own figure rather than stretched to cover numbers that
+aren't the same quantity.
+
+Taken anyway, same rule as the troponin cell: pmc-13070269 moves from 85%
+to 86% pneumonia unweighted, 84.6% to 85.1% weighted. Worse, not better,
+predicted before running the measurement and correct.
+
+One thing the prediction did not anticipate: the unweighted real-case
+count went from 7 correct to **8**. pmc-4672113, a true ACS with pleuritic
+pain absent, previously escalated; a lower P(pleuritic pain present | ACS)
+means a higher P(pleuritic pain absent | ACS) — 0.935 against the old
+0.90 — so the same absence now argues *more* strongly for the correct
+diagnosis on a different patient. Sourcing this cell helped and hurt on
+two different real cases simultaneously, in the direction the mechanism
+actually implies both times. Nothing here was chosen for that effect; it
+is what checking an untested assumption produced. 177 likelihoods, 101
+invented, 43%. 174 tests pass; no wrong-commit-count assertion needed
+re-pinning because the count did not move, only which case's confidence
+and which other case newly commits.
 
 ### A configuration inconsistency found while writing this, and fixed
 

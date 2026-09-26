@@ -127,8 +127,8 @@ contradicted, all four for that reason:
   correcting it cost.
 
 **Most of these numbers are still invented, and which ones are not is
-recorded.** 42% of the 177 likelihoods carry a citation — 7 from DDXPlus, 11
-from the Merck Manual's narrative text, 55 from published cohorts and
+recorded.** 43% of the 177 likelihoods carry a citation — 7 from DDXPlus, 11
+from the Merck Manual's narrative text, 56 from published cohorts and
 StatPearls. The fraction fell from 42% when two pericardial concepts were
 added with invented rival cells, and recovered on a pneumonia pass and a
 tachycardia-column pass; see WRITEUP.md §5.
@@ -234,7 +234,7 @@ here holds symptoms, signs, laboratory results and imaging findings, and
 nothing in scope reasons about medication. That is a scope fact rather than a
 substitution.
 
-**The likelihood tables are still mostly invented — 102 of 177.** UMLS was
+**The likelihood tables are still mostly invented — 101 of 177.** UMLS was
 probed and found unusable for this purpose — mostly translations and billing
 crosswalks, and its one clinical relation mixes symptoms, risk factors and
 treatment complications without distinguishing them. HPO supplies concepts but

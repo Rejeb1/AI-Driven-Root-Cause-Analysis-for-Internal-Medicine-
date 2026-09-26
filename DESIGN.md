@@ -2849,3 +2849,17 @@ VERIFIED_CUI, same mechanism as the three pins already there. Second run:
 `Vocabulary.umls_coverage`: 26/38 -> 28/38, live from the data file, no
 code change needed. SCOPE.md's concept count was stale by two findings
 independent of this (27 -> 29) and corrected at the same time.
+
+## The wrong commit's real lever was pleuritic pain, not troponin
+
+Mechanistic trace said pleuritic_pain (invented 0.10, ACS) carries the
+decisive -2.30 nat penalty, untouched by correlation weighting. Checked:
+Hess EP et al 2012 (Ann Emerg Med, n=2718 ED chest-pain, 30-day cardiac
+events) gives sensitivity 6.5%, lower than invented, taken anyway. Effect
+measured before writing anything: pmc-13070269 worse (85%->86% unweighted,
+84.6%->85.1% weighted, predicted). Unanticipated: unweighted real-case
+correct count 7->8 -- pmc-4672113 (true ACS, pleuritic pain absent) now
+commits, because a lower P(present|ACS) raises P(absent|ACS) and this
+patient has the absent version. Same cell, opposite effect on two real
+patients, both in the direction the number implies. 177 likelihoods, 101
+invented, 43%. No wrong-commit-count pin moved; only confidences did.

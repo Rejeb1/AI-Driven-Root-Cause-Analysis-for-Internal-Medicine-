@@ -1256,6 +1256,38 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
              "not the emergency presentation of any acute coronary syndrome. "
              "Cutoff >= 100 against this project's > 100; in the deviations",
     ),
+    # The mechanistic trace of pmc-13070269 (ACS misread as pneumonia,
+    # WRITEUP.md "Three open items") found that troponin was never the
+    # decisive finding in this differential -- pleuritic_pain was, an
+    # invented 0.10 carrying a -2.30 nat penalty against ACS that no
+    # correlation group touches. Searched for directly, not to fix the
+    # case but because it was the untested assumption the trace exposed.
+    ("acute_coronary_syndrome", "pleuritic_pain"): measured(
+        0.065,
+        Citation(
+            "HESS-2012",
+            "Hess EP et al., Ann Emerg Med 2012;59(2):115-25, Table 1",
+            "pleuritic chest pain: sensitivity 6.5%, specificity 81.5% for "
+            "ACS among 2,718 emergency-department chest-pain patients "
+            "followed for 30-day cardiac events (ACS, AMI, "
+            "revascularisation, in-hospital or post-discharge death) at "
+            "three academic centres, 2007-2010",
+        ),
+        low=0.04,
+        high=0.09,
+        note="lower than the invented 0.10, not higher -- this makes "
+             "pmc-13070269 read as pneumonia even more confidently, the "
+             "same direction the troponin cell moved it. Two independent "
+             "reviews cited in the same paper agree only in direction: "
+             "Bruyninckx's meta-analysis gives LR+ 0.2 (95% CI 0.2-0.3) "
+             "for pleuritic pain against AMI, and a separate synthesis "
+             "gives OR 0.31 (0.20-0.48) against ACS -- neither converts "
+             "cleanly to a sensitivity, so the band stays narrow around "
+             "Hess's own reported figure rather than stretched to cover "
+             "metrics that aren't the same quantity. Outcome is a 30-day "
+             "composite (ACS/AMI/revascularisation/death), not a pure ACS "
+             "diagnosis -- a population caveat, not a reason to decline.",
+    ),
     ("asthma_exacerbation", "dyspnoea_at_rest"): measured(
         0.91,
         Citation(
