@@ -3010,3 +3010,16 @@ cases now 7 correct, 1 wrong, 12 escalated of 20 (was 11 escalated of
 19; correct and wrong counts unchanged, only escalated moved +1).
 n=20 still too few for calibration -- one case is a first step, not a
 claim the gap is closed. 174 tests pass.
+
+## New column started: sudden_onset, 1 sourced, 3 declined, 2 untried
+
+lab:raised_wcc closed at 2/8; moved to sudden_onset (invented 6/8). ACS
+sourced free from the Hess 2012 cohort already open for pleuritic_pain --
+"acute onset (<1 hour)" sensitivity 75.9% vs invented 0.60. Three more
+searched, none found: pneumonia (COVID/paediatric serology studies, not
+adult CAP onset timing), oedema (AHF reviews/guidelines, no cohort),
+pericarditis (triage statements, no proportion). COPD and asthma not
+yet tried -- 3 misses isn't 6, no structural verdict on the column yet.
+
+177 likelihoods, 98 invented, 45%. No wrong-commit-count change
+(confirmed by re-running the real-case measurement). 174 tests pass.

@@ -1317,6 +1317,30 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
              "composite (ACS/AMI/revascularisation/death), not a pure ACS "
              "diagnosis -- a population caveat, not a reason to decline.",
     ),
+    # The same Hess 2012 table used for pleuritic_pain above also carries
+    # onset timing. Starting a new column (sudden_onset, invented for 6 of
+    # 8 diseases) on the disease where the highest-value cohort was
+    # already open from the last pass, rather than the disease this
+    # column is largest for.
+    ("acute_coronary_syndrome", "sudden_onset"): measured(
+        0.759,
+        Citation(
+            "HESS-2012",
+            "Hess EP et al., Ann Emerg Med 2012;59(2):115-25, Table 1",
+            "acute onset (<1 hour): sensitivity 75.9%, specificity 32.3% "
+            "for a 30-day cardiac event among 2,718 emergency-department "
+            "chest-pain patients, same cohort and reference as the "
+            "pleuritic_pain cell above",
+        ),
+        low=0.70,
+        high=0.80,
+        note="corrects the invented 0.60 upward. Same population caveat "
+             "as pleuritic_pain: a 30-day composite outcome, not a pure "
+             "ACS diagnosis. 'Acute onset (<1 hour)' is a stricter claim "
+             "than this project's own concept, which does not state a "
+             "specific time window -- taken as the closest available "
+             "match rather than left invented over that gap.",
+    ),
     # Second cell in the lab:raised_wcc column -- see the pneumonia entry
     # above for why this column is being sourced (most-invented, not a
     # lever for any current escalation, worth having for general accuracy).
@@ -1513,6 +1537,19 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
 # everywhere, and as a proportion crossing a stated threshold in
 # exactly two cohorts out of roughly twenty checked across this column.
 # Further searching this column is not expected to find a seventh.
+
+# sudden_onset: one cell sourced, three searched and not found
+# ---------------------------------------------------------------------------
+# Invented for 6 of 8 diseases. ACS's cell is sourced above from the same
+# Hess 2012 cohort already open for pleuritic_pain -- "acute onset
+# (<1 hour)", sensitivity 75.9%. Three more diseases searched next:
+# pneumonia (symptom-duration queries returned COVID-19 and paediatric
+# serology studies, nothing about onset timing in adult CAP), pulmonary
+# oedema (acute-heart-failure reviews and guidelines, no cohort reporting
+# a sudden/gradual split), pericarditis (chest-pain triage statements and
+# pericardial-disease reviews, no proportion). All three stay invented.
+# COPD and asthma not yet attempted -- unlike lab:raised_wcc, this column
+# has not yet failed enough times to call the whole thing structural.
 
 # Load-bearing numbers that no source can supply, and the reason is structural
 # ---------------------------------------------------------------------------
