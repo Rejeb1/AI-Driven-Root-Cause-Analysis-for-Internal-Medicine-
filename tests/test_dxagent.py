@@ -2449,7 +2449,7 @@ def test_the_threshold_dependent_concepts_say_what_they_mean():
     assert not missing, f"threshold-dependent concepts with no definition: {missing}"
 
     deviations = deviations_from_operational_definitions(kb)
-    assert len(deviations) == 6, (
+    assert len(deviations) == 7, (
         "a sourced cell now uses a different cutoff, or one was repaired: "
         f"{deviations}"
     )

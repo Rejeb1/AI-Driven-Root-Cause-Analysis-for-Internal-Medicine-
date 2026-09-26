@@ -2899,3 +2899,26 @@ bacteraemic pneumococcal pneumonia") reported the proportion directly:
 wrong-commit count (confirms the perturbation finding: this cell has no
 leverage on the escalating cases either). 177 likelihoods, 100 invented,
 44%. 174 tests pass, coverage figures + PDFs updated.
+
+## lab:raised_wcc, continued: ACS sourced, oedema declined, two blocked by an outage
+
+ACS: Yeh YT et al 2016 (Medicine (Baltimore) 95(7):e2857, PMC4998652,
+n=796 STEMI on primary PCI) reports 306 leukocytosis (>=12,000/uL,
+38.4%) directly -- a clean stratified cohort, unlike pneumonia's. Taken
+at 0.384 against the invented 0.25, deviation noted (12,000 vs this
+project's ~11,000; STEMI-only population, not any ACS) and added to
+`deviations_from_operational_definitions` (6 -> 7).
+
+Oedema declined: KorAHF registry (PMC5449528) gives leukocytosis only
+as a mortality-regression odds ratio (1.6) and WCC only as mean +/- SD
+-- neither recovers a base rate, same refusal as pneumonia's other
+declined searches. COPD and PE not reached: NCBI's E-utilities started
+returning HTTP 500s and timing out mid-pass, a service outage, not a
+finding -- queued for next time rather than declared searched.
+
+Also patched a gap in the pneumonia WCC entry from the previous commit:
+its note didn't flag that the source's numeric threshold for "normal
+WBC count" isn't stated in the accessible abstract, unlike this ACS
+cell which states its threshold explicitly and can be checked against
+this project's definition. 177 likelihoods, 99 invented, 44%
+(unrounded fraction moved, rounded percentage didn't). 174 tests pass.

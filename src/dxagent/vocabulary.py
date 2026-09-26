@@ -587,6 +587,9 @@ def deviations_from_operational_definitions(kb) -> list[tuple[str, str, str]]:
         ("acute_coronary_syndrome", "exam:tachycardia"):
             "heart rate at or above 100 rather than above 100, in an "
             "intensive-care population",
+        ("acute_coronary_syndrome", "lab:raised_wcc"):
+            "leukocyte count at or above 12,000/uL rather than the "
+            "~11,000 named above, in a STEMI-only population",
     }
     out = []
     for (label, concept), note in known.items():

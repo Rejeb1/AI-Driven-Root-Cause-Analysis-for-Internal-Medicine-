@@ -821,7 +821,11 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
              "counts, the same mean-not-proportion refusal already applied "
              "to temperature and D-dimer; this is the one that reported a "
              "threshold-crossing proportion instead. No exact N recoverable "
-             "beyond the abstract (full text is PDF-only), so no band.",
+             "beyond the abstract (full text is PDF-only), so no band, and "
+             "the abstract does not state the numeric cutoff used for "
+             "'normal WBC count' -- unlike the ACS cell below, this one "
+             "cannot be checked against this project's ~11,000/uL "
+             "definition and is not claimed to match it.",
     ),
     ("community_acquired_pneumonia", "exam:hypoxia"): measured(
         0.61,
@@ -1313,6 +1317,26 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
              "composite (ACS/AMI/revascularisation/death), not a pure ACS "
              "diagnosis -- a population caveat, not a reason to decline.",
     ),
+    # Second cell in the lab:raised_wcc column -- see the pneumonia entry
+    # above for why this column is being sourced (most-invented, not a
+    # lever for any current escalation, worth having for general accuracy).
+    ("acute_coronary_syndrome", "lab:raised_wcc"): measured(
+        0.384,
+        Citation(
+            "YEH-2016",
+            "Yeh YT et al., Medicine (Baltimore) 2016;95(7):e2857, PMC4998652",
+            "306 of 796 consecutive STEMI patients undergoing primary PCI "
+            "had a leukocyte count >= 12,000/uL on admission (38.4%)",
+        ),
+        low=0.35,
+        high=0.42,
+        note="threshold is 12,000/uL against this project's ~11,000; in "
+             "the deviations. Population is STEMI specifically, the most "
+             "severe and most clearly confirmed ACS subtype, not any ACS "
+             "-- a population caveat rather than a reason to decline, "
+             "flagged the same way as the MIMIC-III tachycardia cell "
+             "above. Corrects the invented 0.25 upward by about half.",
+    ),
     ("asthma_exacerbation", "dyspnoea_at_rest"): measured(
         0.91,
         Citation(
@@ -1443,6 +1467,20 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
 # machine-learning papers rather than clinical tables. Same result as the
 # first pass: auscultation is reported in aggregate or not at all in what
 # turns up. Stays invented.
+
+# lab:raised_wcc, continued: two cells found, one declined, two not reached
+# ---------------------------------------------------------------------------
+# Pneumonia and ACS are sourced above. Oedema was checked next: the Korean
+# Acute Heart Failure registry (PMC5449528, KorAHF) reports "Leukocytosis"
+# only as an odds ratio inside a mortality regression (1.6, 95% CI
+# 1.15-2.22) and the raw white cell count only as a mean +/- SD
+# (8674 +/- 4081 /mL on admission) -- an odds ratio does not recover a base
+# rate, and the mean is the same non-proportion shape already declined for
+# pneumonia's temperature and D-dimer. Declined on that basis. COPD and
+# pulmonary embolism were queued next but NCBI's E-utilities started
+# returning HTTP 500s and timeouts partway through this pass -- a service
+# outage, not a finding -- so both stay invented and queued for the next
+# pass rather than declared searched.
 
 # Load-bearing numbers that no source can supply, and the reason is structural
 # ---------------------------------------------------------------------------

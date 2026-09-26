@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 100 of its 177 likelihoods are invented, no
+an unfinished feature — because 99 of its 177 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -131,7 +131,7 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**100 of 177 likelihoods are invented.** That is the number, stated on its own
+**99 of 177 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project. It was 89 of
 153 until the pericardial columns were added (§5): two concepts the real cases
 showed were missing, two sourced cells for pericarditis, and 21 invented rival
@@ -391,7 +391,7 @@ celebrate.
 ### Nothing was checking the numbers themselves
 
 Every test in this project checks outputs. The knowledge base is inputs, and
-for most of its life nothing looked at it: 100 of 177 likelihoods are invented,
+for most of its life nothing looked at it: 99 of 177 likelihoods are invented,
 and the only scrutiny they got was whichever ones happened to change a case.
 
 Reading each column sorted, against what the diseases actually do, found five
@@ -859,7 +859,7 @@ Measured on every set, cells sourced without looking at any case: fixtures
 real patients **4 → 6 correct, 0 wrong**, the SLE pericarditis and the
 second pneumonia now committing; held-out ECE 0.286 → 0.260, coverage 43%
 → 57%. Three fixture-level pins moved with it and are re-pinned with the
-reasoning. 177 likelihoods, 100 invented, coverage 44%.
+reasoning. 177 likelihoods, 99 invented, coverage 44%.
 
 ### One cell at a time: crackles
 
@@ -1147,7 +1147,7 @@ means a higher P(pleuritic pain absent | ACS) — 0.935 against the old
 diagnosis on a different patient. Sourcing this cell helped and hurt on
 two different real cases simultaneously, in the direction the mechanism
 actually implies both times. Nothing here was chosen for that effect; it
-is what checking an untested assumption produced. 177 likelihoods, 100
+is what checking an untested assumption produced. 177 likelihoods, 99
 invented, 44%. 174 tests pass; no wrong-commit-count assertion needed
 re-pinning because the count did not move, only which case's confidence
 and which other case newly commits.
@@ -1201,6 +1201,26 @@ once, but there is no single citation waiting to be found for any of the
 eight cases with no leverage point, and the other three would either make
 things worse or need a value nothing would corroborate. The honest
 description of this gap is a ceiling, not a backlog.
+
+### The most-invented column, worked one cell at a time
+
+`lab:raised_wcc` is invented for all 8 diseases, the single largest
+remaining gap and one of the most commonly recorded findings in any real
+report — not a lever for the 11 escalating cases (the perturbation
+analysis above already ruled that out), but still worth having for
+general accuracy, the same reasoning as every other sourcing pass in this
+project. Pneumonia's cell (Furer 2011, PMC6549842) came after four dead
+searches that returned only mean/SD leukocyte counts; ACS's came clean
+on the first hit for that disease — Yeh YT et al. 2016 (Medicine
+(Baltimore) 95(7):e2857, PMC4998652), 306 of 796 STEMI patients on
+primary PCI with leukocytosis at admission (38.4%), against the invented
+0.25. Oedema was checked and declined (the Korean Acute Heart Failure
+registry gives leukocytosis only as a mortality odds ratio and WCC only
+as mean ± SD, the same non-proportion shape already refused elsewhere).
+COPD and pulmonary embolism are still queued — not searched-and-declined,
+just not reached before NCBI's E-utilities started returning HTTP 500s
+and timeouts partway through the pass, a service outage rather than a
+finding. 177 likelihoods, 99 invented, 44%.
 
 ### A configuration inconsistency found while writing this, and fixed
 
