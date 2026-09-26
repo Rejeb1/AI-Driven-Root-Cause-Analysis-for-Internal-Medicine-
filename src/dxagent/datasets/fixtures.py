@@ -1341,6 +1341,31 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
              "specific time window -- taken as the closest available "
              "match rather than left invented over that gap.",
     ),
+    # Second cell in sudden_onset. Asthma has a named, studied phenotype
+    # for exactly this concept -- "rapid onset" attacks, distinct from the
+    # commoner slow/gradual presentation -- so unlike ACS's borrowed
+    # threshold, this cohort was built to answer this question directly.
+    ("asthma_exacerbation", "sudden_onset"): measured(
+        0.085,
+        Citation(
+            "KOLBE-1998",
+            "Kolbe J, Fergusson W, Garrett J, Thorax 1998;53(4):241-7",
+            "27 of 316 patients aged 15-49 admitted with acute severe "
+            "asthma classified as rapid onset (<6 hours duration) rather "
+            "than slow onset (>=6 hours), interviewed within 24-48 hours "
+            "of admission (8.5%)",
+        ),
+        low=0.06,
+        high=0.11,
+        note="corrects the invented 0.55 down more than sixfold -- rapid "
+             "onset is the paper's own stated finding, 'an important but "
+             "uncommon manifestation', not a borderline call. Threshold "
+             "is <6 hours against ACS's borrowed <1 hour and this "
+             "project's own undefined window; taken as the closest "
+             "available match, same treatment as the ACS cell. This is "
+             "the cohort's own two-way split (rapid vs slow), not a "
+             "subset choice.",
+    ),
     # Second cell in the lab:raised_wcc column -- see the pneumonia entry
     # above for why this column is being sourced (most-invented, not a
     # lever for any current escalation, worth having for general accuracy).

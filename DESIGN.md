@@ -3023,3 +3023,34 @@ yet tried -- 3 misses isn't 6, no structural verdict on the column yet.
 
 177 likelihoods, 98 invented, 45%. No wrong-commit-count change
 (confirmed by re-running the real-case measurement). 174 tests pass.
+
+## asthma sudden_onset: sixfold correction, three-test ripple
+
+Kolbe 1998 (Thorax, n=316 acute severe asthma admissions): rapid onset
+(<6h) in 27 (8.5%) vs invented 0.55 -- sixfold, and the paper's own
+words call it "uncommon". Flips the plausibility_check.py claim
+(raises -> lowers, same direction as COPD) and SCOPE.md's table; both
+fixed.
+
+Three pinned tests moved:
+- test_scope_document_still_matches_the_knowledge_base: caught the
+  stale raises/lowers claim, now fixed at the source.
+- test_the_hard_cases_are_all_answered_after_the_dyspnoea_correction:
+  fx-h05 (true asthma, sudden onset present) dropped from top-1 (5->4)
+  -- it's the atypical presentation the correction says is rare;
+  still escalates, no wrong commit, correction working as intended.
+- test_the_weakened_loop_still_has_exactly_one_masquerade_failure:
+  fx-009 gained top rank under the decisive+correlated arm. Checked,
+  not assumed: single-pass posterior barely moves (PE 0.417->0.41 by
+  direct perturbation), so the fix runs through the sequential loop's
+  evidence-gathering order, not a direct score shift. Traced that far,
+  not further.
+- test_correlation_pays_and_decisive_tests_still_do_not:
+  wrong_commits(False) 2->1 -- the twentieth real case's unweighted
+  wrong commit (asthma, 75%) is gone, because that patient has sudden
+  onset present and asthma's fit for it collapsed. Coincidence with
+  the case added one commit ago, not correction in either direction --
+  stated as such in the test comment.
+
+177 likelihoods, 97 invented, 45% (percentage unrounded, count moved).
+174 tests pass; coverage figures + SCOPE.md table updated.

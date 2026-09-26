@@ -69,15 +69,20 @@ The evidence that most moves each diagnosis, as currently encoded:
 | Acute coronary syndrome | raised troponin, sudden onset | productive cough, consolidation on CXR, fever |
 | Acute pulmonary oedema | pulmonary oedema on CXR, raised BNP, orthopnoea, leg swelling, raised JVP | fever, raised WCC, consolidation on CXR |
 | COPD exacerbation | productive cough, rest dyspnoea, smoking history, hypoxia | pulmonary oedema on CXR, sudden onset, raised JVP |
-| Asthma exacerbation | rest dyspnoea, sudden onset | pulmonary oedema on CXR, raised BNP, crackles |
+| Asthma exacerbation | rest dyspnoea | pulmonary oedema on CXR, raised BNP, crackles, sudden onset |
 | Pericarditis | fever, pleuritic pain | raised troponin, consolidation on CXR, crackles, productive cough |
 | Panic attack | sudden onset, palpitations, tachycardia | CTPA filling defect, hypoxia, productive cough |
 
-One row moved after being written: raised troponin was under "raises" for
+Two rows moved after being written. Raised troponin was under "raises" for
 pericarditis on the strength of a Merck sentence, until a 351-patient cohort
 measured it at 16%. Relative to a differential where infarction and embolism
 claim it hard, it lowers pericarditis — the clinically right way round — and
 the audit in `plausibility_check.py` is what caught the table being stale.
+Sudden onset was under "raises" for asthma on an invented 0.55, until a
+316-patient cohort of acute severe asthma admissions (Kolbe 1998) measured
+rapid-onset attacks (<6 hours) at 8.5% — most severe asthma exacerbations
+are the slow, gradual kind, the same direction already encoded for COPD
+two rows up. The audit caught this one the same way.
 
 **This table means something narrower than it looks, and the difference
 matters.** "Raises it" here is *relative to the other seven candidates*, not
@@ -234,7 +239,7 @@ here holds symptoms, signs, laboratory results and imaging findings, and
 nothing in scope reasons about medication. That is a scope fact rather than a
 substitution.
 
-**The likelihood tables are still mostly invented — 98 of 177.** UMLS was
+**The likelihood tables are still mostly invented — 97 of 177.** UMLS was
 probed and found unusable for this purpose — mostly translations and billing
 crosswalks, and its one clinical relation mixes symptoms, risk factors and
 treatment complications without distinguishing them. HPO supplies concepts but

@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 98 of its 177 likelihoods are invented, no
+an unfinished feature — because 97 of its 177 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -131,7 +131,7 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**98 of 177 likelihoods are invented.** That is the number, stated on its own
+**97 of 177 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project. It was 89 of
 153 until the pericardial columns were added (§5): two concepts the real cases
 showed were missing, two sourced cells for pericarditis, and 21 invented rival
@@ -391,7 +391,7 @@ celebrate.
 ### Nothing was checking the numbers themselves
 
 Every test in this project checks outputs. The knowledge base is inputs, and
-for most of its life nothing looked at it: 98 of 177 likelihoods are invented,
+for most of its life nothing looked at it: 97 of 177 likelihoods are invented,
 and the only scrutiny they got was whichever ones happened to change a case.
 
 Reading each column sorted, against what the diseases actually do, found five
@@ -859,7 +859,7 @@ Measured on every set, cells sourced without looking at any case: fixtures
 real patients **4 → 6 correct, 0 wrong**, the SLE pericarditis and the
 second pneumonia now committing; held-out ECE 0.286 → 0.260, coverage 43%
 → 57%. Three fixture-level pins moved with it and are re-pinned with the
-reasoning. 177 likelihoods, 98 invented, coverage 45%.
+reasoning. 177 likelihoods, 97 invented, coverage 45%.
 
 ### One cell at a time: crackles
 
@@ -1147,7 +1147,7 @@ means a higher P(pleuritic pain absent | ACS) — 0.935 against the old
 diagnosis on a different patient. Sourcing this cell helped and hurt on
 two different real cases simultaneously, in the direction the mechanism
 actually implies both times. Nothing here was chosen for that effect; it
-is what checking an untested assumption produced. 177 likelihoods, 98
+is what checking an untested assumption produced. 177 likelihoods, 97
 invented, 45%. 174 tests pass; no wrong-commit-count assertion needed
 re-pinning because the count did not move, only which case's confidence
 and which other case newly commits.
@@ -1279,7 +1279,7 @@ WCC was reported as a mean, a median, a per-unit odds ratio, or a bare
 qualitative remark in all but two. A threshold-crossing proportion — the
 one shape this project can use without a distributional assumption — is
 the exception in this literature, not the norm. Further searching this
-specific column is not expected to find a seventh. 177 likelihoods, 98
+specific column is not expected to find a seventh. 177 likelihoods, 97
 invented, 45%.
 
 ### A twentieth real case, added for the calibration gap — and an unforced piece of evidence for correlation weighting
@@ -1328,7 +1328,37 @@ proportion). Unlike `lab:raised_wcc`, this is three misses, not six, so
 it is recorded as three declined cells rather than a structural verdict
 on the whole column — COPD and asthma haven't been tried yet, and there
 is not yet a pattern strong enough to predict they would fail the same
-way. 177 likelihoods, 98 invented, 45%.
+way.
+
+Asthma's cell, tried next, turned out to be the opposite of a clean
+extra: it has a named, studied phenotype for exactly this concept. Kolbe
+et al. (Thorax 1998;53(4):241-7) followed 316 patients admitted with
+acute severe asthma and classified attacks as rapid onset (<6 hours) or
+slow onset (≥6 hours) — 27 of them, **8.5%**, were rapid onset, the
+paper's own words calling it "an important but uncommon manifestation."
+The invented value was 0.55. This is not a borderline correction; it is
+sixfold in the opposite direction from what was assumed, and it flips
+the clinical claim outright — `scripts/plausibility_check.py`'s audit
+caught SCOPE.md's discriminating-evidence table asserting sudden onset
+*raises* likelihood of asthma, when the sourced number says it *lowers*
+it, the same direction already encoded for COPD. Fixed in both places.
+
+The ripple from a sixfold swing touched three pinned tests, and each is
+worth stating rather than silently re-pinned. fx-h05 (a hard fixture,
+true asthma, sudden onset present) dropped out of the top-1 count: it
+represents exactly the atypical presentation the literature now says is
+rare, so ranking it lower is the correction working, not a regression —
+it still escalates rather than committing wrong. fx-009 (a fixture
+pulmonary embolism, sudden onset absent) gained top rank on the
+decisive-test arm, through the sequential loop's evidence-gathering
+order rather than a direct score shift on inspection. And the twentieth
+real case's wrong commit on the unweighted arm — asthma at 75%, added
+one section above — is gone: that patient had sudden onset present, and
+asthma's fit for it collapsed under the corrected value. That reversal
+is coincidence, not correction in either direction: the sudden_onset
+cell was sourced to fill a column, not to fix that case, and saying
+otherwise would overstate what happened. 177 likelihoods, 97 invented,
+45%.
 
 ### A configuration inconsistency found while writing this, and fixed
 

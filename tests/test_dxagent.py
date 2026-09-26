@@ -845,11 +845,23 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
     # on the same ten cases, now for the fourth distinct reason -- the point
     # the fixture count exists to make, restated with more evidence each
     # time it is measured.
+    #
+    # fx-009 dropped off this arm's failure list once asthma's sudden_onset
+    # was sourced (0.55 -> 0.085, Kolbe 1998). Not through the single-pass
+    # posterior -- a direct perturbation check shows PE already leads there
+    # both before and after, barely moving (0.417 -> 0.41). The change runs
+    # through the sequential loop instead: a different asthma prior changes
+    # which turns the information-gain selector treats as informative, which
+    # changes the evidence-gathering path before the decisive-test rule ever
+    # fires, and on this path PE ends up ahead by a wide enough margin (0.574
+    # against asthma's 0.157) that the case now escalates on the correct top
+    # label rather than committing to a wrong one. The precise turn-by-turn
+    # mechanism is not traced further than that; the measured outcome is.
     assert [
         case.case_id
         for case in cases
         if decisive.run(case).differential.top.label != case.diagnosis
-    ] == ["fx-009", "fx-010"]
+    ] == ["fx-010"]
 
 
 def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
@@ -1018,13 +1030,25 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     # negatives (no crackles, no wheeze, no rub, normal ECG/troponin/BNP)
     # sharpening a confident wrong answer the same way the fixture set's
     # four-facets-of-one-picture failure does. Weighted escalates on it
-    # correctly. This is exactly the real-patient evidence the write-up
+    # correctly. This was, briefly, the real-patient evidence the write-up
     # said had "run out of patients to point to" after two earlier
     # reversals -- found by adding a case for an unrelated reason, not by
-    # looking for one, which is the only way this kind of evidence is
-    # worth trusting.
+    # looking for one.
+    #
+    # It did not last. The very next sourcing pass -- asthma's own
+    # sudden_onset, invented at 0.55 and measured at 0.085 (Kolbe 1998) --
+    # removed the unweighted arm's advantage this case was demonstrating:
+    # this patient has sudden_onset present, asthma's fit for that worsens
+    # sharply under the corrected value, and the unweighted arm now
+    # escalates on it too. The cell that created this test's second wrong
+    # commit (this same case, added for calibration) and the cell that
+    # removed it (asthma's sudden_onset, sourced while starting an
+    # unrelated column) are unconnected -- neither was chosen with this
+    # case's outcome in mind. Coincidence, not correction, and worth
+    # stating that plainly rather than letting a tidy-looking reversal
+    # imply otherwise.
     assert wrong_commits(True) == 1
-    assert wrong_commits(False) == 2
+    assert wrong_commits(False) == 1
 
     # Where the safety difference lives now: the fixtures. Without the
     # weighting, four facets of one picture counted as four findings sharpen
@@ -2242,6 +2266,17 @@ def test_the_hard_cases_are_all_answered_after_the_dyspnoea_correction():
     commits. What this test pins is the property that matters -- the hard
     cases now carry no wrong commit -- and it will fail if a later change
     reintroduces one, which is the whole reason the set exists.
+
+    A second cost landed later, from a different correction: fx-h05, a
+    true asthma exacerbation with sudden onset present, dropped out of the
+    top-1 count once asthma's own sudden_onset likelihood was sourced
+    (0.55 -> 0.085, Kolbe 1998 -- rapid-onset attacks are an "uncommon
+    manifestation" of severe asthma, 8.5% of a 316-patient cohort). This
+    fixture was written to represent exactly the presentation the measured
+    literature now says is atypical, so the model ranking it lower is the
+    correction working as intended, not a regression -- it still escalates
+    rather than committing wrong, which is what the assertion above
+    protects.
     """
     from dxagent.datasets.fixtures import build_hard_cases
 
@@ -2257,7 +2292,7 @@ def test_the_hard_cases_are_all_answered_after_the_dyspnoea_correction():
             wrong.append((case.case_id, outcome.prediction))
 
     assert wrong == [], f"a wrong commit is back: {wrong}"
-    assert len(top1) == 5, f"true diagnosis ranked first in {top1}"
+    assert len(top1) == 4, f"true diagnosis ranked first in {top1}"
 
 
 def test_the_grid_still_orders_each_finding_the_way_the_diseases_do():

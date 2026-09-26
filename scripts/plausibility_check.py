@@ -108,7 +108,13 @@ CLAIMS: tuple[tuple[str, str, str], ...] = (
     ("copd_exacerbation", "sudden_onset", "lowers"),
     ("copd_exacerbation", "exam:raised_jvp", "lowers"),
     ("asthma_exacerbation", "dyspnoea_at_rest", "raises"),
-    ("asthma_exacerbation", "sudden_onset", "raises"),
+    # "raises" until Kolbe 1998 (316 admissions for acute severe asthma)
+    # measured rapid onset (<6h) at 8.5%, against an invented 0.55 -- most
+    # severe asthma exacerbations are the slow/gradual-onset kind, the same
+    # direction as COPD above, and rapid onset is the paper's own stated
+    # "uncommon manifestation", not a borderline call. The claim moved, not
+    # the number.
+    ("asthma_exacerbation", "sudden_onset", "lowers"),
     ("asthma_exacerbation", "imaging:cxr_pulmonary_oedema", "lowers"),
     ("asthma_exacerbation", "lab:raised_bnp", "lowers"),
     ("asthma_exacerbation", "exam:crackles", "lowers"),
