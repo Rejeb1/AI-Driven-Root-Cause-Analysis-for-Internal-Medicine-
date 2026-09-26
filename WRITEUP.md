@@ -1152,6 +1152,56 @@ invented, 43%. 174 tests pass; no wrong-commit-count assertion needed
 re-pinning because the count did not move, only which case's confidence
 and which other case newly commits.
 
+### There is no single-cell fix for most of the 11 escalating real cases, and this is measured now, not assumed
+
+That cell was found by a mechanistic trace, not a search of a whole
+column, so the same method was pointed at the standing "11 of 19 real
+cases escalate" item to ask a sharper question than "source more cells":
+*which* invented cells, if any, are actually holding any of these 11 back
+from a commit? Every one of the 101 invented likelihoods was perturbed to
+each extreme (0.02 and 0.98) in turn, one at a time, and re-run through a
+single-pass proposal and the gate on all 11 currently-escalating cases —
+the same perturbation method `sensitivity.py` already uses on the
+fixtures, pointed at the real cases and at the commit/escalate boundary
+instead of top-1 identity.
+
+**Eight of the eleven have no leverage point at all.** No single invented
+cell, moved to either extreme, crosses the gate's threshold. Their
+uncertainty is not one bad number sitting in the way; it is genuinely
+multi-factorial, spread thin enough across many findings that no single
+citation could resolve it even in principle. This is a stronger, measured
+version of "not a bug" — not just an inference from the gate's design, a
+direct test that no single sourced cell, however extreme, would change
+the outcome.
+
+Of the three that do have a leverage point, two are worse than useless.
+pmc-5841117 (true pericarditis) and pmc-10993079 (true COPD) each have a
+handful of cells that cross the threshold — and every single one of them
+crosses it *toward pneumonia*, which is wrong both times. Pneumonia wins
+by a margin robust to any one cell's extreme; sourcing any of these
+would not fix the case, it would convert an honest escalation into a
+confident wrong answer, the exact failure mode correlation weighting and
+the abstention gate both exist to prevent. Not pursued, for that reason.
+
+The third, pmc-4775775 (true pneumonia), is the one case where the
+leverage cell points the right way: pneumonia's own `lab:raised_wcc`,
+pushed toward 0.02, commits it correctly. It is not a real lead either —
+0.02 says leukocytosis is present in 2% of pneumonia, and it is a common
+finding (60-80% in the cohorts already sourced for other diseases in this
+file); no citation would plausibly support a value that extreme. The
+perturbation sweep's edges are a probe, not a candidate value, and this
+result shows the probe finding nothing rather than finding something.
+
+The revision this makes to the record: "11 of 19 real cases still
+escalate... moves only with more of item 3's sourcing work, cell by
+cell" (above) was more optimistic than this measurement supports. More
+sourcing can still narrow individual invented values and may eventually
+move one of these cases by changing several cells' worth of evidence at
+once, but there is no single citation waiting to be found for any of the
+eight cases with no leverage point, and the other three would either make
+things worse or need a value nothing would corroborate. The honest
+description of this gap is a ceiling, not a backlog.
+
 ### A configuration inconsistency found while writing this, and fixed
 
 `scripts/run_eval.py` built its knowledge base **without** correlation

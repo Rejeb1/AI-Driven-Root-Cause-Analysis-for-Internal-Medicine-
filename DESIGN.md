@@ -2863,3 +2863,25 @@ commits, because a lower P(present|ACS) raises P(absent|ACS) and this
 patient has the absent version. Same cell, opposite effect on two real
 patients, both in the direction the number implies. 177 likelihoods, 101
 invented, 43%. No wrong-commit-count pin moved; only confidences did.
+
+## No single-cell fix exists for most of the 11 escalating real cases
+
+Asked the leverage question directly instead of continuing to search
+columns blind: perturbed all 101 invented cells to 0.02/0.98 each,
+one at a time, single-pass proposal + gate, across all 11 currently-
+escalating real cases (same method as sensitivity.py, pointed at the
+commit/escalate boundary on real cases instead of fixture top-1 identity).
+
+8/11 have zero leverage points -- no single cell at either extreme
+crosses the gate. Of the 3 that do: pmc-5841117 and pmc-10993079 only
+have leverage cells that flip TOWARD pneumonia, which is wrong for both
+(true pericarditis, true COPD) -- pneumonia wins by a margin robust to
+any one cell, so sourcing these would only manufacture confident wrong
+answers. pmc-4775775's one correct-direction leverage cell
+(pneumonia lab:raised_wcc -> 0.02) needs an implausible value no citation
+would support (leukocytosis is common in pneumonia, not 2%).
+
+Revises the "moves with more sourcing, cell by cell" claim two entries
+up: that was optimism, not measurement. This is a ceiling on single-cell
+sourcing, not a backlog of citations waiting to be found. No fixtures.py
+change, no test re-pin -- pure analysis, not a knowledge-base edit.
