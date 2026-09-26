@@ -1421,10 +1421,32 @@ empty row.
   0 requested: **28.6%**. Then, after adding a fixed seed to every request,
   three more runs back to back: 57.1%, 71.4%, 71.4%, with different picks
   each time. Five runs of one row on one set of seven cases: **28.6% to
-  71.4%.** The seed is not the cause — a model split 20/80 across CPU and
-  GPU does not produce bit-identical logits, and at temperature 0 the
-  near-ties flip. This cannot be fixed on this hardware, only measured:
-  `run_eval.py --llm-repeats N` now runs the row N times and prints the
+  71.4%.** The seed is not the cause. What the split does was checked
+  directly, not assumed: the same prompt (the full pmc-13070269 record,
+  the actual `LLMProposer` render, not a toy) sent to the model repeatedly
+  *within one warm session* came back byte-identical every time on the
+  default GPU+CPU split and, separately, byte-identical every time forced
+  fully onto CPU (`num_gpu=0`) — four runs each, temperature 0, seed 0. So
+  the compute split is not producing non-bit-identical logits on repeated
+  calls to an already-loaded model, which is what the original explanation
+  claimed. Forcing CPU-only is also six to seven times slower (85-144s per
+  call against 15-20s) and does not fix anything, so it is not adopted.
+  One run in that same test did diverge, and only once: the first call
+  immediately after switching from the default split to `num_gpu=0`,
+  before the next three settled back to identical. That points at
+  something tied to a *reload* -- how the model is placed in memory when a
+  fresh process or a changed setting loads it, not the arithmetic of a
+  steady GPU+CPU split -- which matches the five original runs better: each
+  was a separate launch of the evaluation script, a fresh model load every
+  time, not repeated calls to one warm process. Confirming that fully would
+  mean running the whole baseline script several times as separate
+  processes, upwards of an hour of unattended runtime for a component this
+  project already reports honestly as non-reproducible; not done, because
+  the added confidence is not worth an hour against a path that is a
+  documented substitute, not the mandated model. What is fixed is the
+  claim: the cause is a reload effect, not the split itself, and the
+  record no longer states an explanation that a direct test contradicts.
+  `run_eval.py --llm-repeats N` still runs the row N times and prints the
   spread, and no single-run LLM figure in this document is a result.
 
   Measuring the model's disagreement with the posterior at full evidence on

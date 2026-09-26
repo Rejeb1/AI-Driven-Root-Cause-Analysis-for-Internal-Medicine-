@@ -2934,3 +2934,23 @@ All 9 need implausible values (PE hypoxia at 2% against a classically
 etc.) -- same probe-not-candidate shape as the escalating-case analysis.
 Closes item 1: no single sourced number moves this case either
 direction. Pure analysis, no fixtures.py change.
+
+## Local-model reproducibility: CPU-only tested and rejected as a fix
+
+The write-up's explanation ("a model split across CPU/GPU does not
+produce bit-identical logits") was never itself tested -- checked now.
+Same prompt (pmc-13070269's real LLMProposer render), repeated 4x within
+one warm session: byte-identical every time on the default GPU+CPU
+split, and separately byte-identical every time forced fully onto CPU
+(num_gpu=0). CPU-only is also 6-7x slower (85-144s/call vs 15-20s) and
+fixes nothing. One divergence did occur, exactly once, on the first call
+right after switching num_gpu settings -- a reload artifact, not a
+steady-state compute-split one. Matches the original observation better
+too: the five runs that gave 28.6%-71.4% were separate script launches
+(fresh model loads), not repeated calls to one warm process.
+
+Confirming fully needs several full-baseline runs as separate processes,
+~1hr+ unattended -- not done; the component is already a documented,
+honest substitute for the mandated model, and that much runtime isn't
+worth it for a secondary path. WRITEUP.md corrected to state what was
+actually tested rather than repeat an untested explanation.
