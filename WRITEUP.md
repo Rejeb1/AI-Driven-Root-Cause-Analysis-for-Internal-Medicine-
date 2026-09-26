@@ -927,6 +927,17 @@ separate cohort tables — and general searches for either disease alone do
 not turn that up. Recorded as the open question, not as something the next
 search on this pattern is likely to close.
 
+**Searched for directly, and not found.** Three targeted PubMed/NCBI
+queries for a study comparing troponin between confirmed ACS and confirmed
+pneumonia patients turned up nothing built for that comparison. The closest
+candidate, PMC13557950 ("An easy-to-use model for screening type 2
+myocardial infarction in geriatric patients with acute coronary syndrome"),
+studies T2MI prediction *within* an already-ACS-suspected cohort — baseline
+characteristics and a regression model for its training/validation split —
+not a discrimination study against a pneumonia comparator. Rejected on that
+basis rather than adopted on the strength of its title. The open question
+above stands as stated; nothing found narrows it.
+
 **And this pass took down a claim §4 relied on.** The case for correlation
 weighting rested on real patients: "three wrong commits against none, and
 that gap has held or widened through every sourcing pass." After this pass
@@ -973,16 +984,44 @@ lighter setting is recorded here as the thing a larger case set should
 decide.
 
 **Re-measured again after tachycardia and crackles were sourced, and the
-real-case story changed shape a second time.** It is no longer "weighting
-prevents a wrong commit": both arms now commit exactly one real patient
-wrong, and they are different patients. Unweighted misreads pmc-5841117 —
-the positional, sit-forward-relieved pericarditis this project's own
-pericarditis workup was built around — as acute coronary syndrome.
-Weighted misreads pmc-13070269, the ACS the crackles correction exposed
-(§5), as pneumonia. Correlation weighting still catches the case it was
-originally measured on; it no longer prevents a net wrong commit on this
-set, because a different, unrelated cell moved and produced a different
-error in the other diagnostic direction.
+real-case story changed shape a second time.** It was no longer "weighting
+prevents a wrong commit": both arms committed exactly one real patient
+wrong, on different patients — unweighted misread pmc-5841117 (the
+positional, sit-forward-relieved pericarditis this project's own
+pericarditis workup was built around) as acute coronary syndrome; weighted
+misread pmc-13070269, the ACS the crackles correction exposed (§5), as
+pneumonia. That was true for one sourcing pass. The very next one (the
+troponin cell above) closed the gap the rest of the way: pmc-5841117 now
+escalates correctly on *both* arms — the pericarditis workup's own ECG and
+effusion questions settle it once asked, independent of correlation — and
+pmc-13070269 is now the wrong commit on both arms, at nearly the same
+confidence (85.3% unweighted, 84.6% weighted — weighted is, if anything,
+marginally more cautious about it). Two sourcing passes turned "different
+patients, different directions" into "the same patient, the same
+direction, on both arms."
+
+The reason correlation weighting cannot rescue pmc-13070269 is mechanical
+and worth stating precisely, because it explains why the story kept
+reversing instead of settling. Decomposing the log-score by finding: four
+of this patient's ten findings sit inside a fixed correlation group
+(fever and crackles in "consolidation"; ECG changes and troponin in
+"ischaemia"), and weighting them at 0.571 lifts acute coronary syndrome's
+score by 1.35 nats and pneumonia's by 1.32 — almost exactly the same
+amount, because both diseases have roughly the same number of "surprising"
+values sitting inside those two groups for this specific finding-set. The
+margin between them (3.80 nats unweighted, 3.77 weighted) barely moves.
+What actually decides the case is **pleuritic pain**, present here and
+carrying a lone −2.30 nat penalty against acute coronary syndrome that no
+group touches — it is correlated with nothing in `_CORRELATION_GROUPS`, so
+it is never discounted, in either arm. Correlation weighting only ever
+acts on facets of the two clinical pictures it was built to describe; a
+standalone discriminating finding outside both of them is invisible to it
+and can dominate the outcome by itself. That is also why sourcing troponin
+(78% → 85%, above) moved the wrong commit's *confidence* on the weighted
+arm without changing which case fails or flipping either arm's verdict:
+troponin sits inside "ischaemia," so its value passes through at full
+weight unweighted and at 0.571 weighted — a lever on magnitude, not on
+which candidate wins, because pleuritic pain already decided that.
 
 The fixture story is unchanged and still clean: unweighted commits one
 fixture wrong (fx-009) that weighted does not, at the cost of more turns
@@ -1000,9 +1039,12 @@ weighted arm and is the more honest number to read here.
 Net position, restated rather than left implicit: correlation weighting
 stays on for the fixtures, where its effect is real, sized, and
 reproduced across three measurements now. Its case for the real patients
-was never more than one anecdote wide, and that anecdote no longer nets
-in its favour. The mechanism is kept for what it demonstrably does, not
-for a real-patient argument that has now reversed twice.
+was never more than one anecdote wide, and the anecdote is now gone
+entirely — both arms fail the same patient the same way, because the one
+finding that decides this case sits outside every correlation group the
+project has defined. The mechanism is kept for what it demonstrably does
+on the fixtures, not for a real-patient argument that has run out of
+patients to point to.
 
 ### A configuration inconsistency found while writing this, and fixed
 

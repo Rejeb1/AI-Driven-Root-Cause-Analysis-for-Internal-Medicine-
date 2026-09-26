@@ -2776,3 +2776,32 @@ pericarditis this project's own workup was built for; weighted misreads
 this ACS). The fixture effect is unchanged. Held-out ECE flipped which arm
 looks better, on seven cases -- reported, not trusted; Brier still favours
 weighted.
+
+## The tie collapsed further, and the mechanism behind it
+
+Searched for a joint ACS-vs-pneumonia troponin discrimination study (the
+open question above). Nothing found: PMC13557950 is the closest hit and
+studies T2MI prediction inside an ACS-suspected cohort, not a comparison
+against pneumonia. Declined.
+
+Re-ran both arms on all 18 real cases directly rather than re-measuring
+aggregates: pmc-5841117 now escalates correctly on BOTH arms (the
+pericarditis workup's ECG/effusion questions settle it once asked,
+independent of correlation), and pmc-13070269 is now the wrong commit on
+BOTH arms too, at nearly the same confidence (85.3% unweighted, 84.6%
+weighted). "Different patients" was true for exactly one sourcing pass and
+is no longer true.
+
+Decomposed the log-score by finding to see why weighting can't move this
+one. Four of the ten findings sit in a correlation group (fever+crackles
+in "consolidation", ecg+troponin in "ischaemia") and weighting lifts both
+candidates by nearly the same amount (ACS +1.35 nats, pneumonia +1.32) --
+the margin barely moves (3.80 -> 3.77). The finding that actually decides
+the case, pleuritic pain (-2.30 nats against ACS), belongs to no
+correlation group in `_CORRELATION_GROUPS` and is never discounted in
+either arm. The mechanism only ever acts on facets of the two pictures it
+was built to describe; a standalone discriminator outside both is immune
+to it. This is also why the troponin sourcing pass moved the wrong
+commit's confidence but never its verdict: troponin is inside a group, so
+its value is a lever on magnitude in both arms, not on which candidate
+wins -- pleuritic pain already decided that.
