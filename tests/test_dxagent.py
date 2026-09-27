@@ -4311,3 +4311,72 @@ def test_guideline_criteria_veto_a_commit_and_never_make_one():
 
     unsure_same = grounded(kb, {"acute_coronary_syndrome": 0.4, "pericarditis": 0.35})
     assert not gate.evaluate(unsure_same, criteria_met=("acute_coronary_syndrome",)).should_commit
+
+
+def _load_script(name):
+    import importlib.util
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        name, Path(__file__).resolve().parent.parent / "scripts" / f"{name}.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    # Registered before running: a dataclass defined in the script resolves
+    # its own module through sys.modules.
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_adding_a_language_model_keeps_the_evidence_fit_check():
+    """A second opinion must not switch off a safety check.
+
+    The loop reads ``last_evidence_fit`` off whatever proposer it holds. The
+    consensus proposer did not have one, so the loop defaulted to inf and
+    the "findings not explained by any diagnosis" escalation went silent
+    whenever an LLM was added. pmc-12393936 is the real case that check
+    escalates; it must still say so with a model alongside.
+    """
+    from dxagent.datasets import REAL_CASES
+    from dxagent.llm import ScriptedLLM
+
+    kb = build_knowledge_base(correlated=True)
+    case = next(c for c in REAL_CASES if c.case_id == "pmc-12393936")
+    llm = ScriptedLLM([ScriptedLLM.ranking([(case.diagnosis, 0.9)])])
+    consensus = ConsensusProposer(
+        primary=BayesianProposer(kb), secondary=LLMProposer(kb=kb, llm=llm)
+    )
+    from dxagent.baselines import _observe_everything
+
+    consensus.propose(_observe_everything(case), case.presenting_complaint)
+    assert math.isfinite(consensus.last_evidence_fit)
+    assert consensus.last_evidence_fit == consensus.primary.last_evidence_fit
+
+    limits = LoopLimits(uninformative_turns_still_count=False, unanswered_actions_still_cost=False)
+    outcome = DiagnosticAgent(
+        kb=kb, proposer=consensus, gate=AbstentionGate(kb=kb), limits=limits
+    ).run(case)
+    assert outcome.verdict is Verdict.ESCALATED
+    assert "not explained by any diagnosis" in outcome.escalation.reason
+
+
+def test_llm_single_pass_counts_fallbacks_and_never_scores_them():
+    """An unparseable answer falls back to Bayes; it must not score as the model's."""
+    from dxagent.datasets import REAL_CASES
+    from dxagent.llm import ScriptedLLM
+
+    script = _load_script("llm_real_cases")
+    kb = build_knowledge_base(correlated=True)
+    # pmc-6129844: the Bayesian proposer gets this right on the full record,
+    # so a fallback scored as the model's answer would show up as correct.
+    cases = [c for c in REAL_CASES if c.case_id == "pmc-6129844"]
+    assert BayesianProposer(kb).propose(
+        script._observe_everything(cases[0]), ""
+    ).top.label == cases[0].diagnosis
+
+    garbage = script.single_pass(kb, ScriptedLLM(["I think pneumonia."]), cases, repeats=2)
+    assert garbage.fallbacks == 2 and garbage.correct(cases) == 0
+
+    right = ScriptedLLM([ScriptedLLM.ranking([(cases[0].diagnosis, 0.8)])])
+    answered = script.single_pass(kb, right, cases, repeats=2)
+    assert answered.fallbacks == 0 and answered.correct(cases) == 2

@@ -210,8 +210,11 @@ Rules:
 - Return probabilities that sum to 1.0.
 - If the findings are weakly discriminating, say so with a flat distribution. \
 Do not manufacture confidence.
+- State how confident you are, from 0 to 1, that your top-ranked label is \
+the correct diagnosis.
 - Respond with JSON only, no prose and no markdown fences, in the form:
-  {"ranking": [{"label": "...", "probability": 0.0, "why": "..."}]}"""
+  {"ranking": [{"label": "...", "probability": 0.0, "why": "..."}], \
+"confidence": 0.0}"""
 
 
 @dataclass
@@ -370,6 +373,16 @@ class ConsensusProposer:
     # How often the secondary has had no opinion, for the report.
     secondary_fallbacks: int = 0
     turns: int = 0
+
+    # The gate's evidence-fit check reads this attribute off whatever proposer
+    # the loop holds. Without it, adding an LLM made the loop see no attribute,
+    # default to inf, and silently disable the "findings not explained by any
+    # diagnosis" escalation -- a safety check lost by adding a second opinion.
+    # The consensus returns the primary's differential, so the primary's fit
+    # is the right one to pass through.
+    @property
+    def last_evidence_fit(self) -> float:
+        return getattr(self.primary, "last_evidence_fit", float("inf"))
 
     def propose(self, findings: list[Finding], complaint: str = "") -> Differential:
         a = self.primary.propose(findings, complaint)

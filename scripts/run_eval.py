@@ -232,6 +232,9 @@ def baseline_comparison(kb, test_cases, result, args=None) -> str:
         "without that column is the complete-profile flattery MEDDxAgent\n"
         "  criticises, and a retrieval-only baseline scoring near the loop is a\n"
         "  finding about the benchmark rather than about the system."
+        "\n\n  These are the invented fixtures, which are easy on a complete record --"
+        "\n  a language model scores 7 of 7 here. The same baselines on the 25 real"
+        "\n  cases: scripts/llm_real_cases.py."
     )
     return "\n".join(lines)
 

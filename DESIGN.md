@@ -3220,3 +3220,16 @@ with complaint 64/75 runs (85%); findings only 32/50 (64%); Bayesian 13/25
 (52%). 0 fallbacks; 23/25 stable across runs. Errors differ from Bayes
 (asthma->COPD x3, panic->PE x2, sent-home NSTEMI->PE). Fixtures 7/7 every
 run. Contamination possible (published cases); findings only, no IDs.
+
+## Consensus evidence-fit bug; confidence never requested; quota trap
+
+ConsensusProposer lacked last_evidence_fit -> loop/graph getattr default inf
+-> "not explained" escalation silently off whenever an LLM was added. Fixed
+(property passing the primary's through); test on pmc-12393936. Prompt never
+asked for "confidence", so verbalised confidence was always NaN; now asked.
+Gemini stated 72% vs 88% accurate (underconfident); calibrator declines
+(25 < 30 independent cases). Real-case baselines: retrieval-only 14/25,
+Bayes single pass 13/25, Gemini 42-43/50 runs, loop 10/0/15. In-loop run
+hit the daily free quota; GeminiLLM retried PerDay 429s for an hour, all
+fallbacks. Now: PerDay raises at once, script probes first, in-loop report
+flags >5% fallback turns as not a result. In-loop still unmeasured.

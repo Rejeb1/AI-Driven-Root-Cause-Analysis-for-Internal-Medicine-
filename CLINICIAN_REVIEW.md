@@ -187,6 +187,28 @@ could not be read here. *What would you put it at?*
 
 ---
 
+## Part 5 (optional) — Where a language model and the system disagree (about 5 minutes)
+
+A general-purpose language model (Gemini, free tier) was given the same
+recorded findings, without the free-text complaint, and asked to rank the
+eight diagnoses. Where it and the system's Bayesian model disagree is where
+a clinician's reading is most informative, because the two make different
+kinds of mistake.
+
+| Case | Confirmed | Language model says | System's model says |
+|---|---|---|---|
+| PMC12414739, PMC12393936, PMC8656026 | asthma (all three) | COPD, every run | wrong on all three too |
+| PMC3982377 | panic attack | PE | panic attack (right) |
+| PMC10357390 | panic attack | PE | wrong |
+| PMC9335400 (sent home, later NSTEMI) | ACS | PE | wrong |
+
+Given the complaint text as well, the language model gets the three
+asthma cases right in 8 of 9 runs. *From the recorded findings alone, is reading these
+asthma cases as COPD a reasonable call, or a sign the findings as
+extracted leave out what distinguishes them?*
+
+---
+
 ## What happens to your answers
 
 Each answer is written into the knowledge base with a citation marking it

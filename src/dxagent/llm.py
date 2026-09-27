@@ -159,6 +159,14 @@ class GeminiLLM:
             except Exception as exc:
                 if "429" not in str(exc) or attempt == self.max_retries - 1:
                     raise
+                # A per-day quota does not reset within any backoff worth
+                # waiting. Retrying it cost a run over an hour of sleeps,
+                # each ending in a fallback that scored Bayes against Bayes.
+                if "PerDay" in str(exc):
+                    raise RuntimeError(
+                        f"daily free-tier quota for {self.model} is used up; "
+                        "it resets once a day"
+                    ) from exc
                 # The API states how long to wait; prefer that to a guess,
                 # since a guessed backoff either wastes minutes or retries
                 # into the same limit.

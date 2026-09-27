@@ -44,12 +44,22 @@ should not present a scheduling decision as a privacy stance.
 
 Two code paths make network calls, both opt-in and both off by default:
 
-- `AnthropicLLM` and `GeminiLLM` (`llm.py`) send prompt text to a third-party
-  API. They are used by `LLMProposer` (only with `--llm`) and by
-  `scripts/synthesize.py` (only with an explicit provider flag). The default
-  proposer is `BayesianProposer`, which is local arithmetic and makes no calls.
+- `AnthropicLLM`, `GeminiLLM` and `OpenAICompatibleLLM` pointed at a hosted
+  service (`llm.py`) send prompt text to a third-party API. They are used by
+  `LLMProposer` (only with `--llm`, or from `scripts/llm_real_cases.py`) and
+  by `scripts/synthesize.py` (only with an explicit provider flag).
+  `OpenAICompatibleLLM` pointed at a local Ollama server sends nothing off
+  the machine. The default proposer is `BayesianProposer`, which is local
+  arithmetic and makes no calls.
 - `scripts/build_umls_map.py` queries the UMLS API for concept identifiers. It
   sends finding *names* — "pleuritic pain" — never case data.
+
+**Gemini's free tier, which this project's language-model measurements used,
+lets Google use submitted prompts to improve its products.** What was sent was
+the findings extracted from published case reports and the invented fixtures —
+nothing not already public or synthetic. Real patient data must never go
+through a free tier, whatever agreement a deployment later signs for a paid
+one.
 
 **If this system were ever pointed at real patients, the LLM paths would send
 patient findings to a third party.** That is a design decision a deployment

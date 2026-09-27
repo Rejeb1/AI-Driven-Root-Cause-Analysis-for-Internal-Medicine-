@@ -54,6 +54,8 @@ reader does not have to reconstruct it from the history.
   complaint withheld, **64%**. Its errors differ from the Bayesian model's
   (asthma read as COPD, panic as PE), which is the case for running the two
   side by side rather than choosing one. Top-1 only: no loop, no abstention.
+  The model inside the loop has not been measured yet: the free daily quota
+  ran out first.
   `CLINICIAN_REVIEW.md` lists every question that needs a clinician, sized to
   an hour.
 
@@ -1842,6 +1844,46 @@ escalate, the model must answer every case. And on the 7 invented fixture
 test cases the same model scores 7 of 7 on every run, which says the
 fixtures are easy when complete, not that the model is right. It is a
 free-tier substitute for the mandated model and is reported as one.
+
+### Adding the language model had switched off a safety check
+
+Reading the loop to run the model inside it found a bug that predates any
+model run. The gate's "findings not explained by any diagnosis" check
+reads an evidence-fit value off whatever proposer the loop holds. The
+consensus proposer — Bayesian plus language model — did not pass that value
+through, so the loop saw none, defaulted to infinity, and the check went
+silent in both engines whenever a model was added. The consensus now passes
+the Bayesian proposer's value through, and a test runs pmc-12393936, the
+real case that check escalates, with a scripted model alongside.
+
+A second gap was quieter. The code has a calibrator for the model's stated
+confidence, but the prompt never asked for one, so every stated confidence
+was missing and the calibrator never had anything to fit. The prompt now
+asks. The first measurement (25 real cases, 2 runs each) went against the
+usual expectation: the model stated 72% on average and was right 88% of the
+time — *under*confident — and on its wrong answers it stated 10–70%. The
+calibrator declines to fit, as it should: 25 independent cases, and it
+needs 30. Repeats of the same case are not new evidence about calibration
+and are not counted as such.
+
+The same script now prints the brief's baselines on the real cases rather
+than only on the invented fixtures, and one line of it is uncomfortable:
+**retrieval-only, the crude overlap baseline, ranks 14 of 25 right on the
+complete record, the Bayesian proposer 13.** On complete records the
+knowledge base's likelihoods add nothing over counting overlapping
+findings. The loop's case rests elsewhere — it sees less evidence and never
+commits wrongly — but the knowledge base's value on real cases is not
+demonstrated by top-1, and that is recorded rather than explained away.
+`run_eval.py`'s fixture table now says it is the flattering one.
+
+The in-loop measurement ran out of free daily quota part-way. Gemini's
+client retried the per-day limit as if it were per-minute, so the run spent
+an hour in back-off, every call ending in a fallback that compared the
+Bayesian proposer with itself — which would have looked like "the model
+changes nothing". It now fails at once on a daily limit, the script probes
+the model before starting, and the in-loop report refuses to call a run a
+result when more than 5% of the model's turns fell back. The measurement
+waits for the quota to reset.
 
 ### A configuration inconsistency found while writing this, and fixed
 

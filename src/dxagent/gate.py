@@ -93,6 +93,12 @@ class VerbalisedCalibrator:
     itself is not observing anything it did not already use to produce the
     answer.
 
+    The expectation is not the measurement. The first real measurement here
+    (Gemini 3.5 Flash-Lite, 25 real cases) went the other way: stated 72% on
+    average, right 88% of the time. The direction of the error is itself
+    something to measure per model, which is one more reason not to assume a
+    curve.
+
     So it is treated as a *score*, not a probability: something monotonically
     related to correctness whose mapping onto correctness must be measured.
     ``fit`` bins held-out cases by stated confidence and records the accuracy
