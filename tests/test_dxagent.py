@@ -1097,8 +1097,14 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     # and with the old COPD value it happened to by information-gain order.
     # The number stays; the gap it exposed is written up in WRITEUP.md.
     # Unweighted: three wrong (adds pmc-10993079, a COPD read as pneumonia).
-    assert wrong_commits(True) == 2
-    assert wrong_commits(False) == 3
+    #
+    # The gap was then closed from the guideline, not the case: the
+    # pericarditis workup now triggers on all of the ESC criteria it can see
+    # (ST changes included) and requires all four, the rub included. That
+    # recovers pmc-12708975 on both arms -- weighted back to one wrong
+    # commit, unweighted to two -- with no new wrong commit on any case set.
+    assert wrong_commits(True) == 1
+    assert wrong_commits(False) == 2
 
     # Where the safety difference lives now: the fixtures. Without the
     # weighting, four facets of one picture counted as four findings sharpen
@@ -1363,11 +1369,17 @@ def test_pericarditis_workup_asks_for_the_effusion_the_selector_never_would():
 
     presenting = [Finding("pleuritic_pain", Polarity.PRESENT)]
     assert PERICARDITIS_WORKUP.is_triggered(presenting)
+    # All four ESC criteria are now owed, the rub included -- the one a
+    # bedside examination settles, and the one pmc-12708975 went without.
     assert set(PERICARDITIS_WORKUP.outstanding(presenting)) == {
         "exam:ecg_st_changes", "exam:ecg_pr_depression",
-        "imaging:pericardial_effusion",
+        "imaging:pericardial_effusion", "exam:friction_rub",
     }
     assert not PERICARDITIS_WORKUP.is_triggered([Finding("fever", Polarity.PRESENT)])
+    # An ECG change arms it too: it is one of the four criteria.
+    assert PERICARDITIS_WORKUP.is_triggered(
+        [Finding("exam:ecg_st_changes", Polarity.PRESENT)]
+    )
 
     kb = build_knowledge_base(correlated=True)
     case = next(c for c in REAL_CASES if c.case_id == "pmc-13305284")
@@ -3556,7 +3568,9 @@ def test_reading_unlisted_findings_as_atypical_buys_rank_and_costs_safety():
     # *difference* between the two, not either absolute count.
     # Now 2 on the shipped backoff, after COPD's fever measurement exposed
     # pmc-12708975 (see the correlation test); the atypical backoff: 3.
-    assert wrong_commits(False) == 2, "the shipped backoff's current wrong commits"
+    # Back to 1 once the pericarditis workup was completed from the ESC
+    # criteria; the atypical backoff stays at 3.
+    assert wrong_commits(False) == 1, "the shipped backoff's current wrong commit"
     assert wrong_commits(True) > wrong_commits(False), (
         "if this stops being true the trade-off has changed and the default "
         "is worth revisiting -- re-measure rather than flipping the flag"
@@ -3649,9 +3663,14 @@ def test_completing_the_grid_buys_rank_and_costs_one_wrong_commit():
     # non-clinician's guesses. A result that flips every pass cannot carry a
     # default; it is the clearest case yet for the decision wanting a
     # clinician and more patients rather than this test.
-    assert off_wrong == 2, "the shipped grid's current wrong commits"
-    assert on_wrong == off_wrong - 1, "the complete grid is currently ahead"
-    assert on_rank < off_rank, "and ahead on rank too"
+    #
+    # After the pericarditis workup was completed from the ESC criteria,
+    # the shipped grid is back to one wrong commit, the same count as the
+    # complete grid (different cases); the complete grid keeps a rank
+    # advantage (2.10 against 2.30). Fourth reading in four passes.
+    assert off_wrong == 1, "the shipped grid's current wrong commit"
+    assert on_wrong == off_wrong, "level on wrong commits"
+    assert on_rank < off_rank, "the complete grid still ranks better"
 
     # No cell is left to fall back on once the grid is complete.
     kb = build(correlated=True, complete_grid=True)

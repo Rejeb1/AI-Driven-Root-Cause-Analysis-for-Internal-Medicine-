@@ -1635,6 +1635,46 @@ wrong and which one. Schnyder's smoking rows were read and declined (only
 current vs never, 41% unknown; this project's concept is ever-smoked).
 No coverage change: 177 likelihoods, 88 invented, 50%.
 
+### Closing the pericarditis gap from the guideline, not the case
+
+The gap two sections up — a real pericarditis committed as pneumonia with
+its friction rub never examined — turned out to be answerable without a
+clinician, because the rule it slipped past was already a guideline
+transcription and was simply incomplete. The ESC diagnosis of acute
+pericarditis is two of four criteria: pericarditic pain, a friction rub,
+new widespread ST elevation or PR depression, and a pericardial effusion.
+The workup triggered on two of the four (pain, rub) and required two of
+the four (ECG, echo). Nothing owed the rub — the one criterion a bedside
+examination settles — and a presentation carrying only the ECG criterion
+never armed the rule at all.
+
+Completed from the criteria: ST changes now arm the workup, and the rub
+is now required. The decision to add both was made on the criteria before
+measuring, and then each half was measured separately so the effect is
+attributable:
+
+| | real (correct / wrong / escalated) | fixtures | hard | fixture cost |
+|---|---|---|---|---|
+| before | 6 / 2 / 12 | 7 / 0 / 3 | 4 / 0 / 1 | 21.6 |
+| ST trigger only | 6 / 2 / 12 | same | same | 23.6 |
+| rub required only | 6 / 2 / 12 | same | same | 21.7 |
+| both | **7 / 1 / 12** | 7 / 0 / 3 | 4 / 0 / 1 | 23.4 |
+
+Neither half alone recovers pmc-12708975: the trigger arms the workup but
+it never asks about the rub, and requiring the rub does nothing if the
+workup never arms. Together they recover it, with no new wrong commit on
+any case set, at about 8% more questions on the fixtures. That cost is
+real — ST changes also arm the pericarditis workup on infarctions and
+embolisms — and it is the same kind of cost the PE workup already pays
+on pleuritic pneumonias. The trade stays a clinical policy question in
+principle; what changed is that the rule now matches its own citation.
+
+Real cases on the shipped configuration are back to **7 correct, 1
+wrong, 12 escalated of 20**, and the one remaining wrong commit is the
+long-standing ACS read as pneumonia. Four tests re-pinned. The complete-
+grid comparison has now read four different ways in four passes (level
+on wrong commits this time, still better on rank); it stays off.
+
 ### A configuration inconsistency found while writing this, and fixed
 
 `scripts/run_eval.py` built its knowledge base **without** correlation

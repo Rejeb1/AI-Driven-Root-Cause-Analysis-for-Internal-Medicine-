@@ -3176,3 +3176,13 @@ productive_cough ceilings from any-cough counts: asthma <= 0.638
 OUTSIDE). PE failure kept on purpose -- the ceiling can't supply a point
 value. Audit wording "from cohort quartiles" -> "from cohort data". 7
 bounds, 1 outside (known). Schnyder smoking declined (no ever-smoked).
+
+## Pericarditis workup completed from the ESC 2-of-4 criteria
+
+Trigger + exam:ecg_st_changes (an ECG change is one criterion); required
++ exam:friction_rub (the bedside criterion, previously never owed).
+Decided on the criteria before measuring; measured each half: neither
+alone recovers pmc-12708975, both together do. Real 6/2/12 -> 7/1/12;
+fixtures 7/0/3 and hard 4/0/1 unchanged; fixture cost 21.6 -> 23.4
+(+8%). 4 re-pins; complete-grid now level on wrong commits (4th reading
+in 4 passes), stays off. 174 tests pass.

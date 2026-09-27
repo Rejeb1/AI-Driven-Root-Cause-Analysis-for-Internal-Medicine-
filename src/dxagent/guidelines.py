@@ -366,13 +366,25 @@ ACS_WORKUP = MandatoryWorkup(
     ),
 )
 
+# Trigger and requirements both read off the same ESC "two of four" criteria:
+# pericarditic pain, friction rub, new widespread ST elevation or PR
+# depression, pericardial effusion. The first version triggered on only two
+# of the four (pain, rub) and required only two of the four (ECG, effusion),
+# so the one bedside criterion -- listening for a rub -- was never owed, and
+# a presentation carrying only the ECG criterion never armed the rule. Found
+# when a real pericarditis with fever, ST changes and a documented rub
+# (pmc-12708975) was committed as pneumonia after twelve questions without
+# the rub ever being examined; see WRITEUP.md. The rule was completed from
+# the criteria, not tuned to that case: each half alone does not recover it,
+# and the decision to add both was made on the criteria before measuring.
 PERICARDITIS_WORKUP = MandatoryWorkup(
     name="Pericarditis assessment",
-    trigger_any=("pleuritic_pain", "exam:friction_rub"),
+    trigger_any=("pleuritic_pain", "exam:friction_rub", "exam:ecg_st_changes"),
     required=(
         "exam:ecg_st_changes",
         "exam:ecg_pr_depression",
         "imaging:pericardial_effusion",
+        "exam:friction_rub",
     ),
     rationale=(
         "Pleuritic chest pain or a rub is the presentation of pericarditis, "
@@ -386,7 +398,12 @@ PERICARDITIS_WORKUP = MandatoryWorkup(
         "suspicion is expressed in this vocabulary, and it arms the workup on "
         "pleuritic pneumonias and embolisms too. That is the same cost the "
         "PE workup already pays, and it is a clinical policy decision "
-        "awaiting a clinician."
+        "awaiting a clinician. ST changes also arm it, because an ECG change "
+        "is itself one of the four criteria; that arms it on infarctions and "
+        "embolisms with ST changes as well, at a measured cost of about 8% "
+        "more questions on the fixture set and no new wrong commit on any "
+        "case set. The rub is required because it is the only one of the "
+        "four criteria a bedside examination settles."
     ),
     citation=_cite(
         "ESC-PERICARDIAL-2015",
