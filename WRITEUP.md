@@ -1515,6 +1515,29 @@ pericarditis cases, against the shipped arm's one ACS) for a rank gain of
 0.05, so the test's original title is true again. Real cases on the
 shipped configuration: unchanged. 177 likelihoods, 92 invented, 48%.
 
+### D-dimer: no new cell, two bounds instead
+
+`lab:raised_d_dimer`'s ACS and oedema cells were already worked and
+declined long ago (two ACS cohorts gave quartile bounds that don't
+overlap). Of the rest, pneumonia came closest: 630 hospitalised CAP
+patients without venous thromboembolism (PMC11809021) had a median D-dimer
+of 468 ng/mL, IQR 286–978. The paper even uses "D-dimer ≥ 500" as a
+yes/no regression variable — and never states how many patients crossed
+it. So the 500 cutoff sits between the median and the third quartile,
+which says P(raised D-dimer | pneumonia) is between 0.25 and 0.50 without
+any distributional assumption, and says nothing more precise.
+
+A bound cannot source a cell, but this project already has a mechanism
+for what it can do: `QUARTILE_BOUNDS` in `plausibility_check.py` checks an
+invented value against a measured range without replacing it. Two entries
+added — this one, and the ACS BNP quartiles declined as a point value last
+pass (224 NSTEACS patients, 100 pg/mL falling inside the third quartile,
+so also [0.25, 0.50]). Both invented values sit inside their bounds (0.35
+and 0.30), so both go from "unverified" to "unverified but not
+contradicted," which is a real if modest change in what the file can
+claim. Pericarditis and panic: nothing found. No coverage change; 177
+likelihoods, 92 invented, 48%.
+
 ### A configuration inconsistency found while writing this, and fixed
 
 `scripts/run_eval.py` built its knowledge base **without** correlation

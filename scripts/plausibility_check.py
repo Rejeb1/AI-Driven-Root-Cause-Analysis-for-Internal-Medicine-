@@ -244,6 +244,15 @@ QUARTILE_BOUNDS: tuple[tuple[str, str, float, float, str, str], ...] = (
      "PMC13007150 Table 2, 351 pericarditis patients at first attack",
      "white cell count median 9.6-10.4, IQR to 12.0-13.0 x10^9/L; the 11 "
      "cutoff sits between the median and Q3 in both arms"),
+    ("community_acquired_pneumonia", "lab:raised_d_dimer", 0.25, 0.50,
+     "PMC11809021 Table 1, 630 hospitalised CAP patients without VTE",
+     "D-dimer median 468, IQR 286-978 ng/mL; the 500 cutoff sits between "
+     "the median and Q3. The paper uses D-dimer >=500 as a regression "
+     "variable but never states the count, so this bounds rather than sources"),
+    ("acute_coronary_syndrome", "lab:raised_bnp", 0.25, 0.50,
+     "PMC4811277, 224 NSTEACS patients stratified into exact BNP quartiles",
+     "quartile edges 22.2 / 81.9 / 225 pg/mL; the 100 cutoff sits inside the "
+     "third quartile, so between a quarter and a half are above it"),
     # Not written, and recorded: the same table has admission temperature at
     # median 36.4 with Q3 37.0, so fewer than a quarter were febrile on
     # measurement. That bounds measured fever, and this project's fever

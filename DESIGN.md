@@ -3132,3 +3132,12 @@ Re-pins: correlation test's "stable" cost assertion removed (weighted
 unweighted fixture wrong commits 2 -> 1 (fx-010 now escalates);
 complete-grid trade reopened (2 wrong vs shipped 1, rank gain 0.05).
 Real cases unchanged. 177 likelihoods, 92 invented, 48%. 174 tests pass.
+
+## D-dimer pass: 0 sourced, 2 quartile bounds added
+
+CAP D-dimer (PMC11809021, n=630 non-VTE): median 468, IQR 286-978 ng/mL,
+count >=500 never stated despite being a regression variable -> bound
+[0.25,0.50]. ACS BNP quartiles (PMC4811277) from last pass -> same
+bound. Both added to QUARTILE_BOUNDS; both invented values (0.35, 0.30)
+inside. Pericarditis/panic D-dimer: nothing found. 5 bounds, 0 outside.
+No coverage change. 174 tests pass.
