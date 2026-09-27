@@ -1246,6 +1246,16 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
     # knowledge base models. That is a design and clinical choice, not a
     # sourcing one, and it is in CLINICIAN_REVIEW.md. Until it is made the
     # cell stays at its invented value.
+    #
+    # Checked whether the choice could be made from a guideline instead:
+    # the ESC recommends high-sensitivity troponin, which would point to the
+    # hs era -- but that only helps if ACS gets an hs-era figure too, and
+    # none was found (one hs cohort reports only its "observe zone" subset,
+    # another only patients first labelled unstable angina). And the column
+    # is already mixed: PE's cell spans two assays, COPD's is a conventional
+    # troponin I, pneumonia's a high-sensitivity one. A coherent column
+    # means re-sourcing every troponin cell in one era, which is recorded as
+    # a task rather than attempted one cell at a time.
     ("acute_pulmonary_oedema", "lab:raised_bnp"): measured(
         0.93,
         Citation(

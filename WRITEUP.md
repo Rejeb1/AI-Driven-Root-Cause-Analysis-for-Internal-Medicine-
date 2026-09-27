@@ -1748,6 +1748,29 @@ decides which era the system models. PE's productive-cough ceiling was
 also softened: it rests on one cohort's questionnaire item ("cough as a
 new symptom"), and the largest PE cohort, PIOPED II, was not readable here.
 
+### The loop's invented budgets and costs, swept and not chosen
+
+`scripts/settings_sweep.py` does for the loop what `gate_sweep.py` does for
+the gate: reports outcomes across values, chooses none. The question budget
+(40 cost units, 12 turns) sits exactly at the knee — less loses commits,
+more changes nothing, which confirms that the 13 real escalations are not
+the loop running out of budget. The relative cost of tests matters more
+than expected: doubling lab and imaging costs cuts real correct commits
+from 7 to 2, and *halving* them introduces a real wrong commit, because
+cheaper tests change the question order — the same order-fragility the
+pericarditis case exposed. The costs are service-design choices and stay
+as shipped.
+
+The troponin column was also checked for a guideline way out of the
+assay-era decision. ESC recommends high-sensitivity troponin, but no
+high-sensitivity ACS figure turned up to pair with heart failure's, and
+the column is already mixed (PE's cell spans two assays, COPD's is
+conventional, pneumonia's high-sensitivity), so a coherent column means
+re-sourcing every troponin cell in one era — recorded as a task, not
+attempted one cell at a time. Two more PE cohorts were searched for a
+cough row; neither has one, so PE's productive-cough ceiling stays
+single-source.
+
 ### A configuration inconsistency found while writing this, and fixed
 
 `scripts/run_eval.py` built its knowledge base **without** correlation

@@ -277,6 +277,11 @@ QUARTILE_BOUNDS: tuple[tuple[str, str, float, float, str, str], ...] = (
     # not been read and is not cited for a number. Until it or another
     # cohort is, this is a contradiction with one study, not a settled
     # error.
+    #
+    # Two more PE presentation cohorts checked for a cough row: PMC10124252
+    # (1,242 PE by ESC risk class) tabulates haemoptysis, chest pain,
+    # dyspnoea and syncope but not cough; PMC10344497 (591 PE) ranks only
+    # the chief complaint. Still single-source.
     ("pulmonary_embolism", "productive_cough", 0.0, 0.039,
      "PMC3288010 (Miniati 2012) Table 3, 360 confirmed acute PE (Firenze)",
      "new cough of any kind in 14 of 360 (3.9%); productive cough is a "
