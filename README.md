@@ -54,6 +54,7 @@ python3 scripts/sensitivity.py          # which invented numbers actually matter
 python3 scripts/sensitivity.py --ablate # what deleting them costs, vs moving them
 python3 scripts/sensitivity.py --bands  # do the sourced ranges change anything
 python3 scripts/plausibility_check.py   # SCOPE.md's claims, and the ordering audit
+python3 scripts/llm_real_cases.py       # a language model on the real cases (needs GEMINI_API_KEY)
 python3 scripts/build_ontology.py       # the finding/cause graph, as text or DOT
 python3 scripts/synthesize.py --dry-run # synthetic case plan (section 5.2)
 ```

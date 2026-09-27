@@ -3212,3 +3212,11 @@ An earlier pass took PMC4748508 (COPD + stress cardiomyopathy), which
 this pass's mixed rule would exclude; kept, inconsistency recorded.
 Asthma tachycardia/SpO2/fever/WCC search: ED cohorts give means or
 documentation rates only (PMC9843545, PMC5126747, PMC13242825); none written.
+
+## Gemini on the real cases (scripts/llm_real_cases.py)
+
+gemini-3.5-flash-lite, free tier, substitute model. Complete record, top-1:
+with complaint 64/75 runs (85%); findings only 32/50 (64%); Bayesian 13/25
+(52%). 0 fallbacks; 23/25 stable across runs. Errors differ from Bayes
+(asthma->COPD x3, panic->PE x2, sent-home NSTEMI->PE). Fixtures 7/7 every
+run. Contamination possible (published cases); findings only, no IDs.

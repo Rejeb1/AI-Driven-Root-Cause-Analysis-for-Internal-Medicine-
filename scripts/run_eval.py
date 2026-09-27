@@ -208,7 +208,7 @@ def baseline_comparison(kb, test_cases, result, args=None) -> str:
             lines.append(
                 f"    top-1 over {repeats} runs: min {tops[0]:.1%}, "
                 f"median {tops[len(tops) // 2]:.1%}, max {tops[-1]:.1%} "
-                "-- the row above is the median run; a local model is not "
+                "-- the row above is the median run; no model is guaranteed "
                 "reproducible run to run"
             )
             continue
@@ -353,7 +353,7 @@ def main() -> int:
         type=int,
         default=1,
         help="run the single-pass LLM baseline this many times and report the "
-             "spread; a local model is not reproducible run to run",
+             "spread; no model is guaranteed reproducible run to run",
     )
     parser.add_argument(
         "--no-baselines",

@@ -47,6 +47,13 @@ reader does not have to reconstruct it from the history.
   the evidence. The troponin column mixes assay generations and needs a
   decision about which one to model. The mandated language model has never
   run; a local 3B model was measured and is not usable for extraction.
+- **A language model, measured on the real cases** (Gemini 3.5 Flash-Lite,
+  free tier — a substitute, not the mandated model). Given each complete
+  record in one prompt, it ranks the right diagnosis first in **85%** of runs
+  against the Bayesian model's 52% on the same record; with the free-text
+  complaint withheld, **64%**. Its errors differ from the Bayesian model's
+  (asthma read as COPD, panic as PE), which is the case for running the two
+  side by side rather than choosing one. Top-1 only: no loop, no abstention.
   `CLINICIAN_REVIEW.md` lists every question that needs a clinician, sized to
   an hour.
 
@@ -1801,6 +1808,40 @@ sign was documented rather than its value (Schnyder's Swiss audit;
 a Nigerian two-hospital audit; a prehospital salbutamol series whose
 population is not asthma-only). No cell was written; they stay invented
 and on the sheet.
+
+### A language model on the real cases, at last
+
+The brief's model has never run for want of credits, and the local 3B model
+was unusable, so the LLM half of the design had only ever been tested on
+invented cases. With a free Gemini key it now has a real-case number, from
+`scripts/llm_real_cases.py`: the complete extracted record of each of the 25
+cases in one prompt, top-ranked diagnosis scored.
+
+| Given to the model | Right first | Same answer every run |
+|---|---|---|
+| findings and free-text complaint (3 runs each) | 64 of 75 runs, **85%** | 23 of 25 cases |
+| findings only (2 runs each) | 32 of 50 runs, **64%** | 23 of 25 cases |
+| Bayesian model, same record | 13 of 25, **52%** | deterministic |
+
+No answer fell back to the Bayesian posterior (the script counts those
+separately, because scoring them as the model's would credit it with Bayes'
+answers). Two-thirds of the model's lead comes from the complaint text,
+which the Bayesian model cannot read at all — that is a real advantage, not
+a flaw in the comparison, but it means the two are not seeing the same
+evidence. On findings alone the errors differ in kind: the model calls all
+three asthma cases COPD, two of three panic attacks PE, and the NSTEMI that
+was sent home PE; the Bayesian model gets one of those panic attacks right
+and misses cases the model gets. Different errors are what the consensus
+proposer's disagreement signal needs.
+
+Three limits. The cases are published and may be in the model's training
+data; it sees only extracted findings, never the report or its identifier,
+which reduces that risk without removing it. Top-1 on a complete record is
+not the task the loop does — the loop sees 43% of the evidence and may
+escalate, the model must answer every case. And on the 7 invented fixture
+test cases the same model scores 7 of 7 on every run, which says the
+fixtures are easy when complete, not that the model is right. It is a
+free-tier substitute for the mandated model and is reported as one.
 
 ### A configuration inconsistency found while writing this, and fixed
 
