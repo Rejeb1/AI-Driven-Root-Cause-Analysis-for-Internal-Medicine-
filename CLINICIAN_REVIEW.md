@@ -83,6 +83,16 @@ system follows the D-dimer-then-imaging sequence. The treating clinicians
 scanned anyway. *When would you image despite a normal D-dimer, and
 should the system?*
 
+**1.4c Which troponin assay should the system assume?**
+The troponin numbers come from cohorts using different assay generations.
+A high-sensitivity cohort finds troponin above the 99th percentile in 90%
+of acute heart failure admissions; the ACS figure (78%) reflects a cohort
+where a fifth of ACS was still classed as unstable angina. Mixing them
+makes "raised troponin" look commoner in heart failure than in ACS, so the
+heart-failure figure has been left out until one era is chosen.
+*Should the system assume high-sensitivity troponin throughout (with the
+99th-percentile cutoff that implies), or conventional assays?*
+
 **1.5 Fill in the remaining guesses, or leave them neutral?**
 For 55 finding–disease pairs nobody has characterised (e.g. "palpitations
 in pulmonary embolism", "wheeze in pneumonia"), the system currently uses

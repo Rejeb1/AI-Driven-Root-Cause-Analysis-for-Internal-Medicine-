@@ -1218,6 +1218,34 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
     # same review: (1 - 0.935) / 0.529 = 0.123, which recovers it. An
     # independent figure from the Breathing Not Properly cohort at the same
     # cutoff gives 90% and 76%, so the band spans the two.
+    # Sourced, measured, and NOT written -- the troponin column has no
+    # single assay era, and this cell exposed it.
+    #
+    # Takashio S et al. (NaDEF), PLoS ONE 2017, PMC5381770: of 449 patients
+    # hospitalised with acutely decompensated heart failure, 404 had
+    # admission high-sensitivity troponin T above the 99th percentile; the
+    # other 45 were excluded for a normal value (the quartiles the paper
+    # reports look like a distribution-free bound and are not -- the 404
+    # are raised by construction; the exclusion count is the measurement).
+    # 0.90 against an invented 0.30.
+    #
+    # Written in, it put P(raised troponin | oedema) at 0.90 above
+    # P(raised troponin | ACS) at 0.778, and the ordering audit caught the
+    # inversion. Neither number is wrong; they answer differently defined
+    # questions. The ACS value is the myocardial-infarction fraction of a
+    # cohort whose unstable-angina share reflects its assay era, while this
+    # one is a high-sensitivity count, and under high-sensitivity assays
+    # nearly all ACS would read raised. Pairing them states a comparison
+    # neither source supports -- the objection this file already applies to
+    # the natriuretic-peptide column (BNP against NT-proBNP), applied here
+    # to assay generation. It also cost two oedema fixtures their correct
+    # commits (fx-003, fx-008, both hand-written with a normal troponin, a
+    # belief from the conventional-assay era).
+    #
+    # Making the column coherent needs a decision first: which assay era the
+    # knowledge base models. That is a design and clinical choice, not a
+    # sourcing one, and it is in CLINICIAN_REVIEW.md. Until it is made the
+    # cell stays at its invented value.
     ("acute_pulmonary_oedema", "lab:raised_bnp"): measured(
         0.93,
         Citation(
