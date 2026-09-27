@@ -3076,3 +3076,24 @@ outcome. SCOPE.md table: PE/hypoxia flips too (LR 0.92, near-coin-flip,
 "lowers" only because the table has no neutral column).
 
 177 likelihoods, 96 invented, 46%. 174 tests pass.
+
+## imaging:cxr_consolidation: PE sourced, a real reversal this time
+
+PE: Al Dandan 2020 (Int J Emerg Med 13:47, n=85 confirmed PE), 37.6%
+parenchymal infiltrates on CXR vs invented 0.10. Paper's own term
+differs from "consolidation" but the same table separately lists
+atelectasis/oedema, so not standing in for either; CXR's stated role in
+this cohort is alt-diagnosis-finding not PE-confirming, so no selection
+artefact. Oedema declined for actual selection bias this time (a
+pneumonia-vs-oedema comparison cohort pre-filtered to patients who
+already have SOME infiltrate) -- distinct from the usual
+mean-not-proportion decline. ACS/asthma/pericarditis: nothing found.
+Panic: not searched, no precedent anywhere in this file for a
+panic-attack CXR cohort existing.
+
+Unlike hypoxia's near-coin-flip, this one is a real clinical reversal:
+invented 0.10 ruled PE out hard, sourced 37.6% now raises it. Flipped
+in SCOPE.md + plausibility_check.py (4th row this pattern has caught).
+
+177 likelihoods, 95 invented, 46%. No real-case wrong-commit change.
+174 tests pass.

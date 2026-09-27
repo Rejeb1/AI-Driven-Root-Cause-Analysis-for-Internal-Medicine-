@@ -356,6 +356,29 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
              "decline, same treatment as the ACS/pleuritic_pain and "
              "ACS/sudden_onset population caveats above.",
     ),
+    # First cell in imaging:cxr_consolidation (invented for 6 of 8 diseases).
+    # PE again, since the cohort was already open above.
+    ("pulmonary_embolism", "imaging:cxr_consolidation"): measured(
+        0.376,
+        Citation(
+            "AL-DANDAN-2020",
+            "Al Dandan O et al., Int J Emerg Med 2020;13:47, PMC7457516",
+            "parenchymal infiltrates on chest radiograph in 32 of 85 "
+            "patients with confirmed pulmonary embolism at a Saudi "
+            "academic centre (37.6%)",
+        ),
+        low=0.28,
+        high=0.48,
+        note="corrects the invented 0.10 upward nearly fourfold. 'Parenchymal "
+             "infiltrates' is the paper's term, not 'consolidation' -- taken "
+             "as the same finding because the same table lists atelectasis "
+             "(12) and pulmonary oedema (3) as separate rows, so this "
+             "category is not standing in for either of them. Chest "
+             "radiography's stated role in this cohort is finding an "
+             "alternative diagnosis, not confirming PE, so an infiltrate "
+             "here is a genuine competing/incidental finding, not an "
+             "artefact of the inclusion criteria.",
+    ),
     # Found by targeted search after both bulk routes were exhausted: DDXPlus
     # records zero ACS patients with palpitations (a rule-base artefact, not a
     # frequency) and the Merck ACS chapter never mentions the symptom at all.
@@ -1617,6 +1640,24 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
 # mean/median-not-proportion shape already declined repeatedly elsewhere
 # in this file. Panic's cell is not searched for at all -- see the
 # structural section below for why.
+
+# imaging:cxr_consolidation: one cell sourced, one selection-bias decline,
+# three not found
+# ---------------------------------------------------------------------------
+# Invented for 6 of 8 diseases. PE sourced above (Al Dandan 2020). Oedema
+# had one promising-looking hit -- a study comparing CXR-confirmed
+# pneumonia against pulmonary oedema, PMC6393097 -- but its cohort is
+# restricted by inclusion criterion to patients who already have pulmonary
+# infiltrates on the chest film; using it would report the rate of
+# consolidation in oedema patients who were selected for having some kind
+# of infiltrate, not the presentation rate. Declined for the selection
+# bias, not for the wrong shape of data. ACS, asthma and pericarditis
+# searched, nothing found -- imaging-profile and baseline-characteristics
+# queries returned other conditions (COVID-19 imaging reviews, paediatric
+# asthma pathways) rather than a cohort reporting this finding for any of
+# the three. Panic not searched -- CXR is not part of a typical panic
+# workup in the literature that turns up elsewhere in this file, and nothing
+# suggested this column would be different.
 
 # Load-bearing numbers that no source can supply, and the reason is structural
 # ---------------------------------------------------------------------------

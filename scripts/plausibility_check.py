@@ -81,7 +81,12 @@ CLAIMS: tuple[tuple[str, str, str], ...] = (
     ("pulmonary_embolism", "exam:hypoxia", "lowers"),
     ("pulmonary_embolism", "orthopnoea", "lowers"),
     ("pulmonary_embolism", "imaging:cxr_pulmonary_oedema", "lowers"),
-    ("pulmonary_embolism", "imaging:cxr_consolidation", "lowers"),
+    # "lowers" until Al Dandan 2020 (n=85 confirmed PE) measured parenchymal
+    # infiltrates at 37.6%, against an invented 0.10 -- consolidation on CXR
+    # does not rule PE out as strongly as assumed; relative to the rest of
+    # the differential it now raises PE rather than lowering it. The claim
+    # moved, not the number.
+    ("pulmonary_embolism", "imaging:cxr_consolidation", "raises"),
     ("community_acquired_pneumonia", "imaging:cxr_consolidation", "raises"),
     ("community_acquired_pneumonia", "fever", "raises"),
     ("community_acquired_pneumonia", "lab:raised_wcc", "raises"),

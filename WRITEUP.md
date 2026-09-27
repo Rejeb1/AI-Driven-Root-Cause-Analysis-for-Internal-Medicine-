@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 96 of its 177 likelihoods are invented, no
+an unfinished feature — because 95 of its 177 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -131,7 +131,7 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**96 of 177 likelihoods are invented.** That is the number, stated on its own
+**95 of 177 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project. It was 89 of
 153 until the pericardial columns were added (§5): two concepts the real cases
 showed were missing, two sourced cells for pericarditis, and 21 invented rival
@@ -391,7 +391,7 @@ celebrate.
 ### Nothing was checking the numbers themselves
 
 Every test in this project checks outputs. The knowledge base is inputs, and
-for most of its life nothing looked at it: 96 of 177 likelihoods are invented,
+for most of its life nothing looked at it: 95 of 177 likelihoods are invented,
 and the only scrutiny they got was whichever ones happened to change a case.
 
 Reading each column sorted, against what the diseases actually do, found five
@@ -859,7 +859,7 @@ Measured on every set, cells sourced without looking at any case: fixtures
 real patients **4 → 6 correct, 0 wrong**, the SLE pericarditis and the
 second pneumonia now committing; held-out ECE 0.286 → 0.260, coverage 43%
 → 57%. Three fixture-level pins moved with it and are re-pinned with the
-reasoning. 177 likelihoods, 96 invented, coverage 46%.
+reasoning. 177 likelihoods, 95 invented, coverage 46%.
 
 ### One cell at a time: crackles
 
@@ -1147,7 +1147,7 @@ means a higher P(pleuritic pain absent | ACS) — 0.935 against the old
 diagnosis on a different patient. Sourcing this cell helped and hurt on
 two different real cases simultaneously, in the direction the mechanism
 actually implies both times. Nothing here was chosen for that effect; it
-is what checking an untested assumption produced. 177 likelihoods, 96
+is what checking an untested assumption produced. 177 likelihoods, 95
 invented, 46%. 174 tests pass; no wrong-commit-count assertion needed
 re-pinning because the count did not move, only which case's confidence
 and which other case newly commits.
@@ -1279,7 +1279,7 @@ WCC was reported as a mean, a median, a per-unit odds ratio, or a bare
 qualitative remark in all but two. A threshold-crossing proportion — the
 one shape this project can use without a distributional assumption — is
 the exception in this literature, not the norm. Further searching this
-specific column is not expected to find a seventh. 177 likelihoods, 96
+specific column is not expected to find a seventh. 177 likelihoods, 95
 invented, 46%.
 
 ### A twentieth real case, added for the calibration gap — and an unforced piece of evidence for correlation weighting
@@ -1396,7 +1396,39 @@ column being worked. Also flipped a third row in SCOPE.md's
 discriminating-evidence table, though this one barely matters clinically:
 PE's hypoxia rate lands almost exactly on the knowledge base's own
 marginal (LR 0.92), a coin flip that only reads as "lowers" because the
-table has no neutral column. 177 likelihoods, 96 invented, 46%.
+table has no neutral column.
+
+### A fourth column, and a real reversal this time
+
+`imaging:cxr_consolidation` is invented for 6 of 8 diseases. PE's cell
+sourced from the same cohort already open for hypoxia's discussion above
+(a different paper, Al Dandan et al., Int J Emerg Med 2020;13:47):
+32 of 85 confirmed PE patients (37.6%) had parenchymal infiltrates on
+chest radiograph, against an invented 0.10. The paper's own term is
+"infiltrates," not "consolidation," but the same table lists atelectasis
+and pulmonary oedema as separate rows, so this category is not silently
+standing in for either — and the paper states chest radiography's role
+in suspected PE is finding an alternative diagnosis, not confirming PE,
+so a positive finding here is a genuine competing signal, not an
+artefact of how patients were selected into the cohort.
+
+Oedema had a promising-looking hit — a study comparing radiographically
+confirmed pneumonia against pulmonary oedema — declined once its
+inclusion criterion turned out to be "has some pulmonary infiltrate
+already," which would report the rate of consolidation in oedema
+patients selected for having an infiltrate, not the presentation rate.
+Selection bias, not the wrong shape of data, and worth distinguishing
+from the usual "only a mean was reported" decline. ACS, asthma and
+pericarditis searched, nothing found; panic not searched, since nothing
+in this project's other chest-imaging searches has ever surfaced a
+panic-attack CXR cohort.
+
+Unlike the hypoxia flip, this one is a real reversal, not a coin flip
+that only looks like one: the invented 0.10 had consolidation firmly
+ruling PE out, and the sourced 37.6% is high enough that it now raises
+PE relative to the rest of the differential instead. Flipped in
+SCOPE.md's table and `plausibility_check.py`'s claims, the fourth row
+this pattern has caught. 177 likelihoods, 95 invented, 46%.
 
 ### A configuration inconsistency found while writing this, and fixed
 
