@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 95 of its 177 likelihoods are invented, no
+an unfinished feature — because 94 of its 177 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -131,7 +131,7 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**95 of 177 likelihoods are invented.** That is the number, stated on its own
+**94 of 177 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project. It was 89 of
 153 until the pericardial columns were added (§5): two concepts the real cases
 showed were missing, two sourced cells for pericarditis, and 21 invented rival
@@ -391,7 +391,7 @@ celebrate.
 ### Nothing was checking the numbers themselves
 
 Every test in this project checks outputs. The knowledge base is inputs, and
-for most of its life nothing looked at it: 95 of 177 likelihoods are invented,
+for most of its life nothing looked at it: 94 of 177 likelihoods are invented,
 and the only scrutiny they got was whichever ones happened to change a case.
 
 Reading each column sorted, against what the diseases actually do, found five
@@ -859,7 +859,7 @@ Measured on every set, cells sourced without looking at any case: fixtures
 real patients **4 → 6 correct, 0 wrong**, the SLE pericarditis and the
 second pneumonia now committing; held-out ECE 0.286 → 0.260, coverage 43%
 → 57%. Three fixture-level pins moved with it and are re-pinned with the
-reasoning. 177 likelihoods, 95 invented, coverage 46%.
+reasoning. 177 likelihoods, 94 invented, coverage 47%.
 
 ### One cell at a time: crackles
 
@@ -1147,8 +1147,8 @@ means a higher P(pleuritic pain absent | ACS) — 0.935 against the old
 diagnosis on a different patient. Sourcing this cell helped and hurt on
 two different real cases simultaneously, in the direction the mechanism
 actually implies both times. Nothing here was chosen for that effect; it
-is what checking an untested assumption produced. 177 likelihoods, 95
-invented, 46%. 174 tests pass; no wrong-commit-count assertion needed
+is what checking an untested assumption produced. 177 likelihoods, 94
+invented, 47%. 174 tests pass; no wrong-commit-count assertion needed
 re-pinning because the count did not move, only which case's confidence
 and which other case newly commits.
 
@@ -1279,8 +1279,8 @@ WCC was reported as a mean, a median, a per-unit odds ratio, or a bare
 qualitative remark in all but two. A threshold-crossing proportion — the
 one shape this project can use without a distributional assumption — is
 the exception in this literature, not the norm. Further searching this
-specific column is not expected to find a seventh. 177 likelihoods, 95
-invented, 46%.
+specific column is not expected to find a seventh. 177 likelihoods, 94
+invented, 47%.
 
 ### A twentieth real case, added for the calibration gap — and an unforced piece of evidence for correlation weighting
 
@@ -1446,6 +1446,47 @@ Declined on that basis, not because nothing relevant was found. Asthma:
 nothing relevant at all. All four stay invented — a column with a 0%
 hit rate this pass, recorded plainly rather than dressed up. 177
 likelihoods, 95 invented, 46% (unchanged).
+
+### A narrative number measured and found sevenfold too high
+
+Re-reading the Miniati 2012 cohort (360 confirmed PE, already cited for
+four PE cells) for PE's last invented cell turned up more than that cell.
+Dyspnoea was the easy part: 290 of 360, 81%, against an invented 0.80 —
+confirmation, not correction, and taken with the same generic "dyspnoea"
+mapping already used for pneumonia and asthma.
+
+Fever was the finding. PE's fever cell was not invented; it was one of
+this project's narrative-tier values, the Merck Manual's "fever can
+occur" run through the fixed rubric to 0.30. SCOPE.md had noted it landed
+on the marginal and was "recorded rather than adjusted." Miniati counted
+fever >38°C — this project's exact threshold — in 15 of 360: **4%**. The
+rubric had overstated it sevenfold, and the invented 0.15 it replaced
+years of commits ago was closer to the truth. By the knowledge base's own
+precedence rule, a count in patients outranks a converted phrase, so the
+measured value now wins; the Merck sentence stays in the retrieval corpus
+as the grounding quote it always was.
+
+That one number reversed a result this project had held up as evidence.
+`test_sourcing_repaired_the_buried_diagnosis` recorded that the narrative
+fever value "unburied" pulmonary embolism on a febrile, CTPA-positive
+presentation. With fever measured, PE is buried again — fourth on both
+knowledge bases; correlation weighting still lifts it threefold, but to
+fourth, not first. fx-009 (a febrile fixture PE built to masquerade as
+pneumonia) drops from fifth to sixth in the loop and still escalates, which
+is the property that matters. The unweighted fixture arm's wrong commits
+went back from one to two; the weighted arm's stay at zero. Nothing on the
+real cases changed in count.
+
+It also exposed a second narrative value as wrong without supplying its
+replacement: PE's productive cough sits at 0.20 from "less common symptoms
+include cough", and Miniati counts *any* new cough at 4%. Productive cough
+is a subset of cough, so 4% is a ceiling the current value exceeds
+fivefold. A ceiling is not a point value, so nothing is written in its
+place — but it is now known wrong, not merely unverified, and recorded as
+such in `fixtures.py`. The general lesson is the one every NARRATIVE-tier
+number carries as a caveat, now demonstrated twice on one disease from one
+table: a faithfully transcribed sentence can still be a wrong frequency.
+177 likelihoods, 94 invented, 47%.
 
 ### A configuration inconsistency found while writing this, and fixed
 

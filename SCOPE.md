@@ -122,11 +122,16 @@ contradicted, all four for that reason:
 - **Wheeze barely separates asthma from COPD** (87% against 91%), which is
   precisely what this document's own COPD row predicts when it calls
   distinguishing them "a real clinical task".
-- **Fever is now neutral for pulmonary embolism**, not lowering. The Merck
-  Manual says fever "can occur" in PE; the fixed rubric maps that to 0.30,
-  which lands on the knowledge base's marginal almost exactly. The rubric is
-  deliberately coarse and is not re-tuned to produce a preferred answer, so
-  this is recorded rather than adjusted.
+- **Fever lowers pulmonary embolism, measured.** It used to read as
+  neutral: the Merck Manual says fever "can occur" in PE, the fixed rubric
+  maps that to 0.30, and that landed on the knowledge base's marginal almost
+  exactly — recorded rather than adjusted, because the rubric is not re-tuned
+  to produce a preferred answer. It was not adjusted; it was replaced.
+  Miniati 2012 counted fever >38°C in 15 of 360 confirmed PE patients, 4%,
+  and a measured count outranks a converted phrase by this project's own
+  precedence rule. The rubric had overstated it sevenfold — the clearest
+  single demonstration so far that a faithfully transcribed textbook
+  sentence can still be a wrong frequency.
 - **Rest dyspnoea no longer lowers pneumonia**, and the reason is a sourcing
   error rather than a surprise about medicine. The Merck chapter says
   dyspnoea in pneumonia "usually is mild and exertional and is rarely present
@@ -140,9 +145,9 @@ contradicted, all four for that reason:
   correcting it cost.
 
 **Most of these numbers are still invented, and which ones are not is
-recorded.** 46% of the 177 likelihoods carry a citation — 7 from DDXPlus, 11
-from the Merck Manual's narrative text, 60 from published cohorts and
-StatPearls. The fraction fell from 42% when two pericardial concepts were
+recorded.** 47% of the 177 likelihoods carry a citation — 83 in all: 72
+counted in patients (7 from DDXPlus, 65 from published cohorts) and 11
+converted from narrative text (the Merck Manual and StatPearls). The fraction fell from 42% when two pericardial concepts were
 added with invented rival cells, and recovered on a pneumonia pass and a
 tachycardia-column pass; see WRITEUP.md §5.
 `scripts/sensitivity.py` reports the split and `dxagent.provenance` tracks it
@@ -247,7 +252,7 @@ here holds symptoms, signs, laboratory results and imaging findings, and
 nothing in scope reasons about medication. That is a scope fact rather than a
 substitution.
 
-**The likelihood tables are still mostly invented — 95 of 177.** UMLS was
+**The likelihood tables are still mostly invented — 94 of 177.** UMLS was
 probed and found unusable for this purpose — mostly translations and billing
 crosswalks, and its one clinical relation mixes symptoms, risk factors and
 treatment complications without distinguishing them. HPO supplies concepts but

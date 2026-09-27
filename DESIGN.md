@@ -3106,3 +3106,19 @@ threshold falls inside Q3, so P(BNP>100) only bounds to [0.25,0.50],
 not a point value; same quartile-assumption refusal as D-dimer.
 Asthma: nothing relevant. All four stay invented. Comment-only,
 no fixture change. 174 tests pass.
+
+## Miniati 2012 re-read: PE dyspnoea sourced, PE fever narrative replaced
+
+dyspnoea_at_rest: 290/360 (81%) vs invented 0.80 -- confirms. fever: was
+NARRATIVE (Merck "can occur" -> rubric 0.30); Miniati counts >38C in
+15/360 (4%) -- literature beats narrative by precedence, sevenfold
+overstatement by the rubric. Reverses test_sourcing_repaired_the_buried_
+diagnosis's thesis (PE now 4th on both KBs for febrile CTPA+ evidence;
+correlation still lifts ~3x). Re-pinned: fixture_wrong_commits(False)
+1->2, correlation_survives ranks (4,3)->(6,4), fx-009 loop rank 5->6
+(still escalates). Real cases unchanged. productive_cough (narrative
+0.20) contradicted by Miniati's any-cough 4% ceiling -- recorded, not
+replaced (ceiling isn't a point value). SCOPE.md fever-neutral passage
+rewritten; citation breakdown corrected to sum to the live 83.
+
+177 likelihoods, 94 invented, 47%. 174 tests pass.

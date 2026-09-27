@@ -308,6 +308,55 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
             "pleuritic chest pain in 118 of 360 confirmed acute PE patients",
         ),
     ),
+    # Two more cells from the same Firenze table (Miniati 2012, PMC3288010,
+    # Table 3), read while sourcing exam:hypoxia. Dyspnoea was the last PE
+    # cell still invented; fever was a Merck narrative conversion ("can
+    # occur" -> 0.30) that a direct count at this project's own threshold
+    # now overrides by the precedence rule below (literature beats
+    # narrative).
+    ("pulmonary_embolism", "dyspnoea_at_rest"): measured(
+        0.806,
+        Citation(
+            "MINIATI-2012",
+            "PLoS ONE 7(2):e30891, Firenze sample, Table 3",
+            "dyspnoea in 290 of 360 confirmed acute PE patients (sudden "
+            "onset 281, gradual onset 9)",
+        ),
+        low=0.76,
+        high=0.84,
+        note="the questionnaire asked about dyspnoea 'during exertion or at "
+             "rest' and does not split the two -- the same generic mapping "
+             "already used for pneumonia's and asthma's dyspnoea_at_rest "
+             "cells. Courtney 2010 (confirmed VTE, n=568) gives 79.0%, "
+             "inside the band. Invented value was 0.80, so this confirms "
+             "rather than corrects it.",
+    ),
+    ("pulmonary_embolism", "fever"): measured(
+        0.042,
+        Citation(
+            "MINIATI-2012",
+            "PLoS ONE 7(2):e30891, Firenze sample, Table 3",
+            "fever >38C in 15 of 360 confirmed acute PE patients (5% across "
+            "both samples, n=800)",
+        ),
+        low=0.02,
+        high=0.07,
+        note="replaces the Merck narrative conversion ('fever can occur' -> "
+             "0.30 by the fixed rubric), which SCOPE.md had already flagged "
+             "as landing on the marginal and being recorded rather than "
+             "adjusted. Threshold >38C matches this project's definition "
+             "exactly. A sevenfold correction, and in the direction that "
+             "makes fever argue against PE rather than being neutral about "
+             "it.",
+    ),
+    # Not taken, and recorded because it is a contradiction rather than a
+    # gap: PE's productive_cough is a Merck narrative conversion at 0.20
+    # ("less common symptoms include cough"), and the same Miniati table
+    # counts *any* new cough in 14 of 360 (4%). Productive cough is a subset
+    # of cough, so 4% is a ceiling the current value exceeds fivefold. A
+    # ceiling is not a point value, so nothing is written in its place yet --
+    # but the 0.20 is now known to be wrong in direction and roughly in size,
+    # not merely unverified.
     ("pulmonary_embolism", "leg_swelling"): measured(
         0.175,
         Citation(

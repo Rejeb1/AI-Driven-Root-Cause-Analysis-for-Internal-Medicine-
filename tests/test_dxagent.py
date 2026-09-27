@@ -1077,7 +1077,14 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     # Two, then one after the tachycardia column was sourced: the unweighted
     # arm now commits fx-009 as COPD rather than pneumonia, and gets fx-010
     # right. Still a wrong commit the weighting prevents.
-    assert fixture_wrong_commits(False) == 1
+    #
+    # Two again after PE's fever cell was measured (Miniati 2012, 4% at
+    # >38C, replacing a Merck "can occur" -> 0.30). fx-009 is a febrile PE
+    # and still commits as COPD; fx-010 (an ACS) now commits as pulmonary
+    # oedema on this arm too. The weighted arm still commits neither -- the
+    # gap this assertion exists to record is back to two, measured, not
+    # chosen.
+    assert fixture_wrong_commits(False) == 2
 
 
 def _superseded_test_decisive_tests_do_not_repair(kb, cases):
@@ -1416,6 +1423,18 @@ def test_sourcing_repaired_the_buried_diagnosis(kb):
     evidence that the diagnosis of *why* the old result happened was right,
     and that the cost of an invented number is not spread evenly: three of
     them, on one disease, were holding the whole failure in place.
+
+    The repair did not survive a measurement. Miniati 2012 counted fever
+    (>38C, this project's threshold) in 15 of 360 confirmed PE patients --
+    4%, not 0.30. The fixed rubric had turned "can occur" into a number
+    seven times too high, and the invented 0.15 it replaced was closer to
+    the truth. With fever measured, pulmonary embolism is buried again on
+    this evidence: fourth on both knowledge bases. The textbook sentence was
+    faithfully transcribed and still wrong as a frequency, which is the
+    standing caveat on every NARRATIVE-tier value in this file, now
+    demonstrated rather than assumed. What survives is the mechanism the
+    second half of this test pins: correlation weighting still lifts PE
+    (0.037 -> 0.124), it just no longer lifts it to first.
     """
     from dxagent.datasets.fixtures import build_knowledge_base as build
 
@@ -1452,13 +1471,19 @@ def test_sourcing_repaired_the_buried_diagnosis(kb):
     plain = BayesianProposer(build(correlated=False)).propose(confirmatory)
     assert plain.top.label == "community_acquired_pneumonia"
 
-    # With correlation weighting it still is retrieved, which is the point.
-    # Four correlated negatives about PE are not four independent penalties,
-    # and once they stop being counted as such a positive CTPA is enough even
-    # against the lower prior.
+    # With correlation weighting it used to be retrieved. Not any more: once
+    # PE's fever was measured at 4% (see docstring), a febrile, productive
+    # presentation argues against embolism hard enough that a positive CTPA
+    # and the correlation discount together leave it fourth, behind COPD,
+    # pneumonia and asthma. Correlation still lifts it roughly threefold --
+    # the mechanism is intact, the evidence it acts on is weaker.
     aware = BayesianProposer(build(correlated=True)).propose(confirmatory)
-    assert aware.top.label == "pulmonary_embolism"
-    assert aware.probability_of("pulmonary_embolism") < 0.5
+    assert aware.top.label == "copd_exacerbation"
+    labels = [h.label for h in aware.hypotheses]
+    assert labels.index("pulmonary_embolism") + 1 == 4
+    assert aware.probability_of("pulmonary_embolism") > 3 * plain.probability_of(
+        "pulmonary_embolism"
+    )
 
 
 def test_state_records_realised_information_gain(kb, cases):
@@ -2052,14 +2077,20 @@ def test_correlation_survives_the_sourcing_that_removed_its_prop():
     # fourth to third instead of third to first. The mechanism is unchanged
     # and still worth more than five-fold; what changed is how much there is
     # to lift with.
-    assert (plain_rank, aware_rank) == (4, 3), "correlation still moves the rank"
-    assert aware_p > 4 * plain_p, f"a lift, not a nudge: {plain_p:.3f} -> {aware_p:.3f}"
     # Re-measured after crackles: ranks unchanged, probabilities moved
     # (0.046 -> 0.218, was different before). The mechanism is stable across
     # three sourcing passes now; the magnitudes it acts on keep changing.
+    #
+    # Moved again when PE's fever was measured (0.30 narrative -> 0.042,
+    # Miniati 2012): this evidence set includes fever present, so embolism
+    # starts much further back -- sixth unweighted at 0.6%, fourth weighted
+    # at 8%. Correlation still moves it two places and more than tenfold;
+    # the lift is larger in ratio and smaller in what it reaches.
+    assert (plain_rank, aware_rank) == (6, 4), "correlation still moves the rank"
+    assert aware_p > 4 * plain_p, f"a lift, not a nudge: {plain_p:.3f} -> {aware_p:.3f}"
 
     # Pinned so a later move is noticed.
-    assert plain_p < 0.10 < aware_p < 0.50
+    assert plain_p < 0.01 < aware_p < 0.10
 
     # The case, run properly, is no longer committed -- and the precise shape
     # of that matters more than the headline.
@@ -2100,8 +2131,9 @@ def test_correlation_survives_the_sourcing_that_removed_its_prop():
     # rather than pneumonia -- COPD's tachycardia was also sourced down,
     # bringing it closer -- and pulmonary embolism sits fifth rather than
     # third. Escalation is what this test protects, and it still escalates.
+    # Sixth after PE's fever was measured at 4% -- fx-009 is febrile.
     labels = [h.label for h in outcome.differential.hypotheses]
-    assert labels.index("pulmonary_embolism") + 1 == 5
+    assert labels.index("pulmonary_embolism") + 1 == 6
 
 
 # --------------------------------------------------------------------------
