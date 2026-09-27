@@ -148,6 +148,9 @@ class GeminiLLM:
             system_instruction=system or None,
             max_output_tokens=max_tokens,
             temperature=0.0,
+            # No tools are ever passed; left on, the SDK warns about automatic
+            # function calling on every call, which reads like a fault.
+            automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
         )
 
         for attempt in range(self.max_retries):
