@@ -33,8 +33,20 @@ above 10%, and no guideline's diagnostic criteria point elsewhere (a
 troponin rise with ST changes for myocardial infarction; a positive CTPA
 for PE). Otherwise it escalates. On 20 real published cases it commits 7
 times (all 7 correct) and escalates 13.
-*Is escalating on 12 of 20 real cases too cautious, about right, or not
-cautious enough? Are 65% / 15 points / 10% sensible thresholds?*
+What the confidence threshold trades, measured on every case set
+(correct / wrong / escalated; `scripts/gate_sweep.py` reproduces it):
+
+| Commit when top diagnosis reaches | 20 real cases | 10 fixtures | 5 hard cases |
+|---|---|---|---|
+| 50–55% | 7 / **2** / 11 | 7 / 0 / 3 | 3 / 0 / 2 |
+| 60–65% (current: 65%) | 7 / 0 / 13 | 6 / 0 / 4 | 3 / 0 / 2 |
+| 70% | 5 / 0 / 15 | 4 / 0 / 6 | 3 / 0 / 2 |
+| 75–80% | 3 / 0 / 17 | 4 / 0 / 6 | 2–3 / 0 / 2–3 |
+
+The 15-point margin rule changed nothing anywhere between 5 and 25
+points, and the 10% time-critical tolerance changed one hard case at 5%.
+*Is escalating on 13 of 20 real cases too cautious, about right, or not
+cautious enough? Which row would you choose?*
 
 **1.2 Pulmonary embolism workup trigger.**
 A D-dimer (then imaging if positive) is required before any commit
