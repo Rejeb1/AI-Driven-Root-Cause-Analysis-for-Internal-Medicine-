@@ -267,7 +267,16 @@ QUARTILE_BOUNDS: tuple[tuple[str, str, float, float, str, str], ...] = (
     # but does not supply the right value, and a point chosen inside
     # [0, 0.039] would be an assumption this file refuses elsewhere. The
     # audit reporting one failure here is the audit working: it names a
-    # number the knowledge base knows is wrong.
+    # number the one cohort read so far contradicts.
+    #
+    # Single-source, and stated as such. Miniati's item was "cough (as a new
+    # symptom)" on a patient questionnaire, which may undercount cough a
+    # clinician would record. The largest PE clinical cohort, PIOPED II
+    # (Stein PD et al., Am J Med 2007, PMC2071924), tabulates presenting
+    # symptoms too, but only its abstract was retrievable here, so it has
+    # not been read and is not cited for a number. Until it or another
+    # cohort is, this is a contradiction with one study, not a settled
+    # error.
     ("pulmonary_embolism", "productive_cough", 0.0, 0.039,
      "PMC3288010 (Miniati 2012) Table 3, 360 confirmed acute PE (Firenze)",
      "new cough of any kind in 14 of 360 (3.9%); productive cough is a "

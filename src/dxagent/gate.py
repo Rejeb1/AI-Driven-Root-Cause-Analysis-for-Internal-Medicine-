@@ -330,6 +330,7 @@ class AbstentionGate:
         differential: Differential,
         disagreement: float = 0.0,
         evidence_fit: float = float("inf"),
+        criteria_met: tuple[str, ...] = (),
     ) -> GateDecision:
         """Assess an already-calibrated differential.
 
@@ -338,6 +339,20 @@ class AbstentionGate:
         case.
         """
         confidence = differential.top.probability
+
+        # A guideline's diagnostic criteria, met by the observed findings,
+        # veto a commit to anything else. Veto only: see
+        # guidelines.DiagnosticCriterion for why this never commits to the
+        # criterion's own diagnosis.
+        vetoing = [c for c in criteria_met if c != differential.top.label]
+        if vetoing:
+            return GateDecision(
+                False,
+                f"guideline criteria for {', '.join(vetoing)} are met by the "
+                f"observed findings, but the model ranks "
+                f"'{differential.top.label}' first",
+                confidence,
+            )
 
         if self.require_grounding and not differential.top.is_grounded:
             return GateDecision(

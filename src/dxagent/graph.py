@@ -50,7 +50,11 @@ from .agent import (
 from .belief import BayesianProposer, ConsensusProposer, Proposer
 from .environment import Case, CaseOracle, Environment
 from .gate import AbstentionGate
-from .guidelines import outstanding_workup, unexamined_signatures
+from .guidelines import (
+    diagnostic_criteria_met,
+    outstanding_workup,
+    unexamined_signatures,
+)
 from .knowledge import InMemoryKnowledgeBase
 from .schemas import (
     Action,
@@ -120,11 +124,12 @@ class GraphAgent:
             else 0.0
         )
         evidence_fit = getattr(self.proposer, "last_evidence_fit", float("inf"))
+        case_state = state["state"]
         decision = self.gate.evaluate(
-            differential, disagreement=disagreement, evidence_fit=evidence_fit
+            differential, disagreement=disagreement, evidence_fit=evidence_fit,
+            criteria_met=diagnostic_criteria_met(case_state.findings),
         )
 
-        case_state = state["state"]
         action, mandated, ruleout, flip = choose_action(
             self.selector, self.kb, case_state, differential, self.limits
         )

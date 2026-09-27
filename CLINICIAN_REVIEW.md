@@ -28,9 +28,11 @@ Each is currently set one way. The question is whether that is acceptable.
 
 **1.1 When should the system commit instead of escalating?**
 It commits only when its top diagnosis reaches 65% probability, leads
-the runner-up by 15 points, and no time-critical diagnosis (PE, ACS)
-remains above 10%. Otherwise it escalates. On 20 real published cases it
-commits 8 times (7 correct, 1 wrong) and escalates 12.
+the runner-up by 15 points, no time-critical diagnosis (PE, ACS) remains
+above 10%, and no guideline's diagnostic criteria point elsewhere (a
+troponin rise with ST changes for myocardial infarction; a positive CTPA
+for PE). Otherwise it escalates. On 20 real published cases it commits 7
+times (all 7 correct) and escalates 13.
 *Is escalating on 12 of 20 real cases too cautious, about right, or not
 cautious enough? Are 65% / 15 points / 10% sensible thresholds?*
 
@@ -52,13 +54,22 @@ also fires on heart attacks and embolisms with ST changes.
 chest-pain population?*
 
 **1.4 Should a positive CT pulmonary angiogram be near-decisive?**
-The system treats a positive CTPA as strong but not overriding evidence
-(it sees filling defects in 83% of PE and 4% of non-PE). In one real case
-(Part 3, case B) a CTPA-confirmed PE was ranked 7th of 8, because fever,
-a productive cough and a *normal* D-dimer each argued against PE and
-together outweighed the scan.
-*In practice, does a positive CTPA end the discussion, or would you also
-weigh the symptoms against it?*
+The model weighs a positive CTPA as strong but not overriding evidence
+(filling defects in 83% of PE, 4% of non-PE). In one real case (Part 3,
+case B), given the whole record *including* a positive CTPA, the model
+still ranks PE 7th of 8 at 5%: fever, a productive cough and a normal
+D-dimer each argue against PE and together outweigh the scan. The system
+now has a guideline veto (ESC 2019: a CTPA filling defect confirms PE)
+that stops it committing to anything else once a positive CTPA is
+observed; it escalates instead. It does not make PE the answer.
+*In practice, does a positive CTPA end the discussion? Should the system
+go further than a veto and treat it as the diagnosis?*
+
+**1.4b A normal D-dimer stops the PE workup.** In the same case the loop
+never ordered the CT scan, because the D-dimer came back normal and the
+system follows the D-dimer-then-imaging sequence. The treating clinicians
+scanned anyway. *When would you image despite a normal D-dimer, and
+should the system?*
 
 **1.5 Fill in the remaining guesses, or leave them neutral?**
 For 55 finding–disease pairs nobody has characterised (e.g. "palpitations
@@ -99,20 +110,22 @@ by a non-clinician. For each, two questions: **(a) is the extraction
 right?** and **(b) what would you have concluded from these findings
 alone?**
 
-**A. PMC13070269 — the one wrong commit.** 32-year-old man, burning
+**A. PMC13070269 — the former wrong commit.** 32-year-old man, burning
 pleuritic chest pain radiating to the left shoulder, breathless, fever
 the day before. Recorded: fever, pleuritic pain, rest dyspnoea,
 tachycardia, ST changes, raised troponin, raised white count; no hypoxia,
-no crackles, non-smoker. **True diagnosis: ACS. System: pneumonia at 76%,
-committed.** *Is pneumonia a defensible reading of these findings, or is
-this a clear error?*
+no crackles, non-smoker. **True diagnosis: ACS. The model ranks pneumonia
+first at 76%;** it used to commit to that, and now escalates because a
+troponin rise with ST changes meets the MI definition. *Is pneumonia a
+defensible reading of these findings, or is ACS clear from them?*
 
 **B. PMC11753817 — PE ranked 7th of 8.** 36-year-old man, a day of
 fever, cough and chest pain, then sudden breathlessness. Recorded: fever,
 productive cough, rest dyspnoea, sudden onset, tachycardia, hypoxia,
 raised white count, **positive CTPA**; D-dimer normal, no consolidation on
-X-ray. **True diagnosis: PE. System: pneumonia first (43%), escalated.**
-*See 1.4.*
+X-ray. **True diagnosis: PE. System: never ordered the CTPA (normal
+D-dimer), ranked pneumonia first (43%) and PE 7th, escalated.** *See 1.4
+and 1.4b.*
 
 **C. PMC4565285 — PE ranked first, not committed.** 78-year-old man,
 seven days of progressive exertional breathlessness, no chest pain.
@@ -143,10 +156,12 @@ estimate can fill them.
 | SpO₂ < 95% | 3 | |
 | exertional chest pain | 20 | |
 
-And one number the project knows is wrong: **productive cough in
-pulmonary embolism** is set at 20% from a textbook sentence ("less common
-symptoms include cough"), but a 360-patient cohort found *any* new cough
-in only 4% of PE patients. *What would you put it at?*
+And one number a study contradicts: **productive cough in pulmonary
+embolism** is set at 20% from a textbook sentence ("less common symptoms
+include cough"), but a 360-patient cohort found *any* new cough in only 4%
+of PE patients (asked on a questionnaire as "cough as a new symptom").
+That is one study; a larger one (PIOPED II) reports symptoms too but
+could not be read here. *What would you put it at?*
 
 ---
 

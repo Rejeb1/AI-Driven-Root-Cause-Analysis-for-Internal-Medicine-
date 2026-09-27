@@ -23,6 +23,7 @@ from .environment import Case, CaseOracle, Environment
 from .gate import AbstentionGate
 from .guidelines import (
     cheap_unexamined,
+    diagnostic_criteria_met,
     outstanding_workup,
     unavailable_workup,
     unexamined_signatures,
@@ -340,7 +341,8 @@ class DiagnosticAgent:
             # escalating everything.
             evidence_fit = getattr(self.proposer, "last_evidence_fit", float("inf"))
             decision = self.gate.evaluate(
-                calibrated, disagreement=disagreement, evidence_fit=evidence_fit
+                calibrated, disagreement=disagreement, evidence_fit=evidence_fit,
+                criteria_met=diagnostic_criteria_met(state.findings),
             )
 
             action, mandated, ruleout, flip = choose_action(

@@ -1103,8 +1103,17 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     # (ST changes included) and requires all four, the rub included. That
     # recovers pmc-12708975 on both arms -- weighted back to one wrong
     # commit, unweighted to two -- with no new wrong commit on any case set.
-    assert wrong_commits(True) == 1
-    assert wrong_commits(False) == 2
+    #
+    # Then a guideline veto closed the last one. When a troponin rise and
+    # ST changes are both observed -- the Fourth Universal Definition of MI
+    # -- the gate refuses to commit to anything but ACS, and escalates.
+    # pmc-13070269 (ACS read as pneumonia at 76%) now escalates on the
+    # weighted arm; the unweighted arm keeps one (pmc-10993079, a COPD read
+    # as pneumonia, which no criterion covers). The cost is paid on the
+    # fixtures: two correct pericarditis commits at 94% (fx-006, fx-h02,
+    # troponin with ST changes -- myopericarditis) now escalate too.
+    assert wrong_commits(True) == 0
+    assert wrong_commits(False) == 1
 
     # Where the safety difference lives now: the fixtures. Without the
     # weighting, four facets of one picture counted as four findings sharpen
@@ -1136,7 +1145,16 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     # fixture, from a wrong commit as oedema to an escalation. fx-009 still
     # commits as COPD. The count has now read 2, 1, 2, 1 across four
     # sourcing passes -- the fixture arm's own instability, restated.
-    assert fixture_wrong_commits(False) == 1
+    #
+    # Zero after the guideline vetoes. fx-009 is a PE with a positive CTPA,
+    # and ESC 2019 says a CTPA filling defect confirms PE, so the gate no
+    # longer lets the unweighted arm commit it as COPD. That was the last
+    # wrong commit correlation weighting prevented on the fixtures, so its
+    # measured safety advantage there is now duplicated by a guideline rule
+    # and reads 0 against 0. The weighting stays on for the reason it was
+    # added -- not counting one clinical picture four times -- which never
+    # depended on this count.
+    assert fixture_wrong_commits(False) == 0
 
 
 def _superseded_test_decisive_tests_do_not_repair(kb, cases):
@@ -3569,8 +3587,10 @@ def test_reading_unlisted_findings_as_atypical_buys_rank_and_costs_safety():
     # Now 2 on the shipped backoff, after COPD's fever measurement exposed
     # pmc-12708975 (see the correlation test); the atypical backoff: 3.
     # Back to 1 once the pericarditis workup was completed from the ESC
-    # criteria; the atypical backoff stays at 3.
-    assert wrong_commits(False) == 1, "the shipped backoff's current wrong commit"
+    # criteria; the atypical backoff stays at 3. Then 0 after the MI
+    # criterion veto; the atypical backoff 2. The gap this test records
+    # survives every move.
+    assert wrong_commits(False) == 0, "the shipped backoff commits nothing wrong"
     assert wrong_commits(True) > wrong_commits(False), (
         "if this stops being true the trade-off has changed and the default "
         "is worth revisiting -- re-measure rather than flipping the flag"
@@ -3668,8 +3688,13 @@ def test_completing_the_grid_buys_rank_and_costs_one_wrong_commit():
     # the shipped grid is back to one wrong commit, the same count as the
     # complete grid (different cases); the complete grid keeps a rank
     # advantage (2.10 against 2.30). Fourth reading in four passes.
-    assert off_wrong == 1, "the shipped grid's current wrong commit"
-    assert on_wrong == off_wrong, "level on wrong commits"
+    #
+    # And after the MI criterion veto: shipped 0 wrong, complete grid 1
+    # (pmc-13305284, pericarditis as pneumonia), complete grid still better
+    # on rank (2.10 against 2.35). The title is true again -- fifth reading
+    # in five passes, which is the finding.
+    assert off_wrong == 0, "the shipped grid commits nothing wrong"
+    assert on_wrong == off_wrong + 1, "completing the grid costs one wrong commit"
     assert on_rank < off_rank, "the complete grid still ranks better"
 
     # No cell is left to fall back on once the grid is complete.
@@ -4251,3 +4276,38 @@ def test_the_two_engines_agree_on_every_case_under_every_configuration():
                     )
 
     assert not mismatches, "engines disagree:\n" + "\n".join(mismatches)
+
+
+def test_guideline_criteria_veto_a_commit_and_never_make_one():
+    """A met diagnostic criterion blocks committing to anything else.
+
+    Fourth Universal Definition of MI (troponin rise with ischaemic ECG
+    change) and ESC 2019 (a CTPA filling defect confirms PE). Veto only: a
+    confident differential for the criterion's own diagnosis still commits,
+    and a met criterion never manufactures a commit the gate would not make.
+    """
+    from dxagent.guidelines import diagnostic_criteria_met
+
+    both = [
+        Finding("lab:raised_troponin", Polarity.PRESENT),
+        Finding("exam:ecg_st_changes", Polarity.PRESENT),
+    ]
+    assert diagnostic_criteria_met(both) == ("acute_coronary_syndrome",)
+    assert diagnostic_criteria_met(both[:1]) == ()
+    assert diagnostic_criteria_met(
+        [Finding("imaging:ctpa_filling_defect", Polarity.PRESENT)]
+    ) == ("pulmonary_embolism",)
+
+    kb = build_knowledge_base()
+    gate = AbstentionGate(kb=kb)
+    confident_other = grounded(kb, {"community_acquired_pneumonia": 0.9, "acute_coronary_syndrome": 0.05})
+    vetoed = gate.evaluate(confident_other, criteria_met=("acute_coronary_syndrome",))
+    assert not vetoed.should_commit
+    assert "guideline criteria" in vetoed.reason
+    assert gate.evaluate(confident_other).should_commit
+
+    confident_same = grounded(kb, {"acute_coronary_syndrome": 0.9, "pericarditis": 0.05})
+    assert gate.evaluate(confident_same, criteria_met=("acute_coronary_syndrome",)).should_commit
+
+    unsure_same = grounded(kb, {"acute_coronary_syndrome": 0.4, "pericarditis": 0.35})
+    assert not gate.evaluate(unsure_same, criteria_met=("acute_coronary_syndrome",)).should_commit

@@ -355,8 +355,10 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
     # counts *any* new cough in 14 of 360 (4%). Productive cough is a subset
     # of cough, so 4% is a ceiling the current value exceeds fivefold. A
     # ceiling is not a point value, so nothing is written in its place yet --
-    # but the 0.20 is now known to be wrong in direction and roughly in size,
-    # not merely unverified.
+    # but the 0.20 is now contradicted, not merely unverified -- by one
+    # cohort whose item was "cough as a new symptom" on a questionnaire.
+    # PIOPED II (PMC2071924) tabulates symptoms too but was not readable
+    # here; see the bound's comment in plausibility_check.py.
     ("pulmonary_embolism", "leg_swelling"): measured(
         0.175,
         Citation(

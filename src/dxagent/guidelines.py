@@ -416,6 +416,81 @@ PERICARDITIS_WORKUP = MandatoryWorkup(
 
 WORKUPS: tuple[MandatoryWorkup, ...] = (PE_WORKUP, ACS_WORKUP, PERICARDITIS_WORKUP)
 
+
+@dataclass(frozen=True)
+class DiagnosticCriterion:
+    """Findings a guideline says meet the criteria for a diagnosis.
+
+    Used by the gate as a veto, never as a verdict: when a criterion is met
+    and the model's top diagnosis is something else, the gate escalates and
+    names the criterion. It does not commit to the criterion's diagnosis --
+    the findings that meet it are also produced by rivals (a myopericarditis
+    raises troponin with ST changes), and settling that is a clinician's job.
+    The worst this can do is turn a correct commit into an escalation.
+
+    Same posterior-independence as the workups: read off observed findings,
+    so a diagnosis the model has dismissed cannot switch its own criterion
+    off.
+    """
+
+    label: str
+    requires_all: tuple[str, ...]
+    rationale: str
+    citation: Citation
+
+    def is_met(self, findings: list[Finding]) -> bool:
+        present = {f.concept for f in findings if f.polarity is Polarity.PRESENT}
+        return all(concept in present for concept in self.requires_all)
+
+
+MI_CRITERION = DiagnosticCriterion(
+    label="acute_coronary_syndrome",
+    requires_all=("lab:raised_troponin", "exam:ecg_st_changes"),
+    rationale=(
+        "A troponin rise with new ischaemic ECG changes meets the definition "
+        "of myocardial infarction. Transcription judgement, stated: this "
+        "vocabulary's ST-change concept does not distinguish ischaemic from "
+        "pericarditic ST elevation, so a myopericarditis also meets it and "
+        "will escalate rather than commit -- which is also what angiography-"
+        "first clinical practice does with that presentation."
+    ),
+    citation=_cite(
+        "UDMI-2018",
+        "Thygesen K et al., Fourth Universal Definition of Myocardial "
+        "Infarction, Eur Heart J 2019;40:237-69",
+        "myocardial infarction: acute myocardial injury (troponin rise above "
+        "the 99th percentile) with clinical evidence of acute ischaemia, "
+        "including new ischaemic ECG changes",
+    ),
+)
+
+PE_CRITERION = DiagnosticCriterion(
+    label="pulmonary_embolism",
+    requires_all=("imaging:ctpa_filling_defect",),
+    rationale=(
+        "A filling defect on CT pulmonary angiography confirms pulmonary "
+        "embolism. Transcription judgement, stated: the guideline's "
+        "recommendation is for a segmental or more proximal defect in a "
+        "patient with non-low clinical probability; this vocabulary records "
+        "a filling defect without its level, and every patient here has "
+        "been imaged because PE was considered."
+    ),
+    citation=_cite(
+        "ESC-PE-2019",
+        "Konstantinides SV et al., Eur Heart J 2020;41:543-603",
+        "accepting the diagnosis of PE, without further testing, is "
+        "recommended when CTPA shows a segmental or more proximal filling "
+        "defect in a patient with intermediate or high clinical probability",
+    ),
+)
+
+CRITERIA: tuple[DiagnosticCriterion, ...] = (MI_CRITERION, PE_CRITERION)
+
+
+def diagnostic_criteria_met(findings: list[Finding]) -> tuple[str, ...]:
+    """Diagnoses whose guideline criteria the observed findings meet."""
+    return tuple(c.label for c in CRITERIA if c.is_met(findings))
+
 # A positive D-dimer, in a patient where PE_WORKUP was already armed, is not
 # one more piece of evidence to weigh against its acquisition cost -- it is
 # the indication for the confirmatory scan. Wells' own rule pairs risk
