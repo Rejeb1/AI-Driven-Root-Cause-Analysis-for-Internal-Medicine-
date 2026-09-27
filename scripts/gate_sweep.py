@@ -54,7 +54,7 @@ def sweep(name: str, values: list[float], shipped: float) -> None:
     kb = build_knowledge_base(correlated=True)
     fixtures, hard = build_cases(), build_hard_cases()
     print(f"\n{name}  (shipped {shipped})     correct/wrong/escalated")
-    print(f"  {'value':>6}   {'real (20)':>10}   {'fixtures':>9}   {'hard':>6}")
+    print(f"  {'value':>6}   {f'real ({len(REAL_CASES)})':>10}   {'fixtures':>9}   {'hard':>6}")
     for value in values:
         kwargs = {name: value}
         mark = "*" if value == shipped else " "

@@ -3198,3 +3198,15 @@ commits, 70%+ loses correct ones; margin inert 5-25pt. Oedema troponin
 ACS 0.778 (assay-era mismatch, BNP precedent). PE cough ceiling softened
 (single-source questionnaire item; PIOPED II unreadable). WRITEUP.md now
 opens with a current-state section. 175 tests pass.
+
+## Fifth real-case pass: 5 cases, COPD yields none
+
+Rule fixed before search (first two per ACS/oedema/asthma/COPD in PMC
+relevance order; unmixed; >=6 findings). Added pmc-9335400, pmc-13222672
+(ACS), pmc-6350673, pmc-5667298 (oedema), pmc-8656026 (asthma); the next
+asthma hit was already in the set; 22 COPD results all mixed, secondary
+or thin. Real 7/0/13 of 20 -> 10/0/15 of 25. New: 3 correct commits,
+2 escalations on "ACS not excluded" (one is the NSTEMI sent home from the
+ED). KB untouched; fixture/hard unchanged; gate_sweep pattern unchanged.
+An earlier pass took PMC4748508 (COPD + stress cardiomyopathy), which
+this pass's mixed rule would exclude; kept, inconsistency recorded.

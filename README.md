@@ -17,11 +17,11 @@ this went near a patient.
 Python 3.10+. The core runs with no install, no API key and no credentials.
 
 ```bash
-python3 -m pytest tests/ -q          # 159 pass, 2 skip
+python3 -m pytest tests/ -q          # 176 pass, 2 skip
 python3 scripts/run_eval.py          # evaluation report, with the required baselines
 python3 scripts/demo.py              # one consultation, as a readable transcript
 python3 scripts/consult.py           # a live consultation -- you play the patient
-python3 scripts/eval_real_cases.py   # 18 real patients from published PMC case reports
+python3 scripts/eval_real_cases.py   # 25 real patients from published PMC case reports
 ```
 
 **Browser UI.** `scripts/consult.py` on a web page instead of a terminal --
@@ -84,13 +84,13 @@ output rather than resting on someone having remembered.
 extracting. Keep `--limit` small at first -- the loop runs about a second per
 case and the baselines add two more passes over the same cases.
 
-**Real-case evaluation.** `dxagent.datasets.real_cases` holds 20 patients
+**Real-case evaluation.** `dxagent.datasets.real_cases` holds 25 patients
 hand-extracted from open-access PMC case reports -- not invented, not
 generated, never seen by the knowledge base. This is a different, much
 smaller thing than the 10 fixture cases: it exists to put a few real
 data points in front of the system, not to support any accuracy claim at
-n=20. No clinician reviewed the extraction. The current result is 7 correct
-commits, 0 wrong, 13 escalations; the last wrong commit (an acute coronary
+n=25. No clinician reviewed the extraction. The current result is 10 correct
+commits, 0 wrong, 15 escalations; the last wrong commit (an acute coronary
 syndrome read as pneumonia) now escalates under a guideline veto, at the
 cost of two correct commits on the fixture sets. That figure has moved with nearly every sourcing pass --
 between 0 and 2 wrong commits over the project's life -- and WRITEUP.md
@@ -100,8 +100,8 @@ concept in this vocabulary -- drove a vocabulary correction, a weighting
 fix and a presentation-triggered workup; the rule that finally fixed it
 was written after seeing the case, and says so.
 See the module docstring for exactly which reports, how
-each finding was read from the source text, the selection rule the second
-eight were chosen under, and every candidate considered and excluded with
+each finding was read from the source text, the selection rules the later
+passes were chosen under, and every candidate considered and excluded with
 the reason.
 
 **PHI screening.** `synthesis.phi_scan` (regex, structured identifiers) runs

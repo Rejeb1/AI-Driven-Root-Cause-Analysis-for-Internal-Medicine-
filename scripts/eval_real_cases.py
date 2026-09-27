@@ -127,7 +127,7 @@ def main() -> int:
     )
     print(wrap(
         f"  Not a benchmark result -- n={len(REAL_CASES)}: ten hand-picked, "
-        "eight chosen by a rule fixed before any was read, no clinician "
+        "the rest chosen by rules fixed before any was read, no clinician "
         "review of the extraction. Reported this small on purpose rather "
         "than not reported at all.",
         indent="  ",

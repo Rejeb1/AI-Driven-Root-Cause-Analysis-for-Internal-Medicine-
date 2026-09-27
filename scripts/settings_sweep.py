@@ -56,7 +56,7 @@ def row(label: str, kb, **limits) -> None:
 
 def header(title: str) -> None:
     print(f"\n{title}          correct/wrong/escalated, mean cost")
-    print(f"  {'':<26} {'real (20)':>19}   {'fixtures (10)':>19}   {'hard (5)':>19}")
+    print(f"  {'':<26} {f'real ({len(REAL_CASES)})':>19}   {'fixtures (10)':>19}   {'hard (5)':>19}")
 
 
 def scaled_costs(kb_factory, factor: float, prefixes: tuple[str, ...]):

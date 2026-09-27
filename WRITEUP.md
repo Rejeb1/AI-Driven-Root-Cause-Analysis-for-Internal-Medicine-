@@ -26,8 +26,8 @@ reader does not have to reconstruct it from the history.
   model settings (gate thresholds, test costs, correlation weights, budgets,
   selector constants) are all invented; `scripts/gate_sweep.py` shows what the
   gate thresholds trade without choosing them.
-- **Real patients** (20 published case reports, extracted by a non-clinician):
-  **7 correct commits, 0 wrong, 13 escalations.** The last wrong commit (an
+- **Real patients** (25 published case reports, extracted by a non-clinician):
+  **10 correct commits, 0 wrong, 15 escalations.** The last wrong commit (an
   ACS read as pneumonia) now escalates because a guideline criterion — troponin
   rise with ST changes, the definition of myocardial infarction — vetoes
   committing to anything else. That veto costs two correct pericarditis
@@ -41,7 +41,7 @@ reader does not have to reconstruct it from the history.
   claims and seven distribution-free bounds; one bound fails on purpose
   (PE's productive cough, contradicted by one cohort, awaiting a better
   source or a clinician's estimate).
-- **Open, and not resolvable from here.** Twenty real patients are too few to
+- **Open, and not resolvable from here.** Twenty-five real patients are too few to
   fit calibration or to settle design choices — several comparisons in the test
   suite have changed direction on almost every sourcing pass, which is itself
   the evidence. The troponin column mixes assay generations and needs a
@@ -1770,6 +1770,29 @@ re-sourcing every troponin cell in one era — recorded as a task, not
 attempted one cell at a time. Two more PE cohorts were searched for a
 cough row; neither has one, so PE's productive-cough ceiling stays
 single-source.
+
+### Five more real patients, and a diagnosis the search could not supply
+
+The selection rule was written before searching: for acute coronary
+syndrome, acute pulmonary oedema, asthma and COPD, the first two
+open-access adult case reports in PMC relevance order with an unmixed
+confirmed diagnosis and at least six extractable findings. It yielded two
+ACS, two oedema, one asthma (the next asthma report was already in the
+set) and **no COPD** — twenty-two COPD results were all mixed with a
+complication, secondary summaries, or too thin. Every exclusion and its
+reason is in the `real_cases` docstring.
+
+Real cases are now **10 correct, 0 wrong, 15 escalated of 25**. Three of
+the five commit correctly (an inferior STEMI presenting as elbow pain, and
+both oedemas); two escalate on "ACS not excluded". One of those is an
+NSTEMI the treating team sent home with a normal ECG and undetectable
+troponin — given exactly that encounter, the system escalates rather than
+discharges, which is a flag and not a diagnosis. The other is a status
+asthmaticus, the cost side of the same rule. The knowledge base was not
+touched, so the fixture and hard-case results are unchanged, and the gate
+sweep reads the same way at n=25 as at n=20: 50–55% confidence adds two
+real wrong commits, 70% loses correct ones. No test pinned the real-case
+counts, so none moved. Twenty-five is still too few for calibration.
 
 ### A configuration inconsistency found while writing this, and fixed
 
