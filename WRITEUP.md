@@ -1430,6 +1430,23 @@ PE relative to the rest of the differential instead. Flipped in
 SCOPE.md's table and `plausibility_check.py`'s claims, the fourth row
 this pattern has caught. 177 likelihoods, 95 invented, 46%.
 
+### A clean miss: lab:raised_bnp, four searches, nothing usable
+
+Invented for 4 of 8 diseases (pneumonia, ACS, COPD, asthma). Pneumonia
+and COPD both turned up cohorts reporting BNP as a median with IQR, the
+familiar non-proportion shape. ACS came closest — a 224-patient NSTEACS
+cohort stratified into exact BNP quartiles (<22.2 / 22.2–81.9 / 82.0–225
+/ >225 pg/mL) — and this is worth spelling out because it is a different
+kind of miss than a plain mean/median: the quartile structure genuinely
+bounds P(BNP > 100 pg/mL) to [0.25, 0.50], since this project's threshold
+falls inside the third quartile rather than on a boundary. A bound is not
+a point value, and turning it into one needs the same distributional
+assumption this file has refused for D-dimer's quartile data before.
+Declined on that basis, not because nothing relevant was found. Asthma:
+nothing relevant at all. All four stay invented — a column with a 0%
+hit rate this pass, recorded plainly rather than dressed up. 177
+likelihoods, 95 invented, 46% (unchanged).
+
 ### A configuration inconsistency found while writing this, and fixed
 
 `scripts/run_eval.py` built its knowledge base **without** correlation

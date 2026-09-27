@@ -1659,6 +1659,21 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
 # workup in the literature that turns up elsewhere in this file, and nothing
 # suggested this column would be different.
 
+# lab:raised_bnp: four searched, none found
+# ---------------------------------------------------------------------------
+# Invented for 4 of 8 diseases (pneumonia, ACS, COPD, asthma). Pneumonia
+# (PMC13414867, CAP vs COVID pneumonia cardiac biomarkers) and COPD
+# (PMC3921082, plasma BNP in AECOPD) both report BNP as a median with IQR,
+# the same non-proportion shape already declined repeatedly elsewhere in
+# this file. ACS (PMC4811277, n=224 NSTEACS) came closest: a table
+# stratified into exact quartiles by BNP (<22.2 / 22.2-81.9 / 82.0-225 /
+# >225 pg/mL, 56 patients each) -- but this project's 100 pg/mL threshold
+# falls inside the third quartile rather than on a boundary, so
+# P(BNP > 100) is only boundable to [0.25, 0.50] from the quartile
+# structure, not a point value, the same quartile-boundary problem this
+# file has already declined for D-dimer. Asthma: nothing relevant found.
+# All four stay invented.
+
 # Load-bearing numbers that no source can supply, and the reason is structural
 # ---------------------------------------------------------------------------
 # `scripts/sensitivity.py` names four likelihoods that currently change a

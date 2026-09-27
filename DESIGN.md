@@ -3097,3 +3097,12 @@ in SCOPE.md + plausibility_check.py (4th row this pattern has caught).
 
 177 likelihoods, 95 invented, 46%. No real-case wrong-commit change.
 174 tests pass.
+
+## lab:raised_bnp: 0/4, a clean miss recorded plainly
+
+Pneumonia, COPD: median/IQR only. ACS (n=224 NSTEACS): exact quartiles
+(<22.2/22.2-81.9/82.0-225/>225 pg/mL) -- this project's 100 pg/mL
+threshold falls inside Q3, so P(BNP>100) only bounds to [0.25,0.50],
+not a point value; same quartile-assumption refusal as D-dimer.
+Asthma: nothing relevant. All four stay invented. Comment-only,
+no fixture change. 174 tests pass.
