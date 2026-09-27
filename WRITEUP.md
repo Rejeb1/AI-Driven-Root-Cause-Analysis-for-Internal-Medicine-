@@ -1794,6 +1794,14 @@ sweep reads the same way at n=25 as at n=20: 50–55% confidence adds two
 real wrong commits, 70% loses correct ones. No test pinned the real-case
 counts, so none moved. Twenty-five is still too few for calibration.
 
+One sourcing search was also run for the asthma cells on the clinician
+sheet (heart rate over 100, SpO₂ under 95%, fever, white count). The
+adult ED cohorts that turned up report only means, or audit whether a vital
+sign was documented rather than its value (Schnyder's Swiss audit;
+a Nigerian two-hospital audit; a prehospital salbutamol series whose
+population is not asthma-only). No cell was written; they stay invented
+and on the sheet.
+
 ### A configuration inconsistency found while writing this, and fixed
 
 `scripts/run_eval.py` built its knowledge base **without** correlation

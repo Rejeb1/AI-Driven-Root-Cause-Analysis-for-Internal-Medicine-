@@ -3210,3 +3210,5 @@ or thin. Real 7/0/13 of 20 -> 10/0/15 of 25. New: 3 correct commits,
 ED). KB untouched; fixture/hard unchanged; gate_sweep pattern unchanged.
 An earlier pass took PMC4748508 (COPD + stress cardiomyopathy), which
 this pass's mixed rule would exclude; kept, inconsistency recorded.
+Asthma tachycardia/SpO2/fever/WCC search: ED cohorts give means or
+documentation rates only (PMC9843545, PMC5126747, PMC13242825); none written.
