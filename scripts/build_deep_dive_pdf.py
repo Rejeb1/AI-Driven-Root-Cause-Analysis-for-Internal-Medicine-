@@ -1039,7 +1039,7 @@ story += [row([
     card("It checks its own inputs", [
         f"{ORDER_CLAIMS} ordering claims over {ORDER_PAIRS} comparisons, "
         f"{len(PC.CLAIMS)} direction claims from the scope document, "
-        f"{len(PC.QUARTILE_BOUNDS)} distribution-free bounds from cohort quartiles, and "
+        f"{len(PC.QUARTILE_BOUNDS)} distribution-free bounds from cohort data, and "
         f"{len(OPERATIONAL_DEFINITIONS)} concepts given the operational threshold "
         "that makes sourcing possible at all."], TEAL_BG, TEAL),
 ])]

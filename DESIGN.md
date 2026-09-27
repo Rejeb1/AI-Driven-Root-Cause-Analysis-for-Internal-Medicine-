@@ -3168,3 +3168,11 @@ clinical-rule-shaped, not a likelihood. Real cases 6/2/12 (was 7/1/12).
 8 re-pins; due-diligence test now asserted over all fixtures;
 complete-grid now favours the grid (3rd direction in 3 passes), stays
 off. 177 likelihoods, 88 invented, 50%. 174 tests pass.
+
+## Subset ceilings added to the bounds audit; one known failure kept
+
+productive_cough ceilings from any-cough counts: asthma <= 0.638
+(Schnyder, invented 0.40 inside), PE <= 0.039 (Miniati, narrative 0.20
+OUTSIDE). PE failure kept on purpose -- the ceiling can't supply a point
+value. Audit wording "from cohort quartiles" -> "from cohort data". 7
+bounds, 1 outside (known). Schnyder smoking declined (no ever-smoked).

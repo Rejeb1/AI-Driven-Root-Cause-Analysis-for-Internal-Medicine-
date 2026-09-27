@@ -253,6 +253,25 @@ QUARTILE_BOUNDS: tuple[tuple[str, str, float, float, str, str], ...] = (
      "PMC4811277, 224 NSTEACS patients stratified into exact BNP quartiles",
      "quartile edges 22.2 / 81.9 / 225 pg/mL; the 100 cutoff sits inside the "
      "third quartile, so between a quarter and a half are above it"),
+    # Subset ceilings -- a second kind of distribution-free bound. A cohort
+    # that counts *any* cough bounds productive cough from above, because
+    # productive cough is a subset of it; no assumption about how the two
+    # relate is needed for the ceiling, only for anything tighter.
+    ("asthma_exacerbation", "productive_cough", 0.0, 0.638,
+     "PMC9843545 (Schnyder 2022) Table 2, 160 adult asthma exacerbations",
+     "cough of any kind in 102 of 160 (63.8%); productive cough is a subset"),
+    # A KNOWN FAILURE, kept failing on purpose. PE's productive_cough is a
+    # Merck narrative conversion at 0.20 ("less common symptoms include
+    # cough"), and the same Miniati table already cited for five PE cells
+    # counts any new cough in 14 of 360. The ceiling proves the 0.20 wrong
+    # but does not supply the right value, and a point chosen inside
+    # [0, 0.039] would be an assumption this file refuses elsewhere. The
+    # audit reporting one failure here is the audit working: it names a
+    # number the knowledge base knows is wrong.
+    ("pulmonary_embolism", "productive_cough", 0.0, 0.039,
+     "PMC3288010 (Miniati 2012) Table 3, 360 confirmed acute PE (Firenze)",
+     "new cough of any kind in 14 of 360 (3.9%); productive cough is a "
+     "subset"),
     # Not written, and recorded: the same table has admission temperature at
     # median 36.4 with Q3 37.0, so fewer than a quarter were febrile on
     # measurement. That bounds measured fever, and this project's fever
@@ -277,7 +296,7 @@ def report_bounds(kb) -> int:
     """Print the quartile-bound audit. Returns the number of failures."""
     failures = bound_failures(kb)
     print()
-    print(f"{len(QUARTILE_BOUNDS)} distribution-free bounds from cohort quartiles")
+    print(f"{len(QUARTILE_BOUNDS)} distribution-free bounds from cohort data (quartiles, subset ceilings)")
     print("  a bound checks an invented value without replacing it -- see")
     print("  QUARTILE_BOUNDS for the sources and where each cutoff fell")
     for label, concept, low, high, _src, _why in QUARTILE_BOUNDS:

@@ -1618,6 +1618,23 @@ the grid, and says so, and the flag stays off because a result that
 flips every pass on twenty cases cannot carry a default. 177
 likelihoods, 88 invented, 50%.
 
+### The audit now names a number the knowledge base knows is wrong
+
+Two ceilings added to the bounds audit, a second kind of distribution-free
+bound alongside the quartile ones: a cohort that counts *any* cough caps
+productive cough, which is a subset of it. Schnyder 2022 (160 asthma
+exacerbations) counts cough in 64%, so asthma's invented 0.40 sits inside
+its ceiling. Miniati 2012 (360 PE) counts any new cough in 3.9%, and PE's
+narrative 0.20 exceeds that fivefold. The ceiling proves the value wrong
+without supplying the right one, and a point chosen inside [0, 0.039]
+would be an assumption this file refuses elsewhere — so the audit is left
+reporting one failure on purpose, labelled as known. That is better than
+the contradiction living only in a code comment: `plausibility_check.py`
+now says, every time it runs, that one number in the knowledge base is
+wrong and which one. Schnyder's smoking rows were read and declined (only
+current vs never, 41% unknown; this project's concept is ever-smoked).
+No coverage change: 177 likelihoods, 88 invented, 50%.
+
 ### A configuration inconsistency found while writing this, and fixed
 
 `scripts/run_eval.py` built its knowledge base **without** correlation
