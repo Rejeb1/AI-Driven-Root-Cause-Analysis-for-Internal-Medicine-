@@ -1433,6 +1433,49 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
              "specific time window -- taken as the closest available "
              "match rather than left invented over that gap.",
     ),
+    # Two more rows of the same Hess 2012 table (reference "a" in the
+    # review's Table 1, PMC5468083), same cohort and population caveat as
+    # the pleuritic_pain and sudden_onset cells above.
+    ("acute_coronary_syndrome", "exertional_chest_pain"): measured(
+        0.533,
+        Citation(
+            "HESS-2012",
+            "Hess EP et al., Ann Emerg Med 2012;59(2):115-25, Table 1",
+            "chest pain worse with exertion: sensitivity 53.3%, specificity "
+            "71.1% for a 30-day cardiac event among 2,718 emergency-"
+            "department chest-pain patients",
+        ),
+        low=0.48,
+        high=0.58,
+        note="corrects the invented 0.80 downward. The row sits under the "
+             "review's 'timing of the pain' heading, so it is about the "
+             "chest pain, not breathlessness on exertion -- the confusion "
+             "that got a DDXPlus mapping for this cell withdrawn earlier "
+             "(see SCOPE.md). Nearly half of true cardiac events here did "
+             "not report exertional pain, which is the clinically familiar "
+             "point that typical angina is less typical than taught.",
+    ),
+    ("acute_coronary_syndrome", "dyspnoea_at_rest"): measured(
+        0.47,
+        Citation(
+            "HESS-2012",
+            "Hess EP et al., Ann Emerg Med 2012;59(2):115-25, Table 1",
+            "dyspnoea: sensitivity 47.0%, specificity 61.3% for a 30-day "
+            "cardiac event among 2,718 emergency-department chest-pain "
+            "patients; a second cohort in the same review (Milner 2001) "
+            "gives 41.9%",
+        ),
+        low=0.42,
+        high=0.52,
+        note="generic 'dyspnoea', the same mapping already used for "
+             "pneumonia, asthma and PE. Invented value was 0.45, so this "
+             "confirms rather than corrects it; the band spans both cohorts. "
+             "Not taken from the same table: 'acute ischemic ECG changes' "
+             "(71%, Body 2010) for exam:ecg_st_changes -- it includes T-wave "
+             "inversion, the broader-category mis-mapping already refused "
+             "for pericarditis's 'any abnormal ECG'; 'ST depression >0.5mm' "
+             "(17.3%) is narrower than the concept, missing elevation.",
+    ),
     # Second cell in sudden_onset. Asthma has a named, studied phenotype
     # for exactly this concept -- "rapid onset" attacks, distinct from the
     # commoner slow/gradual presentation -- so unlike ACS's borrowed

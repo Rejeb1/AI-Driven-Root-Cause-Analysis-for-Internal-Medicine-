@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 94 of its 177 likelihoods are invented, no
+an unfinished feature — because 92 of its 177 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -131,7 +131,7 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**94 of 177 likelihoods are invented.** That is the number, stated on its own
+**92 of 177 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project. It was 89 of
 153 until the pericardial columns were added (§5): two concepts the real cases
 showed were missing, two sourced cells for pericarditis, and 21 invented rival
@@ -391,7 +391,7 @@ celebrate.
 ### Nothing was checking the numbers themselves
 
 Every test in this project checks outputs. The knowledge base is inputs, and
-for most of its life nothing looked at it: 94 of 177 likelihoods are invented,
+for most of its life nothing looked at it: 92 of 177 likelihoods are invented,
 and the only scrutiny they got was whichever ones happened to change a case.
 
 Reading each column sorted, against what the diseases actually do, found five
@@ -859,7 +859,7 @@ Measured on every set, cells sourced without looking at any case: fixtures
 real patients **4 → 6 correct, 0 wrong**, the SLE pericarditis and the
 second pneumonia now committing; held-out ECE 0.286 → 0.260, coverage 43%
 → 57%. Three fixture-level pins moved with it and are re-pinned with the
-reasoning. 177 likelihoods, 94 invented, coverage 47%.
+reasoning. 177 likelihoods, 92 invented, coverage 48%.
 
 ### One cell at a time: crackles
 
@@ -1147,8 +1147,8 @@ means a higher P(pleuritic pain absent | ACS) — 0.935 against the old
 diagnosis on a different patient. Sourcing this cell helped and hurt on
 two different real cases simultaneously, in the direction the mechanism
 actually implies both times. Nothing here was chosen for that effect; it
-is what checking an untested assumption produced. 177 likelihoods, 94
-invented, 47%. 174 tests pass; no wrong-commit-count assertion needed
+is what checking an untested assumption produced. 177 likelihoods, 92
+invented, 48%. 174 tests pass; no wrong-commit-count assertion needed
 re-pinning because the count did not move, only which case's confidence
 and which other case newly commits.
 
@@ -1279,8 +1279,8 @@ WCC was reported as a mean, a median, a per-unit odds ratio, or a bare
 qualitative remark in all but two. A threshold-crossing proportion — the
 one shape this project can use without a distributional assumption — is
 the exception in this literature, not the norm. Further searching this
-specific column is not expected to find a seventh. 177 likelihoods, 94
-invented, 47%.
+specific column is not expected to find a seventh. 177 likelihoods, 92
+invented, 48%.
 
 ### A twentieth real case, added for the calibration gap — and an unforced piece of evidence for correlation weighting
 
@@ -1487,6 +1487,33 @@ such in `fixtures.py`. The general lesson is the one every NARRATIVE-tier
 number carries as a caveat, now demonstrated twice on one disease from one
 table: a faithfully transcribed sentence can still be a wrong frequency.
 177 likelihoods, 94 invented, 47%.
+
+### Two more rows from an open table, and a relation that was never stable
+
+The Hess 2012 ACS table already cited twice had two more rows matching
+invented ACS cells. "Chest pain worse with exertion" — filed under the
+review's *timing of the pain* heading, so it is about the pain, not the
+exertional breathlessness that got an earlier DDXPlus mapping for this
+cell withdrawn — was 53.3% in true cardiac events, against an invented
+0.80: nearly half of real ACS did not report exertional pain. Dyspnoea
+was 47.0% against an invented 0.45, a confirmation. The same table's ECG
+rows were read and not taken: "acute ischaemic ECG changes" includes
+T-wave inversion (the broader-category mapping already refused for
+pericarditis), and "ST depression >0.5 mm" misses elevation.
+
+Three pinned tests moved, and one of them lost its only assertion. The
+correlation test had kept a single claim about the fixture arms on the
+grounds that it was stable: weighting costs more turns because it makes
+the loop less certain. After this pass the weighted arm cost 15.48 against
+15.65 — reversed by under two tenths of a unit across ten saturated cases.
+It had never been stable, only unreversed so far, and it is removed rather
+than flipped. The unweighted fixture arm's wrong commits read 1 again
+(fx-010, the ACS fixture, now escalates); across four passes that count
+has gone 2, 1, 2, 1. And the complete-grid trade reopened: filling every
+remaining cell now costs one net wrong commit on the real cases (two
+pericarditis cases, against the shipped arm's one ACS) for a rank gain of
+0.05, so the test's original title is true again. Real cases on the
+shipped configuration: unchanged. 177 likelihoods, 92 invented, 48%.
 
 ### A configuration inconsistency found while writing this, and fixed
 

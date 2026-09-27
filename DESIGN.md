@@ -3122,3 +3122,13 @@ replaced (ceiling isn't a point value). SCOPE.md fever-neutral passage
 rewritten; citation breakdown corrected to sum to the live 83.
 
 177 likelihoods, 94 invented, 47%. 174 tests pass.
+
+## Hess 2012 re-read: ACS exertional pain 0.80 -> 0.53, dyspnoea 0.45 -> 0.47
+
+Two more rows of the already-cited table. ECG rows read and declined
+(ischaemic changes include T inversion; ST depression misses elevation).
+Re-pins: correlation test's "stable" cost assertion removed (weighted
+15.48 vs plain 15.65 -- a coin that had landed one way for a while);
+unweighted fixture wrong commits 2 -> 1 (fx-010 now escalates);
+complete-grid trade reopened (2 wrong vs shipped 1, rank gain 0.05).
+Real cases unchanged. 177 likelihoods, 92 invented, 48%. 174 tests pass.
