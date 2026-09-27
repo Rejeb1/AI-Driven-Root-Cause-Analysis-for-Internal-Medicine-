@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 91 of its 177 likelihoods are invented, no
+an unfinished feature — because 88 of its 177 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -131,7 +131,7 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**91 of 177 likelihoods are invented.** That is the number, stated on its own
+**88 of 177 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project. It was 89 of
 153 until the pericardial columns were added (§5): two concepts the real cases
 showed were missing, two sourced cells for pericarditis, and 21 invented rival
@@ -391,7 +391,7 @@ celebrate.
 ### Nothing was checking the numbers themselves
 
 Every test in this project checks outputs. The knowledge base is inputs, and
-for most of its life nothing looked at it: 91 of 177 likelihoods are invented,
+for most of its life nothing looked at it: 88 of 177 likelihoods are invented,
 and the only scrutiny they got was whichever ones happened to change a case.
 
 Reading each column sorted, against what the diseases actually do, found five
@@ -859,7 +859,7 @@ Measured on every set, cells sourced without looking at any case: fixtures
 real patients **4 → 6 correct, 0 wrong**, the SLE pericarditis and the
 second pneumonia now committing; held-out ECE 0.286 → 0.260, coverage 43%
 → 57%. Three fixture-level pins moved with it and are re-pinned with the
-reasoning. 177 likelihoods, 91 invented, coverage 49%.
+reasoning. 177 likelihoods, 88 invented, coverage 50%.
 
 ### One cell at a time: crackles
 
@@ -1147,8 +1147,8 @@ means a higher P(pleuritic pain absent | ACS) — 0.935 against the old
 diagnosis on a different patient. Sourcing this cell helped and hurt on
 two different real cases simultaneously, in the direction the mechanism
 actually implies both times. Nothing here was chosen for that effect; it
-is what checking an untested assumption produced. 177 likelihoods, 91
-invented, 49%. 174 tests pass; no wrong-commit-count assertion needed
+is what checking an untested assumption produced. 177 likelihoods, 88
+invented, 50%. 174 tests pass; no wrong-commit-count assertion needed
 re-pinning because the count did not move, only which case's confidence
 and which other case newly commits.
 
@@ -1279,8 +1279,8 @@ WCC was reported as a mean, a median, a per-unit odds ratio, or a bare
 qualitative remark in all but two. A threshold-crossing proportion — the
 one shape this project can use without a distributional assumption — is
 the exception in this literature, not the norm. Further searching this
-specific column is not expected to find a seventh. 177 likelihoods, 91
-invented, 49%.
+specific column is not expected to find a seventh. 177 likelihoods, 88
+invented, 50%.
 
 ### A twentieth real case, added for the calibration gap — and an unforced piece of evidence for correlation weighting
 
@@ -1566,6 +1566,57 @@ so the trade that test's title describes no longer exists in either
 direction; `complete_grid` stays off on the argument that never depended
 on those counts (63 invented numbers that buy nothing measurable). 177
 likelihoods, 91 invented, 49%.
+
+### Three COPD cells, half the knowledge base sourced — and a real patient pays for it
+
+Two emergency-department COPD cohorts supplied three cells. Freund et al.
+(Intern Emerg Med 2024, 344 AECOPD presentations) counts fever above 38°C
+— this project's exact threshold; COPD's fever cell had been declined
+earlier only because the previous cohort used 37°C — at **11%**, against
+an invented 0.30; and increased dyspnoea at 91%, against 0.70. (The fever
+row is internally inconsistent: 36 in the total column, 40 across the
+groups. The band spans both.) Winther et al. (Respir Res 2017, the ACE 2
+study) gives peripheral oedema in 31 of 84 confirmed AECOPD, 37%, against
+an invented 0.20. With those, **half of the knowledge base's 177
+likelihoods now carry a citation.**
+
+The fever cell cost a real patient. pmc-12708975 is a pericarditis with
+fever, ST changes and a documented friction rub; it had committed
+correctly, and now commits as pneumonia at 67%. Traced rather than
+assumed, reverting each new cell in turn: the COPD fever value alone does
+it. It is not the arithmetic — given the whole record, the single-pass
+posterior still ranks pericarditis first at 72% with either COPD value.
+It is the loop's question order. With the corrected value, the loop
+commits after twelve questions without ever examining the friction rub
+the patient has; with the old value, information-gain ordering happened to
+reach it, and the pericarditis workup followed.
+
+That is a structural gap, and a sourced number exposed it rather than
+created it. Two mechanisms exist to stop exactly this, and neither was
+obliged to fire. The ESC-based pericarditis workup triggers on pleuritic
+pain or a rub; this report never records pleuritic pain, and the rub is
+what went unasked. The unexamined-rival disclosure lists a rival only when
+at least one of its *defining* findings is observed present; fever,
+tachycardia and ST changes are not pericarditis-defining in this
+project's claims, so pericarditis went undisclosed on the commit. Whether
+the loop reached the diagnosis was down to question order — exactly the
+fragility the workups were written to remove, and here they did not cover
+the case. The number stays. What would fix the gap is a clinical
+decision (should ST changes with fever trigger the pericarditis workup?),
+not a likelihood.
+
+Real cases on the shipped configuration: **6 correct, 2 wrong, 12
+escalated of 20** (was 7 / 1 / 12). Eight pinned tests moved; each
+records the measured value and why. Two are worth naming. The
+due-diligence test's case (fx-001) now commits at turn zero in both arms
+under its permissive test gate — the rule working on a case that no
+longer exercises it — so the property is now asserted across all ten
+fixtures instead of one hand-picked case. And the complete-grid test has
+now pointed three different ways in three consecutive passes (costs one
+wrong commit, costs nothing, saves one); it currently favours completing
+the grid, and says so, and the flag stays off because a result that
+flips every pass on twenty cases cannot carry a default. 177
+likelihoods, 88 invented, 50%.
 
 ### A configuration inconsistency found while writing this, and fixed
 

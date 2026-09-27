@@ -3152,3 +3152,19 @@ cell -- labelled so; contrasted in the comment with panic troponin
 95% CI. Caveats: early-STEMI timing, hs-troponin reclassification.
 Complete-grid test: now 1 vs 1 wrong, rank tied 2.35 -- trade gone.
 177 likelihoods, 91 invented, 49%. 174 tests pass.
+
+## COPD fever/dyspnoea/leg swelling: 50% sourced, one real case lost
+
+Freund 2024 (n=344 ED AECOPD): fever >38C 11% (0.30), dyspnoea 91%
+(0.70); source's fever total inconsistent 36 vs 40, band spans both.
+Winther 2017 ACE 2: peripheral oedema 31/84 (0.20 -> 0.37).
+Cost: pmc-12708975 (pericarditis, fever+ST+rub) commits as pneumonia 67%.
+Attributed by single-cell reversion to COPD fever alone; single-pass on
+full record still pericarditis 72% -- it's loop question order: commits
+after 12 questions with the rub never examined. Neither safeguard fires:
+pericarditis workup triggers on pleuritic pain/rub (neither observed);
+unexamined disclosure needs a present defining finding (none). Gap is
+clinical-rule-shaped, not a likelihood. Real cases 6/2/12 (was 7/1/12).
+8 re-pins; due-diligence test now asserted over all fixtures;
+complete-grid now favours the grid (3rd direction in 3 passes), stays
+off. 177 likelihoods, 88 invented, 50%. 174 tests pass.

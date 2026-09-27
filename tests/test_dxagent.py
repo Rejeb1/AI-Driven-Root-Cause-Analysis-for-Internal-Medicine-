@@ -660,8 +660,18 @@ def test_due_diligence_prevents_turn_zero_commit(kb, cases):
         gate=AbstentionGate(kb, min_confidence=0.3, min_margin=0.0),
         limits=LoopLimits(due_diligence_gain=0.10, **limits),
     )
-    case = cases[0]
-    assert len(careful.run(case).steps) > len(eager.run(case).steps)
+    # This used to check cases[0] (fx-001) alone. After COPD's fever was
+    # measured (0.30 -> 0.11), fx-001's volunteered fever and productive
+    # cough concentrate the posterior enough that no action clears the 0.10
+    # gain bar, and both arms stop at turn zero under this test's
+    # deliberately permissive gate -- the rule working, on a case that no
+    # longer exercises it. Rather than hand-pick a replacement case, the
+    # property is asserted over the whole fixture set: the careful arm never
+    # asks less, and on some cases asks more.
+    careful_steps = [len(careful.run(c).steps) for c in cases]
+    eager_steps = [len(eager.run(c).steps) for c in cases]
+    assert all(c >= e for c, e in zip(careful_steps, eager_steps))
+    assert sum(careful_steps) > sum(eager_steps)
 
 
 def test_flip_action_is_silent_once_nothing_can_change_the_answer(kb, cases):
@@ -808,11 +818,16 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
     # fx-009 again on its own; after crackles it does too, for the same
     # reason as the unweighted arm above. The paragraph below is kept as the
     # record of the reasoning that held between the changes.
+    #
+    # fx-005 joined them after three COPD cells were measured (fever 0.30 ->
+    # 0.11, dyspnoea 0.70 -> 0.91, leg swelling 0.20 -> 0.37): it is a COPD
+    # exacerbation with leg swelling absent, which now argues against COPD
+    # harder than before, and asthma edges ahead on this arm (44%).
     assert [
         case.case_id
         for case in cases
         if aware.run(case).differential.top.label != case.diagnosis
-    ] == ["fx-009", "fx-010"]
+    ] == ["fx-005", "fx-009", "fx-010"]
     # fx-009 is no longer recoverable on this arm by any mechanism. Its
     # troponin and its BNP are both normal, and both of those likelihoods for
     # pulmonary embolism have since been sourced upward -- 0.25 to 0.53 and
@@ -1066,8 +1081,24 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     # case's outcome in mind. Coincidence, not correction, and worth
     # stating that plainly rather than letting a tidy-looking reversal
     # imply otherwise.
-    assert wrong_commits(True) == 1
-    assert wrong_commits(False) == 1
+    #
+    # And a second shipped wrong commit, caused by a correct number. COPD's
+    # fever was measured at 11% (Freund 2024) against an invented 0.30, and
+    # pmc-12708975 -- a pericarditis with fever and a documented friction
+    # rub -- now commits as pneumonia at 67%. Traced, not assumed: on the
+    # full record the single-pass posterior still ranks pericarditis first
+    # (72%) with either COPD value. What changed is the loop's question
+    # order, which now commits after twelve questions without ever
+    # examining the friction rub the patient has. The ESC pericarditis
+    # workup triggers on pleuritic pain or a rub, and this report never
+    # records pleuritic pain; the unexamined-rival disclosure needs one
+    # pericarditis-defining finding present, and none of this patient's
+    # recorded findings is one. So nothing in the loop was obliged to look,
+    # and with the old COPD value it happened to by information-gain order.
+    # The number stays; the gap it exposed is written up in WRITEUP.md.
+    # Unweighted: three wrong (adds pmc-10993079, a COPD read as pneumonia).
+    assert wrong_commits(True) == 2
+    assert wrong_commits(False) == 3
 
     # Where the safety difference lives now: the fixtures. Without the
     # weighting, four facets of one picture counted as four findings sharpen
@@ -1493,10 +1524,15 @@ def test_sourcing_repaired_the_buried_diagnosis(kb):
     # pneumonia and asthma. Correlation still lifts it roughly threefold --
     # the mechanism is intact, the evidence it acts on is weaker.
     aware = BayesianProposer(build(correlated=True)).propose(confirmatory)
-    assert aware.top.label == "copd_exacerbation"
+    # COPD led here until its own fever was measured (0.30 -> 0.11); now
+    # pneumonia leads on both knowledge bases. PE stays fourth, and the
+    # lift is 0.048 -> 0.143, just under threefold where it had been just
+    # over -- asserted as "well over double", the mechanism's size rather
+    # than a threshold chosen to sit on either side of 3.
+    assert aware.top.label == "community_acquired_pneumonia"
     labels = [h.label for h in aware.hypotheses]
     assert labels.index("pulmonary_embolism") + 1 == 4
-    assert aware.probability_of("pulmonary_embolism") > 3 * plain.probability_of(
+    assert aware.probability_of("pulmonary_embolism") > 2.5 * plain.probability_of(
         "pulmonary_embolism"
     )
 
@@ -2146,9 +2182,11 @@ def test_correlation_survives_the_sourcing_that_removed_its_prop():
     # rather than pneumonia -- COPD's tachycardia was also sourced down,
     # bringing it closer -- and pulmonary embolism sits fifth rather than
     # third. Escalation is what this test protects, and it still escalates.
-    # Sixth after PE's fever was measured at 4% -- fx-009 is febrile.
+    # Sixth after PE's fever was measured at 4% -- fx-009 is febrile. Fourth
+    # after COPD's fever was measured too (0.30 -> 0.11): COPD stops being as
+    # good an explanation of a febrile patient, and PE moves back up two.
     labels = [h.label for h in outcome.differential.hypotheses]
-    assert labels.index("pulmonary_embolism") + 1 == 6
+    assert labels.index("pulmonary_embolism") + 1 == 4
 
 
 # --------------------------------------------------------------------------
@@ -3516,7 +3554,9 @@ def test_reading_unlisted_findings_as_atypical_buys_rank_and_costs_safety():
     # moved (see the correlation test above for the current one); the
     # atypical backoff carries 3. The trade this test records is the
     # *difference* between the two, not either absolute count.
-    assert wrong_commits(False) == 1, "the shipped backoff's current wrong commit"
+    # Now 2 on the shipped backoff, after COPD's fever measurement exposed
+    # pmc-12708975 (see the correlation test); the atypical backoff: 3.
+    assert wrong_commits(False) == 2, "the shipped backoff's current wrong commits"
     assert wrong_commits(True) > wrong_commits(False), (
         "if this stops being true the trade-off has changed and the default "
         "is worth revisiting -- re-measure rather than flipping the flag"
@@ -3597,9 +3637,21 @@ def test_completing_the_grid_buys_rank_and_costs_one_wrong_commit():
     # What still keeps complete_grid off is the argument that never
     # depended on these counts: it writes 63 invented numbers from one
     # non-clinician in one sitting, and buys nothing measurable for them.
-    assert off_wrong == 1, "the shipped grid's current wrong commit"
-    assert on_wrong == off_wrong, "neither arm is ahead on wrong commits"
-    assert abs(on_rank - off_rank) < 0.05, "the rank gain has gone"
+    #
+    # And now the other way entirely. After three COPD cells were measured,
+    # the shipped grid commits two real cases wrong (pmc-13070269 and the
+    # newly exposed pmc-12708975) and the complete grid only one, with a
+    # better mean rank (2.10 against 2.35). On this measurement completing
+    # the grid is simply better, and that is stated rather than softened.
+    # It stays off because this measurement has now pointed three different
+    # ways in three consecutive passes -- costs one, costs nothing, saves
+    # one -- on 20 cases, and because the 63 values it writes are still one
+    # non-clinician's guesses. A result that flips every pass cannot carry a
+    # default; it is the clearest case yet for the decision wanting a
+    # clinician and more patients rather than this test.
+    assert off_wrong == 2, "the shipped grid's current wrong commits"
+    assert on_wrong == off_wrong - 1, "the complete grid is currently ahead"
+    assert on_rank < off_rank, "and ahead on rank too"
 
     # No cell is left to fall back on once the grid is complete.
     kb = build(correlated=True, complete_grid=True)

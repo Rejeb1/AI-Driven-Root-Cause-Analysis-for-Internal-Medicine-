@@ -1395,6 +1395,67 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         note="inside the [0.25, 0.50] bound the 437-patient admission cohort "
              "gave by quartiles, and at this project's own threshold",
     ),
+    # COPD's fever cell was declined earlier because the only cohort found
+    # (Garcia-Sanz, above) counted temperature above 37C, a different claim
+    # from this project's 38C. A second emergency-department cohort counts
+    # it at 38C exactly. Found while checking a COPD oxygen-saturation
+    # near-miss from the same table (see the exam:hypoxia comment block).
+    ("copd_exacerbation", "fever"): measured(
+        0.11,
+        Citation(
+            "FREUND-2024",
+            "Freund O et al., Intern Emerg Med 2024, PMC11582298, Table 1",
+            "fever > 38C in 36 of 344 emergency-department presentations "
+            "with acute COPD exacerbation (11%)",
+        ),
+        low=0.10,
+        high=0.12,
+        note="corrects the invented 0.30 down nearly threefold. The source "
+             "is internally inconsistent by four patients: its total column "
+             "reads 36 (11%), but its two treatment-group columns (17 of 88, "
+             "23 of 256) sum to 40 (11.6%). The band spans both readings "
+             "rather than choosing one. Population caveat: 16% of the "
+             "cohort had no coded COPD diagnosis -- treated as AECOPD in the "
+             "ED, not all confirmed by spirometry.",
+    ),
+    ("copd_exacerbation", "dyspnoea_at_rest"): measured(
+        0.91,
+        Citation(
+            "FREUND-2024",
+            "Freund O et al., Intern Emerg Med 2024, PMC11582298, Table 1",
+            "increased dyspnoea in 313 of 344 emergency-department "
+            "presentations with acute COPD exacerbation (91%); group "
+            "columns 75 + 238 sum correctly",
+        ),
+        low=0.88,
+        high=0.94,
+        note="generic dyspnoea, the same mapping used for every other "
+             "disease's cell. Increased dyspnoea is one of the Anthonisen "
+             "criteria that help define an exacerbation, so some of this "
+             "rate is definitional -- but it was not an inclusion "
+             "criterion here (9% lacked it), which is why it is taken as a "
+             "measured frequency. Corrects the invented 0.70 upward.",
+    ),
+    ("copd_exacerbation", "leg_swelling"): measured(
+        0.369,
+        Citation(
+            "WINTHER-2017",
+            "Winther JA et al., Respir Res 2017;18:184 (ACE 2), PMC5670515, "
+            "Table 1",
+            "peripheral oedema in 31 of 84 patients with a final diagnosis "
+            "of acute COPD exacerbation among emergency admissions for "
+            "acute dyspnoea (37%)",
+        ),
+        low=0.27,
+        high=0.47,
+        note="corrects the invented 0.20 upward. 'Peripheral oedema' mapped "
+             "to leg_swelling, the precedent already set in real_cases.py. "
+             "Nine of the 84 had chronic heart failure, a plausible "
+             "contributor, and they are part of the population rather than "
+             "excluded from it -- COPD with heart failure is common, and the "
+             "knowledge base's COPD entry does not exclude it either. Band "
+             "is the binomial 95% interval on 31/84.",
+    ),
     ("acute_coronary_syndrome", "exam:tachycardia"): measured(
         0.23,
         Citation(
