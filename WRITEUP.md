@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 92 of its 177 likelihoods are invented, no
+an unfinished feature — because 91 of its 177 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -131,7 +131,7 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**92 of 177 likelihoods are invented.** That is the number, stated on its own
+**91 of 177 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project. It was 89 of
 153 until the pericardial columns were added (§5): two concepts the real cases
 showed were missing, two sourced cells for pericarditis, and 21 invented rival
@@ -391,7 +391,7 @@ celebrate.
 ### Nothing was checking the numbers themselves
 
 Every test in this project checks outputs. The knowledge base is inputs, and
-for most of its life nothing looked at it: 92 of 177 likelihoods are invented,
+for most of its life nothing looked at it: 91 of 177 likelihoods are invented,
 and the only scrutiny they got was whichever ones happened to change a case.
 
 Reading each column sorted, against what the diseases actually do, found five
@@ -859,7 +859,7 @@ Measured on every set, cells sourced without looking at any case: fixtures
 real patients **4 → 6 correct, 0 wrong**, the SLE pericarditis and the
 second pneumonia now committing; held-out ECE 0.286 → 0.260, coverage 43%
 → 57%. Three fixture-level pins moved with it and are re-pinned with the
-reasoning. 177 likelihoods, 92 invented, coverage 48%.
+reasoning. 177 likelihoods, 91 invented, coverage 49%.
 
 ### One cell at a time: crackles
 
@@ -1147,8 +1147,8 @@ means a higher P(pleuritic pain absent | ACS) — 0.935 against the old
 diagnosis on a different patient. Sourcing this cell helped and hurt on
 two different real cases simultaneously, in the direction the mechanism
 actually implies both times. Nothing here was chosen for that effect; it
-is what checking an untested assumption produced. 177 likelihoods, 92
-invented, 48%. 174 tests pass; no wrong-commit-count assertion needed
+is what checking an untested assumption produced. 177 likelihoods, 91
+invented, 49%. 174 tests pass; no wrong-commit-count assertion needed
 re-pinning because the count did not move, only which case's confidence
 and which other case newly commits.
 
@@ -1279,8 +1279,8 @@ WCC was reported as a mean, a median, a per-unit odds ratio, or a bare
 qualitative remark in all but two. A threshold-crossing proportion — the
 one shape this project can use without a distributional assumption — is
 the exception in this literature, not the norm. Further searching this
-specific column is not expected to find a seventh. 177 likelihoods, 92
-invented, 48%.
+specific column is not expected to find a seventh. 177 likelihoods, 91
+invented, 49%.
 
 ### A twentieth real case, added for the calibration gap — and an unforced piece of evidence for correlation weighting
 
@@ -1537,6 +1537,35 @@ and 0.30), so both go from "unverified" to "unverified but not
 contradicted," which is a real if modest change in what the file can
 claim. Pericarditis and panic: nothing found. No coverage change; 177
 likelihoods, 92 invented, 48%.
+
+### ACS troponin, derived from a diagnostic definition
+
+The most load-bearing ACS cell, `lab:raised_troponin`, was still an
+invented 0.90. The five-ED cohort already cited for ACS palpitations
+(Zègre-Hemsey 2018, 473 confirmed ACS) reports its patients by subtype:
+117 STEMI, 251 NSTEMI, 105 unstable angina. Under the universal definition
+of myocardial infarction, STEMI and NSTEMI require a troponin rise and
+unstable angina is ACS without one — so P(raised troponin | ACS) is the MI
+fraction, 368/473 = **0.778**.
+
+This is the first cell in the knowledge base derived through a definition
+rather than a counted lab row, and it is labelled as such. It is worth
+setting beside panic attack's troponin, which stays invented for a
+related-sounding but opposite reason: there, the diagnostic definition
+makes the frequency close to undefined (a normal troponin is how the
+diagnosis is reached); here, the definition partitions ACS into a
+troponin-positive and a troponin-negative part, and the paper counts both.
+Two caveats go in the citation rather than being absorbed: an early STEMI
+can present before its first troponin rises, and high-sensitivity assays
+reclassify unstable angina into NSTEMI, so a newer cohort would likely
+read higher.
+
+No real-case count changed. The complete-grid test moved again — both
+arms now have one wrong commit (different cases) and identical mean rank,
+so the trade that test's title describes no longer exists in either
+direction; `complete_grid` stays off on the argument that never depended
+on those counts (63 invented numbers that buy nothing measurable). 177
+likelihoods, 91 invented, 49%.
 
 ### A configuration inconsistency found while writing this, and fixed
 

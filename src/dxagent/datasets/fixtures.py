@@ -454,6 +454,39 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
         low=0.128,
         high=0.295,
     ),
+    # The same cohort's subtype split sources troponin, by definition rather
+    # than by a counted lab row -- the first cell in this file derived that
+    # way, so the step is spelled out. Under the universal definition of
+    # myocardial infarction, STEMI and NSTEMI require a troponin rise above
+    # the 99th percentile; unstable angina is acute coronary syndrome
+    # without one. So P(raised troponin | ACS) is the MI fraction of the
+    # cohort: (117 + 251) / 473.
+    #
+    # Unlike panic attack's troponin (see the structural section below),
+    # where the diagnostic definition makes the frequency undefined, here it
+    # makes it computable: the definition partitions ACS into a
+    # troponin-positive part and a troponin-negative part, and the paper
+    # counts both.
+    ("acute_coronary_syndrome", "lab:raised_troponin"): measured(
+        0.778,
+        Citation(
+            "ZEGRE-HEMSEY-2018",
+            "Research in Nursing & Health 41(5):459-468",
+            "368 of 473 confirmed ACS patients were myocardial infarction "
+            "(STEMI 117, NSTEMI 251) against 105 unstable angina; troponin "
+            "rise is part of the MI definition and absent in unstable angina",
+        ),
+        low=0.74,
+        high=0.82,
+        note="corrects the invented 0.90 downward. Band is the binomial 95% "
+             "interval on 368/473, not a range across sources. Two caveats "
+             "stated rather than absorbed: the value describes troponin "
+             "during the index admission, and an early STEMI can present "
+             "before its first troponin rises; and the unstable-angina "
+             "fraction depends on assay era -- high-sensitivity troponin "
+             "reclassifies unstable angina into NSTEMI, so a newer cohort "
+             "would likely give a higher figure.",
+    ),
     # StatPearls, suggested as a source after DDXPlus and Merck were
     # exhausted. It reports frequencies where Merck reports adjectives, and
     # this is the number Merck could not supply: its pericarditis chapter

@@ -3141,3 +3141,14 @@ count >=500 never stated despite being a regression variable -> bound
 bound. Both added to QUARTILE_BOUNDS; both invented values (0.35, 0.30)
 inside. Pericarditis/panic D-dimer: nothing found. 5 bounds, 0 outside.
 No coverage change. 174 tests pass.
+
+## ACS troponin 0.90 -> 0.778, by definition
+
+Zègre-Hemsey 2018 subtypes (already cited for palpitations): STEMI 117 +
+NSTEMI 251 of 473 are MI, which by the universal definition requires a
+troponin rise; unstable angina 105 does not. First definition-derived
+cell -- labelled so; contrasted in the comment with panic troponin
+(definition makes it undefined there, computable here). Band = binomial
+95% CI. Caveats: early-STEMI timing, hs-troponin reclassification.
+Complete-grid test: now 1 vs 1 wrong, rank tied 2.35 -- trade gone.
+177 likelihoods, 91 invented, 49%. 174 tests pass.

@@ -3587,9 +3587,19 @@ def test_completing_the_grid_buys_rank_and_costs_one_wrong_commit():
     # rank gain shrank to almost nothing (2.35 -> 2.30). So the title is
     # true again: completing the grid costs one net wrong commit and buys
     # very little rank. Pinned as measured; it will move again.
+    #
+    # And closed again, one commit later, from the other side: once ACS's
+    # troponin was sourced (0.90 invented -> 0.778, the MI fraction of a
+    # 473-patient cohort), the complete grid gets one real case wrong
+    # (pmc-13305284, pericarditis as pneumonia) against the shipped arm's
+    # one (pmc-13070269), and the rank gain is gone -- 2.35 on both. The
+    # trade in this test's title no longer exists in either direction.
+    # What still keeps complete_grid off is the argument that never
+    # depended on these counts: it writes 63 invented numbers from one
+    # non-clinician in one sitting, and buys nothing measurable for them.
     assert off_wrong == 1, "the shipped grid's current wrong commit"
-    assert on_wrong == off_wrong + 1, "completing the grid costs one wrong commit again"
-    assert on_rank < off_rank, "the rank gain is the only part of the trade left standing"
+    assert on_wrong == off_wrong, "neither arm is ahead on wrong commits"
+    assert abs(on_rank - off_rank) < 0.05, "the rank gain has gone"
 
     # No cell is left to fall back on once the grid is complete.
     kb = build(correlated=True, complete_grid=True)
