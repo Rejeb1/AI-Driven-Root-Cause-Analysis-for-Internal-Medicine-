@@ -84,17 +84,20 @@ output rather than resting on someone having remembered.
 extracting. Keep `--limit` small at first -- the loop runs about a second per
 case and the baselines add two more passes over the same cases.
 
-**Real-case evaluation.** `dxagent.datasets.real_cases` holds 19 patients
+**Real-case evaluation.** `dxagent.datasets.real_cases` holds 20 patients
 hand-extracted from open-access PMC case reports -- not invented, not
 generated, never seen by the knowledge base. This is a different, much
 smaller thing than the 10 fixture cases: it exists to put a few real
 data points in front of the system, not to support any accuracy claim at
-n=19. No clinician reviewed the extraction. The current result is 4 correct
-commits, 0 wrong, 15 escalations. It was 2 correct and **1 wrong** until the
-wrong one -- a pericarditis whose deciding findings had no concept in this
-vocabulary -- drove a vocabulary correction, a weighting fix and a
-presentation-triggered workup, each measured on its own in WRITEUP.md; the
-rule that finally fixed it was written after seeing the case, and says so.
+n=20. No clinician reviewed the extraction. The current result is 7 correct
+commits, **1 wrong** (an acute coronary syndrome read as pneumonia), 12
+escalations. That figure has moved with nearly every sourcing pass --
+between 0 and 2 wrong commits over the project's life -- and WRITEUP.md
+records each move and its cause rather than only the latest number. An
+earlier wrong commit -- a pericarditis whose deciding findings had no
+concept in this vocabulary -- drove a vocabulary correction, a weighting
+fix and a presentation-triggered workup; the rule that finally fixed it
+was written after seeing the case, and says so.
 See the module docstring for exactly which reports, how
 each finding was read from the source text, the selection rule the second
 eight were chosen under, and every candidate considered and excluded with
@@ -158,6 +161,7 @@ instead of it, so their disagreement stays visible to the gate.
 | `SCOPE.md` | Step 1 deliverable: presentation, causes, reasoning schema, and every constraint the project ran into |
 | `DESIGN.md` | The running record of what was measured, including the conclusions later measurements took back |
 | `RESPONSIBLE_AI.md` | Privacy, safety and risk, with the limitations stated as limitations |
+| `CLINICIAN_REVIEW.md` | An hour's review sheet: the policy decisions, guessed numbers and real cases where a clinician's answer would change the system |
 | `VOCABULARY.md` | The concept layer: HPO, UMLS CUIs, SNOMED CT codes |
 | `dxagent_what_i_built.pdf` | Eight-page explainer: what this is, for someone with ten minutes |
 | `dxagent_deep_dive.pdf` | Fourteen-page deep dive: how it works, what was measured, what is wrong with it |
