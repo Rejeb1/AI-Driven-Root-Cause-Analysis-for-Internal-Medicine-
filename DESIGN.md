@@ -3186,3 +3186,15 @@ alone recovers pmc-12708975, both together do. Real 6/2/12 -> 7/1/12;
 fixtures 7/0/3 and hard 4/0/1 unchanged; fixture cost 21.6 -> 23.4
 (+8%). 4 re-pins; complete-grid now level on wrong commits (4th reading
 in 4 passes), stays off. 174 tests pass.
+
+## Guideline vetoes, gate sweep, troponin era, current-state summary
+
+Vetoes (MI definition; CTPA confirms PE): real 7/1/12 -> 7/0/13; cost
+fx-006, fx-h02 (myopericarditis) escalate. PE veto: no shipped change;
+unweighted fixture wrong commits 1 -> 0 (correlation's last fixture
+advantage gone). gate_sweep.py: confidence 50-55% adds 2 real wrong
+commits, 70%+ loses correct ones; margin inert 5-25pt. Oedema troponin
+0.90 (Takashio 2017, hs-TnT) measured, not written: inverts ordering vs
+ACS 0.778 (assay-era mismatch, BNP precedent). PE cough ceiling softened
+(single-source questionnaire item; PIOPED II unreadable). WRITEUP.md now
+opens with a current-state section. 175 tests pass.

@@ -14,6 +14,42 @@ an unfinished feature — because 88 of its 177 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
+## Where it stands now
+
+The rest of this document is largely history — what was measured, what was
+believed, and how each belief moved. This section is the current state, so a
+reader does not have to reconstruct it from the history.
+
+- **Knowledge base.** 177 finding-given-disease likelihoods: 78 counted in
+  published patient cohorts, 11 converted from textbook sentences, **88 still
+  invented (50% sourced)**. All 8 disease priors are sourced. The 51 other
+  model settings (gate thresholds, test costs, correlation weights, budgets,
+  selector constants) are all invented; `scripts/gate_sweep.py` shows what the
+  gate thresholds trade without choosing them.
+- **Real patients** (20 published case reports, extracted by a non-clinician):
+  **7 correct commits, 0 wrong, 13 escalations.** The last wrong commit (an
+  ACS read as pneumonia) now escalates because a guideline criterion — troponin
+  rise with ST changes, the definition of myocardial infarction — vetoes
+  committing to anything else. That veto costs two correct pericarditis
+  commits on the fixture sets (myopericarditis meets it too).
+- **Rules the system follows regardless of its own beliefs.** Three
+  presentation-triggered workups (PE via PERC; ACS via HEART; pericarditis via
+  the ESC two-of-four criteria, completed this pass so the rub is always
+  examined) and two guideline vetoes (MI definition; a positive CTPA confirms
+  PE).
+- **Audits.** `scripts/plausibility_check.py` checks direction and ordering
+  claims and seven distribution-free bounds; one bound fails on purpose
+  (PE's productive cough, contradicted by one cohort, awaiting a better
+  source or a clinician's estimate).
+- **Open, and not resolvable from here.** Twenty real patients are too few to
+  fit calibration or to settle design choices — several comparisons in the test
+  suite have changed direction on almost every sourcing pass, which is itself
+  the evidence. The troponin column mixes assay generations and needs a
+  decision about which one to model. The mandated language model has never
+  run; a local 3B model was measured and is not usable for extraction.
+  `CLINICIAN_REVIEW.md` lists every question that needs a clinician, sized to
+  an hour.
+
 ---
 
 ## 1. What was built, and why one presentation
@@ -1674,6 +1710,43 @@ wrong, 12 escalated of 20**, and the one remaining wrong commit is the
 long-standing ACS read as pneumonia. Four tests re-pinned. The complete-
 grid comparison has now read four different ways in four passes (level
 on wrong commits this time, still better on rank); it stays off.
+
+### Guideline vetoes, and a troponin value measured and not written
+
+Two guideline diagnostic criteria were added to the gate as vetoes: the
+Fourth Universal Definition of MI (a troponin rise with ischaemic ECG
+change) and the ESC 2019 PE guideline (a CTPA filling defect confirms PE).
+When one is met and the model's top diagnosis is something else, the gate
+escalates and names the criterion. It never commits to the criterion's
+diagnosis, because rivals meet the criteria too — a myopericarditis raises
+troponin with ST changes. Measured separately: the MI veto turns the last
+real wrong commit (pmc-13070269, ACS read as pneumonia at 76%) into an
+escalation — real cases now **7 correct, 0 wrong, 13 escalated** — and
+costs two correct pericarditis commits on the fixture sets (fx-006,
+fx-h02, both myopericarditis-shaped). The PE veto changes no shipped
+outcome, but removes the unweighted fixture arm's one wrong commit (fx-009,
+a CTPA-positive PE committed as COPD), which was the last fixture wrong
+commit correlation weighting prevented; that advantage now reads 0
+against 0.
+
+Checking the review sheet against the code found that in pmc-11753817 the
+loop never ordered the CTPA: the D-dimer was normal, and the system follows
+the D-dimer-then-imaging sequence. The sheet had said the symptoms
+outweighed the scan; that is true of the full record, not of what the loop
+saw, and the sheet now says both.
+
+A troponin value was measured and deliberately not written. In 449
+patients hospitalised with acute heart failure (Takashio 2017), 404 had
+high-sensitivity troponin T above the 99th percentile — 0.90 against an
+invented 0.30. Written in, it put heart failure's troponin above ACS's
+0.778 and cost two oedema fixtures their commits. Neither number is wrong:
+ACS's is the MI fraction of a cohort from a less sensitive assay era,
+heart failure's is a high-sensitivity count. The column mixes assay
+generations, the same objection this project already applies to BNP
+against NT-proBNP, so the value is recorded and left out until someone
+decides which era the system models. PE's productive-cough ceiling was
+also softened: it rests on one cohort's questionnaire item ("cough as a
+new symptom"), and the largest PE cohort, PIOPED II, was not readable here.
 
 ### A configuration inconsistency found while writing this, and fixed
 

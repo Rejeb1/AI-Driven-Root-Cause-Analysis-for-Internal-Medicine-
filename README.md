@@ -90,8 +90,9 @@ generated, never seen by the knowledge base. This is a different, much
 smaller thing than the 10 fixture cases: it exists to put a few real
 data points in front of the system, not to support any accuracy claim at
 n=20. No clinician reviewed the extraction. The current result is 7 correct
-commits, **1 wrong** (an acute coronary syndrome read as pneumonia), 12
-escalations. That figure has moved with nearly every sourcing pass --
+commits, 0 wrong, 13 escalations; the last wrong commit (an acute coronary
+syndrome read as pneumonia) now escalates under a guideline veto, at the
+cost of two correct commits on the fixture sets. That figure has moved with nearly every sourcing pass --
 between 0 and 2 wrong commits over the project's life -- and WRITEUP.md
 records each move and its cause rather than only the latest number. An
 earlier wrong commit -- a pericarditis whose deciding findings had no
