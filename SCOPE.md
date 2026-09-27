@@ -64,7 +64,7 @@ The evidence that most moves each diagnosis, as currently encoded:
 
 | Cause | Raises it | Lowers it |
 |---|---|---|
-| Pulmonary embolism | CTPA filling defect, raised D-dimer, sudden onset, rest dyspnoea, hypoxia | orthopnoea, pulmonary oedema on CXR, consolidation on CXR |
+| Pulmonary embolism | CTPA filling defect, raised D-dimer, sudden onset, rest dyspnoea | orthopnoea, pulmonary oedema on CXR, consolidation on CXR, hypoxia |
 | Pneumonia | consolidation on CXR, fever, raised WCC, productive cough, crackles | CTPA filling defect, leg swelling |
 | Acute coronary syndrome | raised troponin, sudden onset | productive cough, consolidation on CXR, fever |
 | Acute pulmonary oedema | pulmonary oedema on CXR, raised BNP, orthopnoea, leg swelling, raised JVP | fever, raised WCC, consolidation on CXR |
@@ -73,7 +73,7 @@ The evidence that most moves each diagnosis, as currently encoded:
 | Pericarditis | fever, pleuritic pain | raised troponin, consolidation on CXR, crackles, productive cough |
 | Panic attack | sudden onset, palpitations, tachycardia | CTPA filling defect, hypoxia, productive cough |
 
-Two rows moved after being written. Raised troponin was under "raises" for
+Three rows moved after being written. Raised troponin was under "raises" for
 pericarditis on the strength of a Merck sentence, until a 351-patient cohort
 measured it at 16%. Relative to a differential where infarction and embolism
 claim it hard, it lowers pericarditis — the clinically right way round — and
@@ -82,7 +82,11 @@ Sudden onset was under "raises" for asthma on an invented 0.55, until a
 316-patient cohort of acute severe asthma admissions (Kolbe 1998) measured
 rapid-onset attacks (<6 hours) at 8.5% — most severe asthma exacerbations
 are the slow, gradual kind, the same direction already encoded for COPD
-two rows up. The audit caught this one the same way.
+two rows up. Hypoxia moved for PE too, but not for a clinical reason: a
+7,940-patient cohort (Courtney 2010) measured it at 42.3%, which lands
+almost exactly on this knowledge base's own marginal rate — a coin flip
+either way, "lowers" only because the table has no neutral column. The
+audit caught all three the same way.
 
 **This table means something narrower than it looks, and the difference
 matters.** "Raises it" here is *relative to the other seven candidates*, not
@@ -132,8 +136,8 @@ contradicted, all four for that reason:
   correcting it cost.
 
 **Most of these numbers are still invented, and which ones are not is
-recorded.** 45% of the 177 likelihoods carry a citation — 7 from DDXPlus, 11
-from the Merck Manual's narrative text, 58 from published cohorts and
+recorded.** 46% of the 177 likelihoods carry a citation — 7 from DDXPlus, 11
+from the Merck Manual's narrative text, 59 from published cohorts and
 StatPearls. The fraction fell from 42% when two pericardial concepts were
 added with invented rival cells, and recovered on a pneumonia pass and a
 tachycardia-column pass; see WRITEUP.md §5.
@@ -239,7 +243,7 @@ here holds symptoms, signs, laboratory results and imaging findings, and
 nothing in scope reasons about medication. That is a scope fact rather than a
 substitution.
 
-**The likelihood tables are still mostly invented — 97 of 177.** UMLS was
+**The likelihood tables are still mostly invented — 96 of 177.** UMLS was
 probed and found unusable for this purpose — mostly translations and billing
 crosswalks, and its one clinical relation mixes symptoms, risk factors and
 treatment complications without distinguishing them. HPO supplies concepts but

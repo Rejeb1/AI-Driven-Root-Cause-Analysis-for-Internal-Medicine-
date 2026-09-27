@@ -848,20 +848,30 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
     #
     # fx-009 dropped off this arm's failure list once asthma's sudden_onset
     # was sourced (0.55 -> 0.085, Kolbe 1998). Not through the single-pass
-    # posterior -- a direct perturbation check shows PE already leads there
-    # both before and after, barely moving (0.417 -> 0.41). The change runs
-    # through the sequential loop instead: a different asthma prior changes
-    # which turns the information-gain selector treats as informative, which
-    # changes the evidence-gathering path before the decisive-test rule ever
-    # fires, and on this path PE ends up ahead by a wide enough margin (0.574
-    # against asthma's 0.157) that the case now escalates on the correct top
-    # label rather than committing to a wrong one. The precise turn-by-turn
-    # mechanism is not traced further than that; the measured outcome is.
+    # posterior -- a direct perturbation check showed PE already leading
+    # there both before and after, barely moving (0.417 -> 0.41). The change
+    # ran through the sequential loop instead: a different asthma prior
+    # changed which turns the information-gain selector treated as
+    # informative, changing the evidence-gathering path before the
+    # decisive-test rule fired.
+    #
+    # It did not last one commit. fx-009 has exam:hypoxia present, and
+    # sourcing PE's own exam:hypoxia cell in the same pass (0.60 -> 0.423,
+    # Courtney 2010) makes PE itself a worse fit for this case's hypoxia
+    # finding -- a lower rate of hypoxia in confirmed PE means hypoxia
+    # actually present now argues for PE less than the invented value had
+    # it arguing. fx-009 is back to failing this arm, for the third
+    # reason inside a single sourcing session: asthma's correction helped
+    # it, PE's own correction hurt it, and neither cell was chosen with
+    # this fixture's outcome in mind -- both were the next number in the
+    # column being worked. This is what "the count moves with every
+    # sourcing pass" (docstring above) means in practice, traced rather
+    # than just re-pinned.
     assert [
         case.case_id
         for case in cases
         if decisive.run(case).differential.top.label != case.diagnosis
-    ] == ["fx-010"]
+    ] == ["fx-009", "fx-010"]
 
 
 def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):

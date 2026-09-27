@@ -336,6 +336,26 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
             "sudden onset dyspnoea in 281 of 360 confirmed acute PE patients",
         ),
     ),
+    # Starting exam:hypoxia (invented for 5 of 8 diseases). PE first: a
+    # 12-center, 7,940-patient prospective cohort of ED patients tested for
+    # PE, the same threshold this project already uses (SpO2 < 95%), no
+    # deviation to record.
+    ("pulmonary_embolism", "exam:hypoxia"): measured(
+        0.423,
+        Citation(
+            "COURTNEY-2010",
+            "Courtney DM et al., Ann Emerg Med 2010;55(4):307-315",
+            "hypoxemia (SpO2 < 95%) in 240 of 567 patients with confirmed "
+            "venous thromboembolism (PE or DVT) among 7,940 emergency "
+            "department patients tested for PE at 12 US centres (42.3%)",
+        ),
+        low=0.38,
+        high=0.46,
+        note="corrects the invented 0.60 downward. Outcome is VTE (PE or "
+             "DVT), not pure PE -- a population caveat, not a reason to "
+             "decline, same treatment as the ACS/pleuritic_pain and "
+             "ACS/sudden_onset population caveats above.",
+    ),
     # Found by targeted search after both bulk routes were exhausted: DDXPlus
     # records zero ACS patients with palpitations (a rule-base artefact, not a
     # frequency) and the Merck ACS chapter never mentions the symptom at all.
@@ -1563,7 +1583,7 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
 # exactly two cohorts out of roughly twenty checked across this column.
 # Further searching this column is not expected to find a seventh.
 
-# sudden_onset: one cell sourced, three searched and not found
+# sudden_onset: two cells sourced, three searched and not found
 # ---------------------------------------------------------------------------
 # Invented for 6 of 8 diseases. ACS's cell is sourced above from the same
 # Hess 2012 cohort already open for pleuritic_pain -- "acute onset
@@ -1573,33 +1593,59 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
 # oedema (acute-heart-failure reviews and guidelines, no cohort reporting
 # a sudden/gradual split), pericarditis (chest-pain triage statements and
 # pericardial-disease reviews, no proportion). All three stay invented.
-# COPD and asthma not yet attempted -- unlike lab:raised_wcc, this column
-# has not yet failed enough times to call the whole thing structural.
+# Asthma's cell is sourced above too (Kolbe 1998, rapid onset in 8.5% of
+# severe attacks). COPD not yet attempted -- one miss (asthma went the
+# other way, sourced) is not a pattern.
+
+# exam:hypoxia: one cell sourced, one near-miss declined, two not found
+# ---------------------------------------------------------------------------
+# Invented for 5 of 8 diseases. PE sourced above from a 12-centre,
+# 7,940-patient cohort (Courtney 2010) at this project's exact threshold
+# (SpO2 < 95%), no deviation. COPD came close and was declined rather than
+# stretched: the one relevant cohort found (PMC11717386, n=100) bins
+# oxygen saturation at <=87 / 88-92 / 93-96 / 97-100, and this project's
+# 95% cutoff falls inside the third bin rather than on a boundary -- there
+# is no way to read off P(SpO2 < 95%) from those groups without assuming
+# how the 93-96 bin splits, which is the same distributional assumption
+# already refused for D-dimer and temperature. A different cohort
+# (PMC11582298, n=348) reports SpO2 < 91% in 55% of ED COPD presentations
+# -- a stricter threshold, so a lower bound on the 95% figure and not the
+# figure itself; not taken as a point value for the same reason. Oedema
+# and asthma searched, nothing found: oedema's hits were reviews and
+# protocols with no cohort proportion, asthma's one relevant cohort
+# (PMC2939861) reports only a median and IQR (97%, IQR 95-99), the same
+# mean/median-not-proportion shape already declined repeatedly elsewhere
+# in this file. Panic's cell is not searched for at all -- see the
+# structural section below for why.
 
 # Load-bearing numbers that no source can supply, and the reason is structural
 # ---------------------------------------------------------------------------
 # `scripts/sensitivity.py` names four likelihoods that currently change a
 # diagnosis. Two of them are on panic attack and both were searched for
 # directly, after DDXPlus was exhausted and the Merck panic-disorder chapter
-# came up empty:
+# came up empty. A third, exam:hypoxia, was added to this list while sourcing
+# that column: hyperventilation during panic drives respiratory alkalosis,
+# not hypoxaemia, so a low oxygen saturation is exactly the kind of finding a
+# panic-attack workup exists to rule out, the same shape as the other two.
 #
 #   panic_attack / lab:raised_troponin    (0.03, invented)
 #   panic_attack / exertional_chest_pain  (0.20, invented)
+#   panic_attack / exam:hypoxia           (0.03, invented)
 #
-# Neither is measurable, and not because nobody has looked. Panic attack is a
-# diagnosis of exclusion: a normal troponin is part of how the diagnosis is
-# reached, and exertional chest pain is one of the features that argues the
-# patient *out* of it and toward a cardiac cause. A study reporting "troponin
-# was raised in X% of panic attack patients" would be reporting on a cohort
-# assembled by a rule that partly excludes raised troponin. The frequency is
-# not unpublished; it is close to undefined.
+# None of the three is measurable, and not because nobody has looked. Panic
+# attack is a diagnosis of exclusion: a normal troponin, a normal oxygen
+# saturation, and the absence of exertional chest pain are each part of how
+# the diagnosis is reached, not independent observations about it. A study
+# reporting "troponin was raised in X% of panic attack patients" would be
+# reporting on a cohort assembled by a rule that partly excludes raised
+# troponin. The frequency is not unpublished; it is close to undefined.
 #
 # This is a different failure from the Merck ceiling. There the text simply
 # does not state a frequency for a finding it does describe. Here the finding
 # is entangled with the diagnostic criterion, so the quantity a citation would
-# have to measure barely exists. Both numbers stay invented, deliberately, and
-# the honest description of them is that they encode a definitional relation
-# rather than an observed rate.
+# have to measure barely exists. All three numbers stay invented, deliberately,
+# and the honest description of them is that they encode a definitional
+# relation rather than an observed rate.
 
 # ---------------------------------------------------------------------------
 # PIOPED II's "No PE" arm, for findings no disease here causes.

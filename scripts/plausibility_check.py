@@ -71,7 +71,14 @@ CLAIMS: tuple[tuple[str, str, str], ...] = (
     ("pulmonary_embolism", "lab:raised_d_dimer", "raises"),
     ("pulmonary_embolism", "sudden_onset", "raises"),
     ("pulmonary_embolism", "dyspnoea_at_rest", "raises"),
-    ("pulmonary_embolism", "exam:hypoxia", "raises"),
+    # "raises" until Courtney 2010 (7,940-patient, 12-centre ED cohort)
+    # measured hypoxaemia in 42.3% of confirmed VTE, against an invented
+    # 0.60 -- lands almost exactly on this knowledge base's own marginal
+    # (LR 0.92), the same near-neutral shape already described for fever
+    # in PE below. Barely lowers rather than raises; the claim moved
+    # because the test is binary, not because this is a strong signal
+    # either way.
+    ("pulmonary_embolism", "exam:hypoxia", "lowers"),
     ("pulmonary_embolism", "orthopnoea", "lowers"),
     ("pulmonary_embolism", "imaging:cxr_pulmonary_oedema", "lowers"),
     ("pulmonary_embolism", "imaging:cxr_consolidation", "lowers"),

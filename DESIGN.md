@@ -3054,3 +3054,25 @@ Three pinned tests moved:
 
 177 likelihoods, 97 invented, 45% (percentage unrounded, count moved).
 174 tests pass; coverage figures + SCOPE.md table updated.
+
+## exam:hypoxia column: PE sourced clean, undoes the fixture fix from two commits ago
+
+PE at this project's exact threshold (SpO2<95%, no deviation): Courtney
+2010 (Ann Emerg Med, n=7940, 12 centres), 42.3% hypoxaemia in confirmed
+VTE vs invented 0.60. COPD declined -- close cohort bins at
+87/92/96/100%, 95% falls inside a bin not on a boundary, same
+distributional-assumption refusal as D-dimer/temperature; a second
+cohort's <91% figure is a lower bound, not the figure, not taken as a
+point value. Oedema/asthma: nothing found. Panic: not searched --
+same structural entanglement as troponin/exertional_chest_pain, added
+to that list.
+
+fx-009 (fixture PE, hypoxia present) flips back to failing the
+decisive-test arm: lowering PE's hypoxia rate weakens PE's fit for its
+own case's positive finding, undoing what the asthma sudden_onset
+correction fixed last commit. Third distinct reason for this fixture's
+status inside one sourcing session; neither cell chosen for this
+outcome. SCOPE.md table: PE/hypoxia flips too (LR 0.92, near-coin-flip,
+"lowers" only because the table has no neutral column).
+
+177 likelihoods, 96 invented, 46%. 174 tests pass.

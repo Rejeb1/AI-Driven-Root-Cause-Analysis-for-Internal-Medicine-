@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 97 of its 177 likelihoods are invented, no
+an unfinished feature — because 96 of its 177 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -131,7 +131,7 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**97 of 177 likelihoods are invented.** That is the number, stated on its own
+**96 of 177 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project. It was 89 of
 153 until the pericardial columns were added (§5): two concepts the real cases
 showed were missing, two sourced cells for pericarditis, and 21 invented rival
@@ -391,7 +391,7 @@ celebrate.
 ### Nothing was checking the numbers themselves
 
 Every test in this project checks outputs. The knowledge base is inputs, and
-for most of its life nothing looked at it: 97 of 177 likelihoods are invented,
+for most of its life nothing looked at it: 96 of 177 likelihoods are invented,
 and the only scrutiny they got was whichever ones happened to change a case.
 
 Reading each column sorted, against what the diseases actually do, found five
@@ -859,7 +859,7 @@ Measured on every set, cells sourced without looking at any case: fixtures
 real patients **4 → 6 correct, 0 wrong**, the SLE pericarditis and the
 second pneumonia now committing; held-out ECE 0.286 → 0.260, coverage 43%
 → 57%. Three fixture-level pins moved with it and are re-pinned with the
-reasoning. 177 likelihoods, 97 invented, coverage 45%.
+reasoning. 177 likelihoods, 96 invented, coverage 46%.
 
 ### One cell at a time: crackles
 
@@ -1147,8 +1147,8 @@ means a higher P(pleuritic pain absent | ACS) — 0.935 against the old
 diagnosis on a different patient. Sourcing this cell helped and hurt on
 two different real cases simultaneously, in the direction the mechanism
 actually implies both times. Nothing here was chosen for that effect; it
-is what checking an untested assumption produced. 177 likelihoods, 97
-invented, 45%. 174 tests pass; no wrong-commit-count assertion needed
+is what checking an untested assumption produced. 177 likelihoods, 96
+invented, 46%. 174 tests pass; no wrong-commit-count assertion needed
 re-pinning because the count did not move, only which case's confidence
 and which other case newly commits.
 
@@ -1279,8 +1279,8 @@ WCC was reported as a mean, a median, a per-unit odds ratio, or a bare
 qualitative remark in all but two. A threshold-crossing proportion — the
 one shape this project can use without a distributional assumption — is
 the exception in this literature, not the norm. Further searching this
-specific column is not expected to find a seventh. 177 likelihoods, 97
-invented, 45%.
+specific column is not expected to find a seventh. 177 likelihoods, 96
+invented, 46%.
 
 ### A twentieth real case, added for the calibration gap — and an unforced piece of evidence for correlation weighting
 
@@ -1357,8 +1357,46 @@ one section above — is gone: that patient had sudden onset present, and
 asthma's fit for it collapsed under the corrected value. That reversal
 is coincidence, not correction in either direction: the sudden_onset
 cell was sourced to fill a column, not to fix that case, and saying
-otherwise would overstate what happened. 177 likelihoods, 97 invented,
-45%.
+otherwise would overstate what happened.
+
+### A third column, and a fixture ripple that undid the second column's fix in the same session
+
+`exam:hypoxia` is invented for 5 of 8 diseases. PE's cell sourced clean
+and at this project's exact threshold (SpO2 < 95%, no deviation): Courtney
+DM et al. (Ann Emerg Med 2010;55(4):307-315), a 12-centre, 7,940-patient
+prospective cohort of ED patients tested for PE, gives 42.3% hypoxaemia
+among confirmed venous thromboembolism, against the invented 0.60.
+
+COPD came close and was declined rather than stretched. The one relevant
+cohort found bins oxygen saturation at ≤87 / 88–92 / 93–96 / 97–100%, and
+this project's 95% cutoff falls inside the third bin rather than on a
+boundary — reading off P(SpO2 < 95%) from those groups needs the same
+distributional assumption already refused for D-dimer and temperature. A
+second cohort reports SpO2 < 91% in 55% of ED COPD presentations, a
+stricter threshold and therefore a lower bound on the 95% figure, not the
+figure itself — not taken as a point value for the same reason. Oedema
+and asthma searched, nothing found (reviews with no proportion; a median
+and IQR, the same shape already declined repeatedly). Panic's cell was
+not searched for at all: hyperventilation during panic drives respiratory
+alkalosis, not hypoxaemia, so a normal oxygen saturation is part of how
+the diagnosis is reached, the same structural problem already documented
+for panic's troponin and exertional chest pain — added to that list
+rather than searched for and inevitably not found.
+
+PE's own correction turned out to matter for a case sourcing asthma had
+just fixed. The single sourced hypoxia value (0.60 → 0.423) lowered how
+strongly a *present* hypoxia finding argues for PE — and fx-009, the
+fixture pulmonary embolism the asthma correction had just rescued from
+this section above, has hypoxia present. PE's fit for its own case
+weakened, and fx-009 is back to failing the decisive-test arm. Three
+distinct reasons inside one sourcing session — asthma's correction
+helped it, PE's correction hurt it — and neither cell was chosen with
+this fixture's outcome in mind; each was simply the next number in the
+column being worked. Also flipped a third row in SCOPE.md's
+discriminating-evidence table, though this one barely matters clinically:
+PE's hypoxia rate lands almost exactly on the knowledge base's own
+marginal (LR 0.92), a coin flip that only reads as "lowers" because the
+table has no neutral column. 177 likelihoods, 96 invented, 46%.
 
 ### A configuration inconsistency found while writing this, and fixed
 
