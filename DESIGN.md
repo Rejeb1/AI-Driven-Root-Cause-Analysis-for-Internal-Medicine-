@@ -3281,3 +3281,13 @@ separate hs-era study per cause.
 COPD real cases: 51-hit case-report search; the two unseen candidates are
 mixed (PMC7295310 COPD + new heart failure; PMC8571802 bacteraemia). COPD
 stays at 2 real cases.
+
+## Two subset floors added to the bounds audit
+
+COPD exam:hypoxia >= 0.552 (Freund 2024: SpO2 < 91% in 190/344, and < 91%
+implies < 95%); ACS exam:ecg_st_changes >= 0.247 (Zegre-Hemsey 2018: STEMI
+117/473, ST elevation by definition). The ACS invented 0.75 passes; COPD's
+invented 0.55 sits 0.002 under its floor. Left flagged, not nudged to pass
+(any value above the floor is equally a guess); added to the clinician
+sheet. Bounds: 9, 8 passing. Invented count unchanged at 88: floors check
+cells, they do not source them.

@@ -120,6 +120,7 @@ would have this finding?
 | Asthma exacerbation | SpO₂ < 95% on air | 35 | |
 | Asthma exacerbation | crackles | 10 | |
 | Asthma exacerbation | white cell count > 11 | 20 | |
+| COPD exacerbation | SpO₂ < 95% on air | 55 (a study puts it at *least* 55.2%) | |
 | Acute pulmonary oedema | troponin above the 99th centile | 30 | |
 | Community-acquired pneumonia | D-dimer > 500 µg/L FEU | 35 (a study bounds it between 25 and 50) | |
 

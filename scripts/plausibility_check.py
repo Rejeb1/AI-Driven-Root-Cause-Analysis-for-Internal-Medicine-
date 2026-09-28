@@ -294,6 +294,18 @@ QUARTILE_BOUNDS: tuple[tuple[str, str, float, float, str, str], ...] = (
     # it), so the bound is Ji's. The cell stays the narrative 0.20: no
     # cohort reports productive cough in PE, and this is a ceiling, not a
     # measurement.
+    # Two floors from subsets, read from sources already cited elsewhere.
+    # SpO2 < 91% implies this project's SpO2 < 95%, so Freund's 55.2% is a
+    # floor under COPD hypoxia (declined as a point value in fixtures.py
+    # because it is not the 95% figure; as a floor it is exact).
+    ("copd_exacerbation", "exam:hypoxia", 0.552, 1.0,
+     "PMC11582298 (Freund 2024) Table 1, 344 ED COPD exacerbations",
+     "SpO2 < 91% in 190 of 344 (55.2%); SpO2 < 95% includes all of them"),
+    # STEMI requires ST elevation by definition, so the STEMI share of a
+    # confirmed-ACS cohort is a floor under ST changes in ACS.
+    ("acute_coronary_syndrome", "exam:ecg_st_changes", 0.247, 1.0,
+     "Zegre-Hemsey 2018, Res Nurs Health 41(5):459-468, 473 subtyped ACS",
+     "STEMI in 117 of 473 (24.7%), each with ST elevation by definition"),
     ("pulmonary_embolism", "productive_cough", 0.0, 0.604,
      "PMC5668424 (Ji 2017, Sci Rep 7:14887) Table 1, 551 hospitalised PE",
      "cough of any kind in 333 of 551 (60.4%); productive cough is a subset"),
