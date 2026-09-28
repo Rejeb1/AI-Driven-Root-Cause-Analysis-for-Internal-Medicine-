@@ -169,10 +169,14 @@ class GeminiLLM:
                 return response.text or ""
             except Exception as exc:
                 # 429 is a rate limit; 503 is the service shedding load under
-                # high demand. Both are temporary. Treating a 503 as final
+                # high demand, and 504 the same overload timing out on the
+                # server side. All are temporary. Treating them as final
                 # would turn a brief overload into fallback turns that count
                 # against the run's validity.
-                overloaded = "503" in str(exc) or "UNAVAILABLE" in str(exc)
+                overloaded = any(
+                    code in str(exc)
+                    for code in ("503", "UNAVAILABLE", "504", "DEADLINE_EXCEEDED")
+                )
                 if not ("429" in str(exc) or overloaded) or attempt == self.max_retries - 1:
                     raise
                 # A per-day quota does not reset within any backoff worth
