@@ -178,12 +178,13 @@ estimate can fill them.
 | SpO₂ < 95% | 3 | |
 | exertional chest pain | 20 | |
 
-And one number a study contradicts: **productive cough in pulmonary
-embolism** is set at 20% from a textbook sentence ("less common symptoms
-include cough"), but a 360-patient cohort found *any* new cough in only 4%
-of PE patients (asked on a questionnaire as "cough as a new symptom").
-That is one study; a larger one (PIOPED II) reports symptoms too but
-could not be read here. *What would you put it at?*
+And one number no study measures directly: **productive cough in
+pulmonary embolism** is set at 20% from a textbook sentence ("less common
+symptoms include cough"). Two cohorts bracket it without measuring it:
+*new* cough in 4% of 360 PE patients (a questionnaire item), and cough *of
+any kind* in 60% of 551 hospitalised PE patients. Productive cough at
+presentation, whether new or long-standing, lies somewhere under the
+second. *What would you put it at?*
 
 ---
 

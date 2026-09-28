@@ -38,9 +38,11 @@ reader does not have to reconstruct it from the history.
   examined) and two guideline vetoes (MI definition; a positive CTPA confirms
   PE).
 - **Audits.** `scripts/plausibility_check.py` checks direction and ordering
-  claims and seven distribution-free bounds; one bound fails on purpose
-  (PE's productive cough, contradicted by one cohort, awaiting a better
-  source or a clinician's estimate).
+  claims and seven distribution-free bounds, all passing. The one that used
+  to fail (PE's productive cough) was itself mis-specified: its ceiling
+  counted only cough *as a new symptom*; a second cohort (cough of any kind
+  in 60% of 551 PE patients) supplies a valid ceiling, and the cell's 0.20
+  sits inside it.
 - **Open, and not resolvable from here.** Twenty-five real patients are too few to
   fit calibration or to settle design choices — several comparisons in the test
   suite have changed direction on almost every sourcing pass, which is itself

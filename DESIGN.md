@@ -3256,3 +3256,14 @@ study" / "converted from a textbook" / "INVENTED ... invented estimate" /
 PE: prior sourced (STATPEARLS-PRESENTATION); of 23 likelihoods, 14 measured,
 3 textbook, 6 invented. Reporting only: no decision changes. New test pins
 both tiers.
+
+## PE productive-cough bound: the bound was wrong, not the number
+
+The one failing distribution-free bound (PE productive_cough <= 0.039,
+Miniati 2012) used "cough as a new symptom" as a ceiling for productive
+cough; a PE patient with long-standing productive cough (e.g. COPD) is not
+counted there, so it was never a valid ceiling. Ji et al., Sci Rep
+2017;7:14887 (PMC5668424): cough of any kind in 333 of 551 hospitalised PE
+(60.4%), a valid ceiling since productive cough is a subset. Bound replaced;
+the narrative 0.20 sits inside [0, 0.604]; 7 of 7 bounds pass. The cell is
+unchanged: no cohort measures productive cough in PE.

@@ -281,11 +281,22 @@ QUARTILE_BOUNDS: tuple[tuple[str, str, float, float, str, str], ...] = (
     # Two more PE presentation cohorts checked for a cough row: PMC10124252
     # (1,242 PE by ESC risk class) tabulates haemoptysis, chest pain,
     # dyspnoea and syncope but not cough; PMC10344497 (591 PE) ranks only
-    # the chief complaint. Still single-source.
-    ("pulmonary_embolism", "productive_cough", 0.0, 0.039,
-     "PMC3288010 (Miniati 2012) Table 3, 360 confirmed acute PE (Firenze)",
-     "new cough of any kind in 14 of 360 (3.9%); productive cough is a "
-     "subset"),
+    # the chief complaint.
+    #
+    # Then a second cohort was found, and it showed the bound itself was
+    # wrong. Ji et al. (Sci Rep 2017;7:14887, PMC5668424) record cough in
+    # 333 of 551 hospitalised PE patients (60.4%). The two do not contradict
+    # each other; they measure different things. Miniati's item was cough
+    # *as a new symptom*, so a PE patient with a long-standing productive
+    # cough (a COPD patient, say) is not counted there -- 3.9% bounds new
+    # cough, not productive cough, and it was never a valid ceiling for this
+    # cell. Any cough is a valid ceiling (productive cough is a subset of
+    # it), so the bound is Ji's. The cell stays the narrative 0.20: no
+    # cohort reports productive cough in PE, and this is a ceiling, not a
+    # measurement.
+    ("pulmonary_embolism", "productive_cough", 0.0, 0.604,
+     "PMC5668424 (Ji 2017, Sci Rep 7:14887) Table 1, 551 hospitalised PE",
+     "cough of any kind in 333 of 551 (60.4%); productive cough is a subset"),
     # Not written, and recorded: the same table has admission temperature at
     # median 36.4 with Q3 37.0, so fewer than a quarter were febrile on
     # measurement. That bounds measured fever, and this project's fever
