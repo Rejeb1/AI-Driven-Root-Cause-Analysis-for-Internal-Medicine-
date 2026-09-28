@@ -70,7 +70,12 @@ six findings extractable under the rules below. Results, in order:
   than six findings (PMC8326429, PMC8503445, PMC8503414, PMC3485098 --
   the last also calls a heart rate of 110 "normal"). COPD
   exacerbation case reports are written about the complication or the
-  therapy, not the exacerbation. Note that this pass's mixed-case rule is
+  therapy, not the exacerbation. A later, broader search (COPD and
+  exacerbation in the title, case-report publication type, 51 hits) added
+  two candidates and no case: PMC7295310 is a COPD exacerbation with
+  new-onset heart failure (EF 35%) and possible bronchopneumonia, and
+  PMC8571802 a two-organism bacteraemia; the rest were reviews, trials or
+  complications. Note that this pass's mixed-case rule is
   stricter than an earlier pass, which took PMC4748508 (COPD with stress
   cardiomyopathy); that case stays, and the inconsistency is recorded
   rather than resolved by removing it after seeing its result.

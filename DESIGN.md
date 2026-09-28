@@ -3267,3 +3267,17 @@ counted there, so it was never a valid ceiling. Ji et al., Sci Rep
 (60.4%), a valid ceiling since productive cough is a subset. Bound replaced;
 the narrative 0.20 sits inside [0, 0.604]; 7 of 7 bounds pass. The cell is
 unchanged: no cohort measures productive cough in PE.
+
+## Two searches that found nothing usable (recorded as negative results)
+
+Troponin column in one assay era: looked for a single cohort reporting
+high-sensitivity troponin above the 99th percentile *by final diagnosis*
+across several of the eight causes (ED dyspnoea / chest pain). PMC4311931
+(hs-cTn in hospitalised medical patients) and PMC10243981 (chest discomfort
+with dyspnoea) report diagnoses and troponin but not one within the other.
+No single-cohort source; the column stays mixed-era, and fixing it means a
+separate hs-era study per cause.
+
+COPD real cases: 51-hit case-report search; the two unseen candidates are
+mixed (PMC7295310 COPD + new heart failure; PMC8571802 bacteraemia). COPD
+stays at 2 real cases.
