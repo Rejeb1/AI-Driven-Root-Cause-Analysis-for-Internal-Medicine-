@@ -311,19 +311,31 @@ class InMemoryKnowledgeBase:
     def _evidence_citation(
         entry: DiseaseEntry, finding: Finding, ratio: float
     ) -> Citation:
-        source = entry.citations[0].source_id if entry.citations else "KB"
+        # Each line cites the likelihood it rests on, not the disease entry:
+        # the entry's own citation ("synthetic entry, not sourced") used to
+        # label every line, including numbers counted in published cohorts.
         observed = finding.polarity.value
         probability = entry.features.get(finding.concept)
-        basis = (
-            f"P({finding.concept} | {entry.label}) = {probability:.2f}"
-            if probability is not None
-            else f"{finding.concept} uncharacterised for {entry.label}; "
-            "backed off to the knowledge-base marginal"
-        )
+        cell = entry.sources.get(finding.concept)
+        if probability is None:
+            source = "KB-MARGINAL"
+            basis = (f"{finding.concept} uncharacterised for {entry.label}; "
+                     "backed off to the knowledge-base marginal")
+            tier = "no likelihood of its own"
+        elif cell is not None and cell.is_sourced and cell.citation is not None:
+            source = cell.citation.source_id
+            basis = f"P({finding.concept} | {entry.label}) = {probability:.2f}"
+            tier = ("measured in a published study"
+                    if cell.provenance.value == "measured" else "converted from a textbook")
+        else:
+            source = "INVENTED"
+            basis = f"P({finding.concept} | {entry.label}) = {probability:.2f}"
+            tier = "invented estimate, not sourced"
         return Citation(
             source_id=source,
             locator=f"{entry.label}/{finding.concept}",
-            snippet=f"{finding.concept} {observed}; {basis}; likelihood ratio {ratio:.2f}",
+            snippet=(f"{finding.concept} {observed}; {basis}; likelihood ratio "
+                     f"{ratio:.2f}; {tier}"),
         )
 
     def diseases(self) -> tuple[DiseaseEntry, ...]:

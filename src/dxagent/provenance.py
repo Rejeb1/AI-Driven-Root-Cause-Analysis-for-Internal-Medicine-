@@ -183,6 +183,42 @@ class ProvenanceReport:
         return "\n".join(lines)
 
 
+def entry_provenance(entry) -> Citation:
+    """Where one disease entry's numbers come from, as a single citation.
+
+    This is what a hypothesis is grounded in. It replaced the entry's own
+    citation, "synthetic entry, not sourced", which every surface printed as
+    the provenance of every hypothesis -- including hypotheses whose prior and
+    most likelihoods are measured in published cohorts. The disclosure was
+    accurate about the fixture file and wrong about the numbers in it.
+    """
+    measured = narrative = 0
+    for concept in entry.features:
+        source = entry.sources.get(concept)
+        if source is None:
+            continue
+        if source.provenance is Provenance.MEASURED:
+            measured += 1
+        elif source.provenance is Provenance.NARRATIVE:
+            narrative += 1
+    total = len(entry.features)
+    prior = getattr(entry, "prior_source", None)
+    prior_text = (
+        f"prior sourced ({prior.citation.source_id})"
+        if prior is not None and prior.is_sourced and prior.citation is not None
+        else "prior invented"
+    )
+    return Citation(
+        source_id="PROVENANCE",
+        locator=entry.label,
+        snippet=(
+            f"{prior_text}; of {total} likelihoods, {measured} measured in "
+            f"published studies, {narrative} from a textbook, "
+            f"{total - measured - narrative} invented"
+        ),
+    )
+
+
 def report(kb) -> ProvenanceReport:
     """Count likelihoods and priors by provenance across a knowledge base."""
     total = measured_count = narrative_count = 0

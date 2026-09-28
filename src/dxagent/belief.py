@@ -21,6 +21,7 @@ from typing import Protocol, runtime_checkable
 
 from .knowledge import InMemoryKnowledgeBase, KnowledgeBase
 from .llm import LLMClient
+from .provenance import entry_provenance
 from .schemas import Differential, Finding, Polarity
 
 
@@ -108,7 +109,7 @@ class BayesianProposer:
             supporting, contradicting = self.kb.evidence_split(entry.label, findings)
             support[entry.label] = supporting
             against[entry.label] = contradicting
-            grounding[entry.label] = entry.citations
+            grounding[entry.label] = (entry_provenance(entry),)
 
         rationales = {
             e.label: self._rationale(e.label, findings) for e in entries
@@ -265,7 +266,7 @@ class LLMProposer:
             if self.fallback is None:
                 self.fallback = BayesianProposer(self.kb)
             return self.fallback.propose(findings, complaint)
-        grounding = {e.label: e.citations for e in self.kb.diseases()}
+        grounding = {e.label: (entry_provenance(e),) for e in self.kb.diseases()}
         return Differential.from_scores(scores, grounding=grounding)
 
     def _render(self, labels: list[str], findings: list[Finding], complaint: str) -> str:

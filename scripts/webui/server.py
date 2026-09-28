@@ -141,10 +141,11 @@ def _hypothesis(h, kb, differential=None) -> dict:
     differential moves, not a justification assembled afterwards.
 
     ``grounding`` is sent separately from ``support`` and rendered separately.
-    It says where the knowledge base entry came from, which for this project
-    is "synthetic entry, not sourced"; it used to arrive at the front of the
-    supporting list, so a disclosure that a hypothesis has no source was
-    displayed as a reason to believe it.
+    It summarises where the entry's numbers come from (prior, and how many
+    likelihoods are measured, textbook or invented). It used to be the
+    fixture file's blanket "synthetic entry, not sourced", and before that it
+    arrived at the front of the supporting list, so a disclosure was
+    displayed as a reason to believe the hypothesis.
 
     ``eliminated`` is what the panel was missing. Probabilities normalise
     across the eight causes, so a diagnosis can climb because its rivals were

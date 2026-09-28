@@ -496,9 +496,12 @@ def test_the_unsourced_disclosure_is_not_displayed_as_supporting_evidence(kb):
         assert "synthetic entry, not sourced" not in snippets, (
             f"{hypothesis.label} shows its unsourced disclosure as support"
         )
-        # It has to still be reachable, and still satisfy the gate.
+        # Grounding is still reachable and still satisfies the gate; it is
+        # now the entry's provenance summary rather than the fixture file's
+        # blanket "not sourced", which was wrong about sourced numbers.
         assert any(
-            c.snippet == "synthetic entry, not sourced" for c in hypothesis.grounding
+            c.source_id == "PROVENANCE" and "likelihoods" in c.snippet
+            for c in hypothesis.grounding
         )
         assert hypothesis.is_grounded
 
@@ -4380,3 +4383,27 @@ def test_llm_single_pass_counts_fallbacks_and_never_scores_them():
     right = ScriptedLLM([ScriptedLLM.ranking([(cases[0].diagnosis, 0.8)])])
     answered = script.single_pass(kb, right, cases, repeats=2)
     assert answered.fallbacks == 0 and answered.correct(cases) == 2
+
+
+def test_each_evidence_line_cites_its_own_likelihood(kb):
+    """An evidence line names the study behind its number, or says it is invented.
+
+    Every line used to carry the disease entry's citation, "[FIXTURE-KB]",
+    so a likelihood counted in 360 real patients and one chosen by the
+    author looked identical in the transcript and the browser.
+    """
+    from dxagent.provenance import Provenance
+
+    entry = kb.get("pulmonary_embolism")
+    measured = next(c for c, s in entry.sources.items() if s.provenance is Provenance.MEASURED)
+    invented = next(
+        c for c in entry.features
+        if entry.sources.get(c) is None or not entry.sources[c].is_sourced
+    )
+    for concept, expect_source, expect_text in (
+        (measured, entry.sources[measured].citation.source_id, "measured in a published study"),
+        (invented, "INVENTED", "invented estimate"),
+    ):
+        citation = kb._evidence_citation(entry, Finding(concept, Polarity.PRESENT), 2.0)
+        assert citation.source_id == expect_source
+        assert expect_text in citation.snippet

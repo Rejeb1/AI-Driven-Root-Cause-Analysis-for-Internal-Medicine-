@@ -3244,3 +3244,15 @@ fallback and were saved as done, which a resume would have skipped. Fixed:
 a case with >20% fallback turns is neither saved nor counted, the run stops
 when the model goes silent, and a resume redoes such cases. Partial, not a
 result: 13 patients remain.
+
+## Evidence lines cite their own likelihood's source
+
+Every supporting/contradicting line printed "[FIXTURE-KB]" and every
+hypothesis "provenance: synthetic entry, not sourced", including numbers
+measured in published cohorts (the entry citation was used for all). Now
+each line names its likelihood's citation and tier ("measured in a published
+study" / "converted from a textbook" / "INVENTED ... invented estimate" /
+"KB-MARGINAL" for back-off), and grounding is a per-disease summary, e.g.
+PE: prior sourced (STATPEARLS-PRESENTATION); of 23 likelihoods, 14 measured,
+3 textbook, 6 invented. Reporting only: no decision changes. New test pins
+both tiers.

@@ -180,9 +180,9 @@ def main() -> int:
                         f"{citation.snippet}",
                         "         ",
                     ))
-        # The entry's own citation, kept apart from the evidence. For this
-        # knowledge base it reads "synthetic entry, not sourced", and it used
-        # to be printed at the head of the supporting list.
+        # The entry's provenance summary (prior and likelihood tiers), kept
+        # apart from the evidence; it used to be the fixture file's blanket
+        # "synthetic entry, not sourced", printed at the head of the support.
         for citation in entry.grounding:
             if citation.snippet:
                 print(wrap(
