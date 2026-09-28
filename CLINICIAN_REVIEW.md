@@ -120,9 +120,13 @@ would have this finding?
 | Asthma exacerbation | SpO₂ < 95% on air | 35 | |
 | Asthma exacerbation | crackles | 10 | |
 | Asthma exacerbation | white cell count > 11 | 20 | |
-| COPD exacerbation | SpO₂ < 95% on air | 55 (a study puts it at *least* 55.2%) | |
 | Acute pulmonary oedema | troponin above the 99th centile | 30 | |
 | Community-acquired pneumonia | D-dimer > 500 µg/L FEU | 35 (a study bounds it between 25 and 50) | |
+
+One more guessed number, not shown to change a diagnosis but known to be
+slightly too low: **COPD exacerbation, SpO₂ < 95% on air**, set at 55. A
+344-patient cohort found SpO₂ *below 91%* in 55.2%, so the true figure is at
+least that. *What would you put it at?*
 
 ---
 
