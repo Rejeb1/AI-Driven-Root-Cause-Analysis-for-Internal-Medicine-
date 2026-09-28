@@ -555,7 +555,7 @@ function renderResult(d) {
   $("v-tag").textContent = committed ? "● Committed" : "▲ Escalated to a clinician";
   $("v-head").textContent = committed ? pretty(d.prediction) : "No commit — a question is still open";
   $("v-sub").textContent = committed
-    ? "The gate's six conditions all held: calibrated confidence, margin over the runner-up, grounding, red-flag tolerance, proposer agreement and evidence fit."
+    ? "Every gate condition held: calibrated confidence, margin over the runner-up, grounding, red-flag tolerance, evidence fit, proposer agreement, and no guideline criterion pointing elsewhere."
     : d.escalation?.reason || "";
 
   $("v-stats").innerHTML = `

@@ -475,7 +475,7 @@ story += [row([
 ])]
 
 story += [PageBreak()]
-story += [Paragraph("The six conditions that must all hold before it answers",
+story += [Paragraph("The conditions that must all hold before it answers",
                     S["h2"])]
 story += [table([
     ["#", "Condition", "Why"],
@@ -487,6 +487,9 @@ story += [table([
                                                      "likelier benign cause while a killer is live"],
     ["5", "Proposer disagreement below threshold", "When two proposers run, disagreement is a signal"],
     ["6", "The evidence is explained by something", "Refuses to answer on findings the KB cannot account for"],
+    ["7", "No guideline diagnostic criterion points elsewhere",
+     "A troponin rise with ST changes (MI definition) or a positive CTPA vetoes "
+     "committing to any other cause; it never forces a commit"],
 ], [0.9 * cm, 7.4 * cm, FULLW - 8.3 * cm], header_bg=PLUM)]
 story += [Spacer(1, 0.2 * cm)]
 story += [Paragraph(
