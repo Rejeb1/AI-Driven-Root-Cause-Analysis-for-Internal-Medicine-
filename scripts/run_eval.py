@@ -224,11 +224,15 @@ def baseline_comparison(kb, test_cases, result, args=None) -> str:
     lines.append(row("agentic loop", result.outcomes, loop_evidence))
 
     share = loop_evidence / complete if complete else 0.0
+    # Computed, not written: this sentence used to say "for the same top-1"
+    # as a constant, and stayed in the output after sourcing passes left the
+    # loop well below the single-pass reasoner.
+    loop_top1 = ranking_metrics(result.outcomes, truths).top1
     lines.append(
         "\n  evidence = findings the system saw. Both baselines are handed the "
         "complete\n  record; the loop asks for what it wants and pays per "
         f"question -- here {loop_evidence:.1f}\n  of {complete:.1f} findings, "
-        f"{share:.0%} of the evidence, for the same top-1. Comparing\n  accuracy "
+        f"{share:.0%} of the evidence, at top-1 {loop_top1:.1%}. Comparing\n  accuracy "
         "without that column is the complete-profile flattery MEDDxAgent\n"
         "  criticises, and a retrieval-only baseline scoring near the loop is a\n"
         "  finding about the benchmark rather than about the system."
