@@ -3233,3 +3233,14 @@ Bayes single pass 13/25, Gemini 42-43/50 runs, loop 10/0/15. In-loop run
 hit the daily free quota; GeminiLLM retried PerDay 429s for an hour, all
 fallbacks. Now: PerDay raises at once, script probes first, in-loop report
 flags >5% fallback turns as not a result. In-loop still unmeasured.
+
+## Gemini inside the loop: 12 of 25 measured, none changed
+
+First full --in-loop run (gemini-3.5-flash-lite, free tier): patients 1-12
+answered on every turn (225 turns, 0 fallbacks), 0 of 12 outcomes changed
+vs the Bayesian loop (3 correct commits kept, 9 escalations kept). The
+daily quota ran out at patient 13; cases 13-25 ran with every turn a
+fallback and were saved as done, which a resume would have skipped. Fixed:
+a case with >20% fallback turns is neither saved nor counted, the run stops
+when the model goes silent, and a resume redoes such cases. Partial, not a
+result: 13 patients remain.

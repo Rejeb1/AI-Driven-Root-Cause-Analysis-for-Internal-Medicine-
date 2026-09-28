@@ -193,6 +193,25 @@ def report_single_pass(kb, llm, args) -> None:
     )
 
 
+# Share of a case's model turns that may fall back before the case is treated
+# as not answered (a stray parse failure is tolerated; a silent model is not).
+MAX_CASE_FALLBACK_SHARE = 0.2
+
+
+def report_partial(cases, bayes_only, saved) -> None:
+    """What the finished cases say so far, clearly labelled as partial."""
+    if not saved:
+        return
+    changed = [cid for cid, v in saved.items() if v["verdict"] != bayes_only[cid][0]]
+    print(
+        f"\npartial ({len(saved)} of {len(cases)} cases, model answering): "
+        f"{len(changed)} changed outcome"
+        + (f" ({', '.join(changed)})" if changed else "")
+        + f"; turns {sum(v['turns'] for v in saved.values())}, "
+        f"fallbacks {sum(v['fallbacks'] for v in saved.values())}"
+    )
+
+
 def checkpoint_path(llm) -> Path:
     name = str(getattr(llm, "model", "model")).replace(":", "_").replace("/", "_")
     return Path(tempfile.gettempdir()) / f"dxagent_llm_in_loop_{name}.json"
@@ -210,8 +229,16 @@ def report_in_loop(kb, llm, fresh: bool = False) -> None:
     bayes_only = run_loop(kb, BayesianProposer(kb), cases)
     path = checkpoint_path(llm)
     saved = {} if fresh or not path.exists() else json.loads(path.read_text(encoding="utf-8"))
-    if saved:
-        print(f"resuming: {len(saved)} of {len(cases)} cases already done ({path})")
+    # A case the model did not fully answer is not done. The first long run
+    # lost its daily quota at case 13 and saved the rest as finished with
+    # every turn a fallback, which a resume would then have skipped.
+    redo = [cid for cid, v in saved.items() if v["fallbacks"] > MAX_CASE_FALLBACK_SHARE * v["turns"]]
+    for cid in redo:
+        del saved[cid]
+    if saved or redo:
+        print(f"resuming: {len(saved)} of {len(cases)} cases already done"
+              + (f", {len(redo)} redone because the model did not answer" if redo else "")
+              + f" ({path})")
 
     consensus = ConsensusProposer(primary=BayesianProposer(kb), secondary=LLMProposer(kb, llm))
     agent = DiagnosticAgent(
@@ -229,19 +256,31 @@ def report_in_loop(kb, llm, fresh: bool = False) -> None:
         else:
             verdict = "escalated"
             detail = (outcome.escalation.reason if outcome.escalation else "")[:90]
-        saved[case.case_id] = {
+        record = {
             "verdict": verdict, "detail": detail,
             "turns": consensus.turns - turns,
             "fallbacks": consensus.secondary_fallbacks - fallbacks,
         }
-        path.write_text(json.dumps(saved, indent=1), encoding="utf-8")
         print(
             f"[{n:>2}/{len(cases)}] {case.case_id:<14} {verdict:<9} "
-            f"model turns {saved[case.case_id]['turns']:>2}, "
-            f"fallbacks {saved[case.case_id]['fallbacks']}  "
+            f"model turns {record['turns']:>2}, fallbacks {record['fallbacks']}  "
             f"({time.monotonic() - started:.0f}s)",
             flush=True,
         )
+        if record["fallbacks"] > MAX_CASE_FALLBACK_SHARE * record["turns"]:
+            # The model has gone quiet (typically the daily quota). Going on
+            # would only produce Bayes-against-Bayes cases; stop, keep what
+            # is finished, and let a later run continue from here.
+            print(
+                f"\nstopped: the model gave no answer on {record['fallbacks']} of "
+                f"{record['turns']} turns for {case.case_id} (quota or outage).\n"
+                f"{len(saved)} of {len(cases)} cases are saved; run the same command "
+                "later to continue from this case."
+            )
+            report_partial(cases, bayes_only, saved)
+            return
+        saved[case.case_id] = record
+        path.write_text(json.dumps(saved, indent=1), encoding="utf-8")
 
     with_model = {cid: (v["verdict"], v["detail"]) for cid, v in saved.items()}
     total_turns = sum(v["turns"] for v in saved.values())

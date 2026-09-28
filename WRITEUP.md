@@ -54,8 +54,10 @@ reader does not have to reconstruct it from the history.
   complaint withheld, **64%**. Its errors differ from the Bayesian model's
   (asthma read as COPD, panic as PE), which is the case for running the two
   side by side rather than choosing one. Top-1 only: no loop, no abstention.
-  The model inside the loop has not been measured yet: the free daily quota
-  ran out first.
+  Inside the loop, as the consensus second opinion, it is measured on 12 of
+  the 25 patients so far (225 model turns, every one answered): **none of the
+  12 outcomes changed**, including 3 correct commits. The daily free quota ran
+  out at patient 13; the other 13 await a rerun.
   `CLINICIAN_REVIEW.md` lists every question that needs a clinician, sized to
   an hour.
 
