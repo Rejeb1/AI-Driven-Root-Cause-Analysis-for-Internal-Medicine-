@@ -37,8 +37,11 @@ which reduces that risk without removing it.
 from __future__ import annotations
 
 import argparse
+import json
 import math
 import sys
+import tempfile
+import time
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -190,11 +193,60 @@ def report_single_pass(kb, llm, args) -> None:
     )
 
 
-def report_in_loop(kb, llm) -> None:
+def checkpoint_path(llm) -> Path:
+    name = str(getattr(llm, "model", "model")).replace(":", "_").replace("/", "_")
+    return Path(tempfile.gettempdir()) / f"dxagent_llm_in_loop_{name}.json"
+
+
+def report_in_loop(kb, llm, fresh: bool = False) -> None:
+    """About 500 model calls; one progress line per case, resumable.
+
+    The first version printed nothing until every case was done, so a run
+    stalled on one unanswered request looked exactly like a run in
+    progress for two hours. Each finished case is now printed and saved,
+    and a rerun continues from the checkpoint instead of starting over.
+    """
     cases = REAL_CASES
     bayes_only = run_loop(kb, BayesianProposer(kb), cases)
+    path = checkpoint_path(llm)
+    saved = {} if fresh or not path.exists() else json.loads(path.read_text(encoding="utf-8"))
+    if saved:
+        print(f"resuming: {len(saved)} of {len(cases)} cases already done ({path})")
+
     consensus = ConsensusProposer(primary=BayesianProposer(kb), secondary=LLMProposer(kb, llm))
-    with_model = run_loop(kb, consensus, cases)
+    agent = DiagnosticAgent(
+        kb=kb, proposer=consensus, gate=AbstentionGate(kb=kb), limits=LoopLimits(**REAL_LIMITS)
+    )
+    started = time.monotonic()
+    for n, case in enumerate(cases, 1):
+        if case.case_id in saved:
+            continue
+        turns, fallbacks = consensus.turns, consensus.secondary_fallbacks
+        outcome = agent.run(case)
+        if outcome.verdict is Verdict.COMMITTED:
+            verdict = "correct" if outcome.prediction == case.diagnosis else "WRONG"
+            detail = outcome.prediction
+        else:
+            verdict = "escalated"
+            detail = (outcome.escalation.reason if outcome.escalation else "")[:90]
+        saved[case.case_id] = {
+            "verdict": verdict, "detail": detail,
+            "turns": consensus.turns - turns,
+            "fallbacks": consensus.secondary_fallbacks - fallbacks,
+        }
+        path.write_text(json.dumps(saved, indent=1), encoding="utf-8")
+        print(
+            f"[{n:>2}/{len(cases)}] {case.case_id:<14} {verdict:<9} "
+            f"model turns {saved[case.case_id]['turns']:>2}, "
+            f"fallbacks {saved[case.case_id]['fallbacks']}  "
+            f"({time.monotonic() - started:.0f}s)",
+            flush=True,
+        )
+
+    with_model = {cid: (v["verdict"], v["detail"]) for cid, v in saved.items()}
+    total_turns = sum(v["turns"] for v in saved.values())
+    total_fallbacks = sum(v["fallbacks"] for v in saved.values())
+    print()
     changed = 0
     for case in cases:
         a, b = bayes_only[case.case_id], with_model[case.case_id]
@@ -205,10 +257,10 @@ def report_in_loop(kb, llm) -> None:
     print(f"  Bayesian loop alone        {tally(bayes_only)}")
     print(f"  with the model alongside   {tally(with_model)}")
     print(
-        f"  model turns {consensus.turns}, of which it had no opinion (fallback) "
-        f"on {consensus.secondary_fallbacks}"
+        f"  model turns {total_turns}, of which it had no opinion (fallback) "
+        f"on {total_fallbacks}"
     )
-    if consensus.turns and consensus.secondary_fallbacks / consensus.turns > 0.05:
+    if total_turns and total_fallbacks / total_turns > 0.05:
         print(
             "  NOT A RESULT: on more than 5% of turns the model gave no opinion\n"
             "  (quota, network or parsing), so those turns compared Bayes with\n"
@@ -228,6 +280,7 @@ def main() -> int:
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--no-complaint", action="store_true")
     parser.add_argument("--in-loop", action="store_true")
+    parser.add_argument("--fresh", action="store_true", help="ignore the --in-loop checkpoint")
     args = parser.parse_args()
 
     from dxagent.llm import from_provider
@@ -247,7 +300,7 @@ def main() -> int:
         print(f"model not usable right now: {str(exc)[:160]}")
         return 2
     if args.in_loop:
-        report_in_loop(kb, llm)
+        report_in_loop(kb, llm, fresh=args.fresh)
     else:
         report_single_pass(kb, llm, args)
     return 0

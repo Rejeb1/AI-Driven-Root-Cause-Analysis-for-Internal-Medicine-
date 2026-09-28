@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 import time
 from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
@@ -133,6 +134,10 @@ class GeminiLLM:
     # near-empty corpus for a reason that has nothing to do with the model's
     # ability to write vignettes.
     max_retries: int = 5
+    # Per request. Without one, a request the server never answered held an
+    # in-loop run for over an hour with no output and no CPU; with one, it
+    # fails, the proposer falls back, and the fallback is counted.
+    timeout_ms: int = 60_000
 
     def complete(self, prompt: str, system: str = "", max_tokens: int = 1024) -> str:
         if not self.api_key:
@@ -143,7 +148,10 @@ class GeminiLLM:
         except ImportError as exc:  # pragma: no cover
             raise RuntimeError("pip install google-genai") from exc
 
-        client = genai.Client(api_key=self.api_key)
+        client = genai.Client(
+            api_key=self.api_key,
+            http_options=types.HttpOptions(timeout=self.timeout_ms),
+        )
         config = types.GenerateContentConfig(
             system_instruction=system or None,
             max_output_tokens=max_tokens,
@@ -175,6 +183,8 @@ class GeminiLLM:
                 # into the same limit.
                 match = re.search(r"'retryDelay':\s*'(\d+)s'", str(exc))
                 delay = int(match.group(1)) + 1 if match else 2 ** (attempt + 3)
+                # On stderr, so a long run shows it is waiting, not hung.
+                print(f"gemini: rate limited, retrying in {delay}s", file=sys.stderr)
                 time.sleep(delay)
 
         raise RuntimeError("unreachable")  # pragma: no cover
