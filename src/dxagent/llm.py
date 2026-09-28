@@ -193,7 +193,7 @@ class GeminiLLM:
                 match = re.search(r"'retryDelay':\s*'(\d+)s'", str(exc))
                 delay = int(match.group(1)) + 1 if match else 2 ** (attempt + 3)
                 # On stderr, so a long run shows it is waiting, not hung.
-                why = "server busy (503)" if overloaded else "rate limited"
+                why = "server busy" if overloaded else "rate limited"
                 print(f"gemini: {why}, retrying in {delay}s", file=sys.stderr)
                 time.sleep(delay)
 
