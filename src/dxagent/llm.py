@@ -168,7 +168,12 @@ class GeminiLLM:
                 )
                 return response.text or ""
             except Exception as exc:
-                if "429" not in str(exc) or attempt == self.max_retries - 1:
+                # 429 is a rate limit; 503 is the service shedding load under
+                # high demand. Both are temporary. Treating a 503 as final
+                # would turn a brief overload into fallback turns that count
+                # against the run's validity.
+                overloaded = "503" in str(exc) or "UNAVAILABLE" in str(exc)
+                if not ("429" in str(exc) or overloaded) or attempt == self.max_retries - 1:
                     raise
                 # A per-day quota does not reset within any backoff worth
                 # waiting. Retrying it cost a run over an hour of sleeps,
@@ -184,7 +189,8 @@ class GeminiLLM:
                 match = re.search(r"'retryDelay':\s*'(\d+)s'", str(exc))
                 delay = int(match.group(1)) + 1 if match else 2 ** (attempt + 3)
                 # On stderr, so a long run shows it is waiting, not hung.
-                print(f"gemini: rate limited, retrying in {delay}s", file=sys.stderr)
+                why = "server busy (503)" if overloaded else "rate limited"
+                print(f"gemini: {why}, retrying in {delay}s", file=sys.stderr)
                 time.sleep(delay)
 
         raise RuntimeError("unreachable")  # pragma: no cover
