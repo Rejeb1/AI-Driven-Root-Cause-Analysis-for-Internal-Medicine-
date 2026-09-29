@@ -49,12 +49,14 @@ reader does not have to reconstruct it from the history.
   median 88, upper quartile 100, n = 134), caps pericarditis tachycardia at
   0.25 and fails the invented 0.40 by a wide margin; also flagged, not moved,
   because a ceiling does not say where below it the value lies.
-- **A second, pre-registered real-case set.** 21 patients chosen by a rule
-  committed before any search, run once on a frozen model: 3 correct,
-  **0 wrong**, 18 escalated (coverage 14% against 40% on the original 25;
-  correct diagnosis first in 8 of 21). The no-wrong-commit property held on
-  unseen patients; the coverage did not. Under 30, so calibration is still
-  unfitted. See `datasets/holdout_cases.py` and DESIGN.md.
+- **A second, pre-registered real-case set.** 28 patients in two waves, each
+  chosen by a rule committed before its search, run on a frozen model:
+  5 correct, **0 wrong**, 23 escalated (coverage 18% against 40% on the
+  original 25). The no-wrong-commit property held on unseen patients; the
+  coverage did not. Of 17 escalations for "ACS not excluded" across both
+  sets, 12 are reports that record neither troponin nor ECG -- the records,
+  not the gate, limit coverage. Under 30, so calibration is still unfitted.
+  See `datasets/holdout_cases.py` and DESIGN.md.
 - **Open, and not resolvable from here.** Twenty-five real patients are too few to
   fit calibration or to settle design choices — several comparisons in the test
   suite have changed direction on almost every sourcing pass, which is itself

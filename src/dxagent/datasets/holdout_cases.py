@@ -156,6 +156,37 @@ original 25 -- and then evaluated on the original 25:
    in {0.50, 0.55, ..., 0.80} with zero wrong commits (the shipped 0.65 if
    none is lower). Adopted only if it adds no wrong commit on the original 25.
 
+What wave 2 found (searched 2026-09-29): 7 more, pooled 28 -- still under
+30, so nothing is fitted and the fitting plan below does not run.
+
+- Pericarditis, taken ranks 5, 22, 25, 38. Skipped: 1 an MI; 2, 15 after
+  procedures for cancer; 3, 17, 18, 28 mimics or dissection; 4, 12, 13,
+  23, 35 no PMC full text; 6 leukaemia differentiation syndrome; 7
+  bronchogenic cyst; 8 after catheter ablation; 9 drug with ulcerative
+  colitis; 10 gunshot; 11, 21, 36 COVID-19; 14 concurrent liver injury on
+  immunosuppression; 16 chemotherapy; 19 pacing-lead perforation; 20
+  filter strut; 24 anorexia with pneumomediastinum; 26 Salmonella
+  aneurysm; 27, 33 presented as cholecystitis; 29 attributed to a first
+  e-cigarette (exposure-attributed, as ACS ranks 23 and 40 in wave 1); 30
+  after stem-cell transplant; 31 oesophageal perforation; 32 vaccine
+  myopericarditis; 34 atrial flutter co-primary; 37 too thin at any one
+  presentation.
+- Pneumonia, taken ranks 6, 23; 2 of 3 within 40. Skipped: 5 ARDS with a
+  possible second (fungal) infection, fewer than six findings; 18 walked
+  past in wave 1; 25 no breathing symptoms; 26 lymphoma on chemotherapy;
+  31 kidney transplant on immunosuppression; 32 hairy-cell leukaemia; 33
+  tachypnoea and hypoxia but no breathlessness reported; every other rank
+  not a pneumonia presenting to hospital (meningitis, joint, eye, skin,
+  endocarditis, vaccine), COVID-19, paediatric, nosocomial,
+  immunosuppressed, or with a co-primary complication.
+- Panic, none: the query returned 10 results, of which 1, 6, 9 were already
+  handled in wave 1, 2 is hyperventilation-induced hypophosphataemia (the
+  co-primary rule, as wave 1 rank 5), and the rest are not panic attacks
+  (seizure, Wilson's disease, vasospasm, cannabinoid intoxication, thyroid
+  tumour, dystonia).
+- ACS, taken rank 9. Skipped: 1, 3, 5, 6, 7, 8 mimics; 2 three findings;
+  4 carbon monoxide poisoning.
+
 Not fitted, on purpose: the red-flag tolerance (10%), which decides how much
 residual probability of a time-critical cause is acceptable. That is a
 clinical policy with a cost on both sides, not a parameter to optimise
@@ -644,6 +675,162 @@ HOLDOUT_CASES: tuple[Case, ...] = (
             "lab:raised_troponin": False,
             "lab:raised_d_dimer": False,
             "exam:tachycardia": True,  # "heart rate of 110 beats per minute"
+        },
+        vocabulary=frozenset(),
+    ),
+    # ======== wave 2 (amendment 1) ========
+    # ---- pericarditis ----------------------------------------------------------
+    # PMC7279685 -- recurrent pericarditis with human metapneumovirus, a month
+    # after a first idiopathic episode; later tamponade.
+    Case(
+        case_id="ho-7279685",
+        presenting_complaint=(
+            "26-year-old man, three days of sharp left chest pain worse lying "
+            "down and better sitting up, fever, dry cough, breathlessness"
+        ),
+        diagnosis="pericarditis",
+        features={
+            "fever": True,  # reported; afebrile on arrival -- reported counts
+            "productive_cough": False,  # "dry cough"
+            "dyspnoea_at_rest": True,  # "difficulty breathing"
+            "exam:tachycardia": True,  # 115 bpm
+            "exam:raised_jvp": False,  # "normal neck veins"
+            "lab:raised_d_dimer": False,  # 359 ng/ml
+            "lab:raised_troponin": False,  # < 0.012 ng/ml
+            # WBC 11.0 sits on this project's ~11 cutoff: left out.
+        },
+        vocabulary=frozenset(),
+    ),
+    # PMC7489791 -- post-viral pericarditis with a Brugada phenocopy on ECG.
+    Case(
+        case_id="ho-7489791",
+        presenting_complaint=(
+            "35-year-old man, one day of substernal chest pain radiating to "
+            "the back, worse on inspiration, two weeks after a cold"
+        ),
+        diagnosis="pericarditis",
+        features={
+            "pleuritic_pain": True,  # "worsening with inspiration"
+            "exam:tachycardia": False,  # "vital signs were unremarkable"
+            "lab:raised_wcc": False,  # "normal white blood counts"
+            "imaging:cxr_consolidation": False,  # "no evidence of pneumonia"
+            # "CT angiography was negative for pulmonary embolus"
+            "imaging:ctpa_filling_defect": False,
+            "lab:raised_troponin": False,  # two negative assays
+            "exam:ecg_st_changes": True,  # "diffuse ST-PR discordance"
+            "imaging:pericardial_effusion": False,  # echo "without ... effusion"
+        },
+        vocabulary=frozenset(),
+    ),
+    # PMC12240549 -- idiopathic pericarditis (first episode; recurred a year
+    # later).
+    Case(
+        case_id="ho-12240549",
+        presenting_complaint=(
+            "20-year-old woman, two days of severe sharp substernal chest pain "
+            "worse lying back and better leaning forward, chills"
+        ),
+        diagnosis="pericarditis",
+        features={
+            "exam:tachycardia": True,  # 124 beats per minute
+            "fever": False,  # 98.5F
+            "exam:hypoxia": False,  # 99% on room air
+            "exam:ecg_st_changes": False,  # "no ST wave changes were observed"
+            "lab:raised_d_dimer": True,  # "elevated ... D-dimer levels"
+            "imaging:ctpa_filling_defect": False,  # "ruled out with chest CT"
+            "imaging:cxr_consolidation": False,  # chest X-ray within normal limits
+            "lab:raised_troponin": False,
+            "lab:raised_wcc": False,  # 7.2
+        },
+        vocabulary=frozenset(),
+    ),
+    # PMC12874572 -- acute pericarditis with an incidental right ventricular
+    # outflow tract aneurysm.
+    Case(
+        case_id="ho-12874572",
+        presenting_complaint=(
+            "32-year-old man, two weeks of sharp pleuritic anterior chest pain, "
+            "worse lying flat, partly relieved sitting forward"
+        ),
+        diagnosis="pericarditis",
+        features={
+            "pleuritic_pain": True,
+            # "denied ... dyspnea on exertion, palpitations, orthopnea, ... fever"
+            "palpitations": False,
+            "orthopnoea": False,
+            "fever": False,
+            "smoking_history": True,  # "10 pack-year smoking history"
+            "exam:tachycardia": False,  # 82 bpm
+            "exam:hypoxia": False,  # 98% on room air
+            "exam:friction_rub": False,  # "There was no pericardial rub"
+            "exam:raised_jvp": False,  # "no ... jugular venous distension"
+            "lab:raised_wcc": True,  # 11,200/uL
+        },
+        vocabulary=frozenset(),
+    ),
+    # ---- community-acquired pneumonia -----------------------------------------
+    # PMC9273171 -- Legionella pneumonia during the COVID-19 pandemic (COVID
+    # tests negative).
+    Case(
+        case_id="ho-9273171",
+        presenting_complaint=(
+            "56-year-old man, four days of fever and shortness of breath, no "
+            "cough or chest pain"
+        ),
+        diagnosis="community_acquired_pneumonia",
+        features={
+            "fever": True,  # 104.0F
+            "dyspnoea_at_rest": True,
+            # "There was no history of cough, chest pain"
+            "productive_cough": False,
+            "pleuritic_pain": False,
+            "exertional_chest_pain": False,
+            "smoking_history": False,  # "no history of smoking"
+            "exam:tachycardia": True,  # 128
+            "exam:hypoxia": True,  # 92% on room air
+            # "diminished breath sounds in the left lower lobe"
+            "exam:reduced_breath_sounds": True,
+            "lab:raised_wcc": True,  # 11.9 k/uL
+            "lab:raised_d_dimer": True,  # 2,112 ng/mL D-DU, reference 0-230
+            # "ill-defined pulmonary infiltrate in the lower lobe"
+            "imaging:cxr_consolidation": True,
+        },
+        vocabulary=frozenset(),
+    ),
+    # PMC11272502 -- severe Legionella longbeachae pneumonia from potting soil.
+    Case(
+        case_id="ho-11272502",
+        presenting_complaint=(
+            "70-year-old man, a keen gardener, high fever, cough and "
+            "breathlessness after a few days of diarrhoea"
+        ),
+        diagnosis="community_acquired_pneumonia",
+        features={
+            "fever": True,  # 39.8C
+            "dyspnoea_at_rest": True,
+            "exam:hypoxia": True,  # SpO2 70% on 15 L/min
+            "smoking_history": True,  # 20 pack-years
+            "exam:tachycardia": False,  # 78 bpm, "relative bradycardia"
+            "exam:crackles": True,  # "bilateral coarse crackles"
+            # chest radiography: "ground-glass and infiltrative opacities"
+            "imaging:cxr_consolidation": True,
+        },
+        vocabulary=frozenset(),
+    ),
+    # ---- acute coronary syndrome -------------------------------------------------
+    # PMC8788021 -- anterior STEMI evolving into a de Winter pattern.
+    Case(
+        case_id="ho-8788021",
+        presenting_complaint="34-year-old man who smokes, 49 minutes of chest pain",
+        diagnosis="acute_coronary_syndrome",
+        features={
+            "smoking_history": True,  # 18 pack-years
+            "fever": False,  # 36.5C
+            "exam:tachycardia": False,  # 70 bpm
+            "lab:raised_troponin": True,  # cTnT 47 ng/L, normal < 40
+            "lab:raised_bnp": True,  # 124.5, normal < 100
+            # first ECG "showed an acute anterior ... myocardial infarction"
+            "exam:ecg_st_changes": True,
         },
         vocabulary=frozenset(),
     ),

@@ -3432,3 +3432,34 @@ gradual, weeks-long course, and PE's prior is about a quarter of COPD's in
 this presentation; with a clear chest film and no scan result recorded, the
 model has little that points to PE, which is the honest answer on those
 records.
+
+## Holdout wave 2 (amendment 1): 28 cases, 5/0/23; what limits coverage
+
+Wave 2, under the amendment committed before its search (d622eb1): 7 cases
+-- pericarditis 4, pneumonia 2 of 3, ACS 1, panic 0 of 3 (the panic query
+returned 10 results, none a qualifying attack). First run, identical on the
+frozen model (2c528d9 knowledge base) and the current one: 2 correct, 0
+wrong, 5 escalated. Pooled holdout: 5 correct, 0 wrong, 23 escalated of 28.
+Still under 30, so -- as the amendment fixed in advance -- no temperature
+and no confidence threshold is fitted.
+
+Why coverage is low, measured rather than guessed. Escalation reasons:
+original 25 -- ACS red flag 5, low confidence 4, unexplained evidence 3,
+guideline conflict 3; holdout 28 -- ACS red flag 12, low confidence 8, PE
+red flag 1, unexplained 1, guideline conflict 1. Of the 17 ACS red-flag
+escalations, 12 are patients whose report records neither a troponin nor an
+ECG, 3 record one of the two, and 2 record both. An emergency department
+always has both; a case report often omits them. Most of the missing
+coverage is therefore a property of the records, not something a threshold
+should buy back: the loop asks for the two tests that would rule ACS out and
+the source does not say. Filling them in would be inventing data. The
+honest remedy is real ED records with complete workups (MIMIC-IV-ED, via
+PhysioNet credentialing), not a looser gate.
+
+Calibration, described since it cannot be fitted: mean top-1 confidence
+against top-1 accuracy -- original 25: 0.55 vs 0.60; holdout 28: 0.50 vs
+0.39; pooled 53: 0.52 vs 0.49 (Brier 0.569 / 0.740 / 0.659). Underconfident
+on the set the project has lived with, overconfident on the fresh one; a
+temperature fitted on either alone would point the wrong way for the other,
+which is the argument for waiting for 30 independent cases rather than
+fitting on what is there.
