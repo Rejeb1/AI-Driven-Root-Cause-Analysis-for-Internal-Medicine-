@@ -130,6 +130,37 @@ and pericarditis are almost never reported alone.
   final diagnosis PE; 25, 35 already in ``real_cases``; 29 final diagnosis
   HOCM; 37 toxic; 38 five findings.
 
+Amendment 1 -- a second wave and a fitting plan, committed before its search
+------------------------------------------------------------------------------
+Wave 1 fell short in four diagnoses. Wave 2 fills only those, with new
+title queries (same filters, same inclusion rules 1-5, 40 results each, in
+relevance order), skipping anything already in either set or already walked
+past in wave 1, and taking at most the shortfall:
+
+- pericarditis, 4: ``("acute pericarditis"[ti] OR "idiopathic pericarditis"[ti] OR "viral pericarditis"[ti])``
+- community_acquired_pneumonia, 3: ``("pneumococcal"[ti] OR "Streptococcus pneumoniae"[ti] OR "Legionella"[ti] OR "Mycoplasma pneumoniae"[ti] OR "lobar pneumonia"[ti]) AND pneumonia[tiab]``
+- panic_attack, 3: ``"panic attack"[tiab] AND ("emergency"[tiab] OR "chest pain"[tiab] OR palpitations[tiab])``
+- acute_coronary_syndrome, 1: ``("NSTEMI"[ti] OR "non-ST-elevation"[ti] OR "STEMI"[ti] OR "ST-elevation myocardial infarction"[ti])``
+
+The frozen model stays the one named above; wave-2 cases get their own first
+run, reported apart from wave 1 as well as pooled.
+
+If the pooled set reaches 30, two things are fitted on it -- never on the
+original 25 -- and then evaluated on the original 25:
+
+1. Temperature. ``TemperatureScaler.fit`` on (the loop's final differential,
+   the true label) for every holdout case, on its own grid. Adopted as the
+   shipped default only if it lowers the negative log-likelihood of the true
+   label on the original 25.
+2. The confidence threshold. On the holdout, the lowest ``min_confidence``
+   in {0.50, 0.55, ..., 0.80} with zero wrong commits (the shipped 0.65 if
+   none is lower). Adopted only if it adds no wrong commit on the original 25.
+
+Not fitted, on purpose: the red-flag tolerance (10%), which decides how much
+residual probability of a time-critical cause is acceptable. That is a
+clinical policy with a cost on both sides, not a parameter to optimise
+against 30 case reports.
+
 Use, fixed in the same commit
 -----------------------------
 First, the frozen model runs on this set once and the result is reported as
