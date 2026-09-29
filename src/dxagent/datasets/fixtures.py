@@ -1368,6 +1368,30 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
     # attempt recorded. The same papers sourced or bounded seven other cells
     # on the way, which is the usual shape of this work: a cohort table
     # sources a row, not a cell.
+    #
+    # PE's cell was a Merck conversion ("the most common signs of PE are
+    # tachycardia and tachypnea" -> 0.60), found while tracing why every
+    # holdout PE lost to a rival: a normal heart rate charged PE 0.5-0.65
+    # log-points in four of seven real PE cases. Measured, it overrides the
+    # narrative like any other cohort figure.
+    ("pulmonary_embolism", "exam:tachycardia"): measured(
+        0.501,
+        Citation(
+            "FAUJI-2026-PE-ED",
+            "The Effect of Early Anticoagulation Therapy in Acute Pulmonary "
+            "Embolism, ED retrospective cohort, Rawalpindi, PMC12878442, Table 4",
+            "tachycardia (> 100 bpm) in 173 of 345 adults with acute "
+            "pulmonary embolism presenting to the emergency department (50.1%)",
+        ),
+        low=0.45,
+        high=0.67,
+        note="corrects the textbook 0.60 downward. Band runs from the "
+             "binomial lower limit of 173/345 to a second, smaller ED "
+             "cohort (King Saud Medical City, PMC9391762, Table 2: heart "
+             "rate > 100 in 54 of 81 confirmed PE, 66.7%) -- two populations "
+             "that disagree, reported rather than averaged. Same threshold "
+             "as this project, no deviation.",
+    ),
     ("community_acquired_pneumonia", "exam:tachycardia"): measured(
         0.55,
         Citation(

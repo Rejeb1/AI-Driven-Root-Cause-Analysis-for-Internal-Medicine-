@@ -145,8 +145,8 @@ contradicted, all four for that reason:
   correcting it cost.
 
 **Most of these numbers are still invented, and which ones are not is
-recorded.** 51% of the 177 likelihoods carry a citation — 90 in all: 79
-counted in patients (7 from DDXPlus, 72 from published cohorts) and 11
+recorded.** 51% of the 177 likelihoods carry a citation — 90 in all: 80
+counted in patients (7 from DDXPlus, 73 from published cohorts) and 10
 converted from narrative text (the Merck Manual and StatPearls). The fraction fell from 42% when two pericardial concepts were
 added with invented rival cells, and recovered on a pneumonia pass and a
 tachycardia-column pass; see WRITEUP.md §5.

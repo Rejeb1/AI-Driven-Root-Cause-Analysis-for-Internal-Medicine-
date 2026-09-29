@@ -3402,3 +3402,33 @@ search engine summary quoted "46% of ED pericarditis" but the figure could
 not be traced to any study, including the review it was attributed to --
 and the seven rival cells would all have been invented. Adding it would
 have taken the invented count from 87 to 95 to encode one unsourced number.
+
+## Why PE loses: traced, one cell measured, one declined
+
+Per-finding log-likelihood ratios for the seven real PE cases (three in the
+original 25, four in the holdout) against their top rivals. The recurring
+costs: PE's tachycardia cell (a Merck conversion, 0.60) charged a normal
+heart rate 0.5-0.65 log-points in four of seven; COPD's invented sudden_onset
+(0.20) charged a gradual onset 1.3 in two.
+
+PE tachycardia: measured 0.501 (PMC12878442, 173 of 345 ED acute PE, > 100
+bpm; band to 0.67 from PMC9391762, 54 of 81). Measured 79 -> 80, narrative
+11 -> 10, invented unchanged at 87. Outcomes unchanged on both real sets
+(10/0/15 and 3/0/18); PE's full-record posterior rose in four of the seven
+PE cases and fell in one (a tachycardic patient), rank unchanged in all.
+Courtney 2010 (PMC2847003) was checked first: heart rate only for the whole
+cohort, with odds ratios, not a count within VTE. PIOPED II's full text is
+still not retrievable.
+
+COPD sudden_onset: Aaron 2012 (Thorax, PubMed 22008189) reports 56% of
+exacerbations "sudden" -- but sudden there means the diary threshold was
+crossed the same day symptoms began, in an outpatient diary cohort, not an
+abrupt onset in patients presenting to an ED. Different definition and
+different population; declined, as Kolbe's asthma figure was accepted only
+because its "<6 h" matched.
+
+What is left of PE's weakness is not a single cell. Two holdout PEs have a
+gradual, weeks-long course, and PE's prior is about a quarter of COPD's in
+this presentation; with a clear chest film and no scan result recorded, the
+model has little that points to PE, which is the honest answer on those
+records.

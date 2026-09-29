@@ -20,8 +20,8 @@ The rest of this document is largely history — what was measured, what was
 believed, and how each belief moved. This section is the current state, so a
 reader does not have to reconstruct it from the history.
 
-- **Knowledge base.** 177 finding-given-disease likelihoods: 79 counted in
-  published patient cohorts, 11 converted from textbook sentences, **87 still
+- **Knowledge base.** 177 finding-given-disease likelihoods: 80 counted in
+  published patient cohorts, 10 converted from textbook sentences, **87 still
   invented (51% sourced)**. All 8 disease priors are sourced. The 51 other
   model settings (gate thresholds, test costs, correlation weights, budgets,
   selector constants) are all invented; `scripts/gate_sweep.py` shows what the
