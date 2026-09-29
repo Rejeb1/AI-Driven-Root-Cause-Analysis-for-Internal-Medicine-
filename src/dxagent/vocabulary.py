@@ -13,10 +13,11 @@ Scope, stated plainly because it is easy to over-claim here:
   there is no usable 'contradicts' layer either. Disease-finding edges must
   come from elsewhere and be sourced individually.
 
-This module is therefore the concept layer only. It stands in for UMLS/SNOMED
-while that licence is pending, and it is deliberately shaped so that swapping
-in UMLS later means adding a second identifier per concept, not rewriting call
-sites.
+This module is therefore the concept layer only. It was written to stand in
+for UMLS/SNOMED while that licence was pending; the licence has since cleared,
+and the UMLS identifiers sit beside the HPO ones as a second identifier per
+concept (``data/umls_concepts.json``, built by ``scripts/build_umls_map.py``)
+rather than replacing them.
 
 Mapping policy
 --------------
