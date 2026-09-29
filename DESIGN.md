@@ -3337,7 +3337,7 @@ Med, PMC10179683: positive D-dimer, > 0.55 ug/mL, in 48 of 121 ED NSTEMI;
 band 0.31-0.48). Found through the aortic-dissection literature, which
 measures D-dimer in ACS as its comparison arm. Caveats in the cell: 0.55
 cutoff (deviation #8), NSTEMI only, D-dimer drawn at clinician discretion.
-Coverage 89 -> 90 of 177 (51%); invented 88 -> 87.
+Sourced cells 89 -> 90 (51%); invented 87 of 177, down from 88.
 
 Effects, all recorded in the tests that pinned them: real cases unchanged
 at 10/0/15 on the shipped arm; the unweighted arm gains a second wrong
@@ -3365,3 +3365,40 @@ in 26.5%) caps > 11 at 0.265, while a Serbian cohort's subgroup quartiles
 (1,622 PE; survivors 10.0 [7.9-12.7], deaths 12.1 [9.3-17.6]) floor it at
 0.277. Two populations disagreeing around the invented 0.25; neither a
 value, and the pair cannot both be bounds, so neither row was added.
+
+## A second real-case set, pre-registered: 3/0/18 of 21 on its first run
+
+Rule, frozen model and intended use committed first (2c528d9, empty set),
+then the eight PubMed searches were walked in relevance order, 40 results
+each, first four qualifying per diagnosis. 21 taken, not 32: PE 4, ACS 3,
+pneumonia 1, oedema 4, COPD 4, asthma 4, pericarditis 0, panic 1. Every
+skip and its reason is in the holdout_cases docstring. The shortfalls are a
+finding about the literature: case reports describe the unusual, so plain
+community-acquired pneumonia and idiopathic pericarditis are almost never
+written up alone. COPD, empty in two earlier passes, filled here -- the
+PubMed case-report filter surfaces different reports than PMC search did.
+
+First run of the frozen model (knowledge base and gate untouched since
+2c528d9): 3 committed and correct, 0 committed and wrong, 18 escalated.
+Coverage 14%, against 40% on the 25 this project has been looking at; the
+correct diagnosis leads the differential in 8 of 21 (38%). All four PE
+cases escalate with PE never ranked first -- none of their reports records
+both a CTPA result and a D-dimer the loop could use, and the loop rates
+COPD or ACS above PE on what remains. Most escalations (11 of 18) are
+"ACS not excluded". Read plainly: the safety property (no wrong commit)
+held on patients no design choice has seen; the coverage did not, and the
+40% on the original 25 now looks like a set that has been lived with.
+
+Calibration stays unfitted: 21 is under the 30 the rule required, so the
+second use (fit temperature here, evaluate on the original 25) does not
+run. Nothing in the knowledge base was changed after this run, and nothing
+will be changed because of it without the change being reported against
+this first result.
+
+Not added, and why (the brief's "read the complaint text" item): a
+positional-pain finding (pain eased by sitting forward) was the obvious
+free-text clue for pericarditis. No cohort counting it was found -- one
+search engine summary quoted "46% of ED pericarditis" but the figure could
+not be traced to any study, including the review it was attributed to --
+and the seven rival cells would all have been invented. Adding it would
+have taken the invented count from 87 to 95 to encode one unsourced number.

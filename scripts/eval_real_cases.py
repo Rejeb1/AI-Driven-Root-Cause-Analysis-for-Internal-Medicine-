@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Run the agent against real patients, not invented ones.
 
-    python scripts/eval_real_cases.py
+    python scripts/eval_real_cases.py            # the 25 in real_cases
+    python scripts/eval_real_cases.py --holdout  # the separate, pre-registered set
 
 A handful of cases, hand-extracted from open-access PMC case reports (see
 ``dxagent.datasets.real_cases`` for exactly which ones and how each finding
@@ -28,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from dxagent import AbstentionGate, DiagnosticAgent, LoopLimits, Verdict  # noqa: E402
 from dxagent.belief import BayesianProposer  # noqa: E402
 from dxagent.datasets import REAL_CASES, build_knowledge_base  # noqa: E402
+from dxagent.datasets.holdout_cases import HOLDOUT_CASES  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from demo import RULE, THIN, humanise, wrap  # noqa: E402
@@ -43,6 +45,9 @@ def _force_utf8_stdout() -> None:
 
 def main() -> int:
     _force_utf8_stdout()
+    # The holdout set (datasets/holdout_cases.py) was selected by a rule
+    # committed before any search, and is never merged into REAL_CASES.
+    cases = HOLDOUT_CASES if "--holdout" in sys.argv else REAL_CASES
     kb = build_knowledge_base(correlated=True)
     agent = DiagnosticAgent(
         kb=kb,
@@ -68,7 +73,7 @@ def main() -> int:
     )
 
     print(RULE)
-    print(f"REAL-CASE EVALUATION  ({len(REAL_CASES)} cases from published PMC reports)")
+    print(f"REAL-CASE EVALUATION  ({len(cases)} cases from published PMC reports{' -- HOLDOUT SET' if cases is HOLDOUT_CASES else ''})")
     print(RULE)
     print(wrap(
         "\nReal patients, not invented ones. Every finding below was "
@@ -79,7 +84,7 @@ def main() -> int:
 
     correct = wrong = 0
     escalation_reasons: list[tuple[str, str]] = []
-    for case in REAL_CASES:
+    for case in cases:
         outcome = agent.run(case)
         print(THIN)
         print(f"{case.case_id}")
@@ -122,16 +127,24 @@ def main() -> int:
     print(f"\n{RULE}")
     print(
         f"  {correct} committed and correct, {wrong} committed and WRONG, "
-        f"{len(REAL_CASES) - correct - wrong} escalated, out of "
-        f"{len(REAL_CASES)} real cases."
+        f"{len(cases) - correct - wrong} escalated, out of "
+        f"{len(cases)} real cases."
     )
-    print(wrap(
-        f"  Not a benchmark result -- n={len(REAL_CASES)}: ten hand-picked, "
-        "the rest chosen by rules fixed before any was read, no clinician "
-        "review of the extraction. Reported this small on purpose rather "
-        "than not reported at all.",
-        indent="  ",
-    ))
+    if cases is HOLDOUT_CASES:
+        print(wrap(
+            f"  Not a benchmark result -- n={len(cases)}, every case chosen "
+            "by a rule committed before the search, first run on a model "
+            "frozen in that commit; no clinician review of the extraction.",
+            indent="  ",
+        ))
+    else:
+        print(wrap(
+            f"  Not a benchmark result -- n={len(cases)}: ten hand-picked, "
+            "the rest chosen by rules fixed before any was read, no clinician "
+            "review of the extraction. Reported this small on purpose rather "
+            "than not reported at all.",
+            indent="  ",
+        ))
     if escalation_reasons:
         print(wrap(
             "  Both LoopLimits budget flags are off for this run "

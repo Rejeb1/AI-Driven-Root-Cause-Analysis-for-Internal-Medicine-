@@ -116,8 +116,8 @@ would have this finding?
 |---|---|---|---|
 | Asthma exacerbation | fever (≥38 °C) | 15 | |
 | Asthma exacerbation | productive cough | 40 (a study caps any cough at 64) | |
-| Asthma exacerbation | heart rate > 100 | 45 | |
-| Asthma exacerbation | SpO₂ < 95% on air | 35 | |
+| Asthma exacerbation | heart rate > 100 | 45 (a study's mean and spread cap it at 38) | |
+| Asthma exacerbation | SpO₂ < 95% on air | 35 (a study puts it at 19 or more) | |
 | Asthma exacerbation | crackles | 10 | |
 | Asthma exacerbation | white cell count > 11 | 20 | |
 | Acute pulmonary oedema | troponin above the 99th centile | 30 | |
