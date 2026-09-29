@@ -128,6 +128,11 @@ slightly too low: **COPD exacerbation, SpO₂ < 95% on air**, set at 55. A
 344-patient cohort found SpO₂ *below 91%* in 55.2%, so the true figure is at
 least that. *What would you put it at?*
 
+And one known to be too high: **pericarditis, heart rate > 100**, set at 40.
+A 169-patient emergency-department pericarditis cohort had heart rate median
+88, upper quartile 100, so at most about a quarter are above 100. *What would
+you put it at?*
+
 ---
 
 ## Part 3 — Four real cases (about 20 minutes)

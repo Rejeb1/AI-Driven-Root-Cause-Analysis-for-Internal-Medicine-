@@ -38,14 +38,17 @@ reader does not have to reconstruct it from the history.
   examined) and two guideline vetoes (MI definition; a positive CTPA confirms
   PE).
 - **Audits.** `scripts/plausibility_check.py` checks direction and ordering
-  claims and nine distribution-free bounds. The one that used to fail (PE's
+  claims and ten distribution-free bounds. The one that used to fail (PE's
   productive cough) was itself mis-specified: its ceiling counted only cough
   *as a new symptom*; a second cohort (cough of any kind in 60% of 551 PE
   patients) supplies a valid ceiling, and the cell's 0.20 sits inside it.
   Two new floors come from subsets of already-cited cohorts; one of them
   catches COPD hypoxia's invented 0.55 just under a measured floor of 0.552
   (SpO2 < 91% in 190 of 344), left flagged for a clinician rather than
-  nudged to pass.
+  nudged to pass. A tenth, from an ED pericarditis cohort (heart rate
+  median 88, upper quartile 100, n = 134), caps pericarditis tachycardia at
+  0.25 and fails the invented 0.40 by a wide margin; also flagged, not moved,
+  because a ceiling does not say where below it the value lies.
 - **Open, and not resolvable from here.** Twenty-five real patients are too few to
   fit calibration or to settle design choices — several comparisons in the test
   suite have changed direction on almost every sourcing pass, which is itself

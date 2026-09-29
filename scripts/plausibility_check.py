@@ -244,6 +244,22 @@ QUARTILE_BOUNDS: tuple[tuple[str, str, float, float, str, str], ...] = (
      "PMC13007150 Table 2, 351 pericarditis patients at first attack",
      "white cell count median 9.6-10.4, IQR to 12.0-13.0 x10^9/L; the 11 "
      "cutoff sits between the median and Q3 in both arms"),
+    # Corroborated by an ED cohort: Ceriani 2026 (PMC13109608, 169 ESC-
+    # confirmed pericarditis discharged from an Italian ED) has WBC median
+    # 10.5, IQR 8.4-12.8 -- the same bracket.
+    #
+    # A KNOWN FAILURE, kept failing on purpose, like PE productive cough
+    # below. The same ED cohort's heart rate is median 88, IQR 76-100 bpm
+    # (n = 134 with a recorded rate), so at most a quarter are above this
+    # project's 100 bpm cutoff; the invented 0.40 is above that ceiling.
+    # The ceiling proves 0.40 too high and does not supply the right value,
+    # so the cell is not moved to a point chosen inside [0, 0.25]. Single
+    # source: the other pericarditis cohort cited here (PMC13007150) reports
+    # no heart rate. On the clinician sheet.
+    ("pericarditis", "exam:tachycardia", 0.0, 0.25,
+     "PMC13109608 (Ceriani 2026) Table 1, 169 ED acute pericarditis",
+     "heart rate median 88, IQR 76-100 bpm in 134 with a recorded rate; "
+     "at most a quarter above 100"),
     ("community_acquired_pneumonia", "lab:raised_d_dimer", 0.25, 0.50,
      "PMC11809021 Table 1, 630 hospitalised CAP patients without VTE",
      "D-dimer median 468, IQR 286-978 ng/mL; the 500 cutoff sits between "

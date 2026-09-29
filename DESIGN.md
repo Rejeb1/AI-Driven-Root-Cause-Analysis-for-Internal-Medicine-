@@ -3302,3 +3302,30 @@ commits to escalations (TV ~1.0). Reading: on these real cases the model's
 second opinion agrees at commit points and adds cost without effect; with
 the local 3B model earlier it did block commits on the fixtures, so the
 effect depends on the model. Substitute model, n=25.
+
+## A pericarditis heart-rate ceiling, and a negative panic search
+
+Asked to close the known limits, this pass tried the two columns where
+every real case escalates and one whose values a cohort could check.
+
+Panic: no cell written. Three open-access PMC papers were read.
+PMC12932601 (Singapore ED, 125 SCID-confirmed panic-related anxiety among
+321 with cardiopulmonary complaints) names shortness of breath, dizziness and
+palpitations as the commonest symptoms but gives no per-symptom counts;
+PMC3808760 is a protocol (Panic Screening Score) with only accuracy figures;
+PMC10661159 is an abstract with no retrievable full text. Panic's
+dyspnoea_at_rest (0.60) and tachycardia (0.70) stay invented.
+
+Pericarditis: Ceriani 2026 (PMC13109608, 169 ESC-confirmed pericarditis
+from an Italian ED), Table 1. WBC median 10.5, IQR 8.4-12.8, the same
+[0.25, 0.50] bracket PMC13007150 already gives -- corroboration, no change.
+Heart rate median 88, IQR 76-100 (n = 134), so at most a quarter are above
+the project's 100 bpm: a ceiling of 0.25 under an invented 0.40. Added to
+the bounds audit as a known failure; the cell is not moved, for the same
+reason as COPD hypoxia (a bound says the value is wrong, not what it is).
+Single source. On the clinician sheet. Bounds: 10, 8 passing. Invented
+count unchanged at 88.
+
+Not done, and why. Fitting the gate thresholds or the temperature on the 25
+real cases would be tuning on the test set. The mandated model still has no
+credits. A ninth cause would add a column of mostly invented numbers.
