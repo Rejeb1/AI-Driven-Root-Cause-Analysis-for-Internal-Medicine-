@@ -896,7 +896,7 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
     # than just re-pinned.
     #
     # fx-004 joined when ACS's D-dimer was measured (invented 0.20 -> 0.397,
-    # Kim 2023) -- the same commit that took fx-005 off the correlation-only
+    # Lee 2023) -- the same commit that took fx-005 off the correlation-only
     # arm above. One cell, one fixture off one arm and another onto the
     # next: the saturated-set point again, not a signal about either case.
     assert [

@@ -3332,7 +3332,7 @@ credits. A ninth cause would add a column of mostly invented numbers.
 
 ## One cell measured, three bounds added, a new bound method (Cantelli)
 
-ACS lab:raised_d_dimer: invented 0.20 -> measured 0.397 (Kim 2023, J Clin
+ACS lab:raised_d_dimer: invented 0.20 -> measured 0.397 (Lee 2023, J Clin
 Med, PMC10179683: positive D-dimer, > 0.55 ug/mL, in 48 of 121 ED NSTEMI;
 band 0.31-0.48). Found through the aortic-dissection literature, which
 measures D-dimer in ACS as its comparison arm. Caveats in the cell: 0.55

@@ -1377,9 +1377,9 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
     ("pulmonary_embolism", "exam:tachycardia"): measured(
         0.501,
         Citation(
-            "FAUJI-2026-PE-ED",
-            "The Effect of Early Anticoagulation Therapy in Acute Pulmonary "
-            "Embolism, ED retrospective cohort, Rawalpindi, PMC12878442, Table 4",
+            "RIAZ-2026",
+            "Riaz A et al., Cureus 2026;18(1):e100980, ED retrospective "
+            "cohort, Rawalpindi, PMC12878442, Table 4",
             "tachycardia (> 100 bpm) in 173 of 345 adults with acute "
             "pulmonary embolism presenting to the emergency department (50.1%)",
         ),
@@ -1685,8 +1685,8 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
     ("acute_coronary_syndrome", "lab:raised_d_dimer"): measured(
         0.397,
         Citation(
-            "KIM-2023-DT-RATIO",
-            "Kim et al., J Clin Med 2023;12(9):3054, PMC10179683, Table 2",
+            "LEE-2023-DT-RATIO",
+            "Lee M et al., J Clin Med 2023;12(9):3054, PMC10179683, Table 2",
             "positive D-dimer (above the 0.55 ug/mL reference value, "
             "turbidimetric) in 48 of 121 NSTEMI patients presenting to a "
             "Korean emergency department with acute chest pain (39.7%)",
