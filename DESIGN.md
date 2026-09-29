@@ -3384,8 +3384,8 @@ Coverage 14%, against 40% on the 25 this project has been looking at; the
 correct diagnosis leads the differential in 8 of 21 (38%). All four PE
 cases escalate with PE never ranked first -- none of their reports records
 both a CTPA result and a D-dimer the loop could use, and the loop rates
-COPD or ACS above PE on what remains. Most escalations (11 of 18) are
-"ACS not excluded". Read plainly: the safety property (no wrong commit)
+COPD or ACS above PE on what remains. Most escalations (11 of 18) are a
+time-critical cause not excluded: ACS in 10, PE in 1. Read plainly: the safety property (no wrong commit)
 held on patients no design choice has seen; the coverage did not, and the
 40% on the original 25 now looks like a set that has been lived with.
 
