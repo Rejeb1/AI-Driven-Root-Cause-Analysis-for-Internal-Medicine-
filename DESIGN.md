@@ -3291,3 +3291,14 @@ invented 0.55 sits 0.002 under its floor. Left flagged, not nudged to pass
 (any value above the floor is equally a guess); added to the clinician
 sheet. Bounds: 9, 8 passing. Invented count unchanged at 88: floors check
 cells, they do not source them.
+
+## Gemini inside the loop: complete, 25 of 25, none changed
+
+Resumed run finished patients 13-25 (0 fallbacks). Whole set: 461 model
+turns, 0 fallbacks, 0 of 25 outcomes changed (10/0/15 both ways). The
+consensus disagreement (TV > 0.40) never fired where the Bayesian loop
+would commit. Not an inert path: a contrary ScriptedLLM flips all 10
+commits to escalations (TV ~1.0). Reading: on these real cases the model's
+second opinion agrees at commit points and adds cost without effect; with
+the local 3B model earlier it did block commits on the fixtures, so the
+effect depends on the model. Substitute model, n=25.

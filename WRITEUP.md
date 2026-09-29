@@ -59,10 +59,14 @@ reader does not have to reconstruct it from the history.
   complaint withheld, **64%**. Its errors differ from the Bayesian model's
   (asthma read as COPD, panic as PE), which is the case for running the two
   side by side rather than choosing one. Top-1 only: no loop, no abstention.
-  Inside the loop, as the consensus second opinion, it is measured on 12 of
-  the 25 patients so far (225 model turns, every one answered): **none of the
-  12 outcomes changed**, including 3 correct commits. The daily free quota ran
-  out at patient 13; the other 13 await a rerun.
+  Inside the loop, as the consensus second opinion, it is measured on all 25
+  patients (461 model turns, every one answered, over two days of free
+  quota): **none of the 25 outcomes changed** — the 10 correct commits and
+  15 escalations are identical with and without it. Its disagreement never
+  crossed the gate's threshold at a point where the Bayesian model would
+  commit, so on these cases it cost ~460 requests and changed nothing. The
+  mechanism is not inert: a deliberately contrary scripted model turns all
+  10 commits into escalations.
   `CLINICIAN_REVIEW.md` lists every question that needs a clinician, sized to
   an hour.
 
