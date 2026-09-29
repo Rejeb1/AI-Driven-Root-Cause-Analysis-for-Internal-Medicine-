@@ -3153,7 +3153,7 @@ cell -- labelled so; contrasted in the comment with panic troponin
 Complete-grid test: now 1 vs 1 wrong, rank tied 2.35 -- trade gone.
 177 likelihoods, 91 invented, 49%. 174 tests pass.
 
-## COPD fever/dyspnoea/leg swelling: 50% sourced, one real case lost
+## COPD fever/dyspnoea/leg swelling: half sourced, one real case lost
 
 Freund 2024 (n=344 ED AECOPD): fever >38C 11% (0.30), dyspnoea 91%
 (0.70); source's fever total inconsistent 36 vs 40, band spans both.
@@ -3329,3 +3329,39 @@ count unchanged at 88.
 Not done, and why. Fitting the gate thresholds or the temperature on the 25
 real cases would be tuning on the test set. The mandated model still has no
 credits. A ninth cause would add a column of mostly invented numbers.
+
+## One cell measured, three bounds added, a new bound method (Cantelli)
+
+ACS lab:raised_d_dimer: invented 0.20 -> measured 0.397 (Kim 2023, J Clin
+Med, PMC10179683: positive D-dimer, > 0.55 ug/mL, in 48 of 121 ED NSTEMI;
+band 0.31-0.48). Found through the aortic-dissection literature, which
+measures D-dimer in ACS as its comparison arm. Caveats in the cell: 0.55
+cutoff (deviation #8), NSTEMI only, D-dimer drawn at clinician discretion.
+Coverage 89 -> 90 of 177 (51%); invented 88 -> 87.
+
+Effects, all recorded in the tests that pinned them: real cases unchanged
+at 10/0/15 on the shipped arm; the unweighted arm gains a second wrong
+commit (pmc-6350673, oedema read as panic at 65%), so correlation weighting
+now prevents two real wrong commits; held-out fixture gate coverage 42.9%
+-> 28.6% (selective accuracy still 100%); on the weakened fixture arms fx-005
+leaves one and fx-004 joins another. The flip-action test's second half,
+already described by its own docstring as a fact about the day's KB, broke
+again (fever could now flip fx-002 to pneumonia at 9%) and was narrowed to
+the property that holds: the rule never re-proposes an asked question.
+
+Cantelli's one-sided Chebyshev inequality, P(X >= mu + k) <= s^2/(s^2+k^2),
+turns a mean and SD into a distribution-free bound, so tables this file
+declined as "means only" are usable as bounds after all:
+- asthma tachycardia <= 0.385 (PMC6580601, 201 ED asthma, pulse 80.3 +/- 13
+  and 85.4 +/- 15): invented 0.45 FAILS, flagged not moved.
+- oedema fever <= 0.131 (Ross 2024, PMC11313032, 36.2 +/- 0.7C): 0.10 passes.
+And a subset floor: asthma hypoxia >= 0.191 (Schnyder, SpO2 < 92% in 30 of
+157): 0.35 passes. Bounds: 13, 3 failing (COPD hypoxia, pericarditis
+tachycardia, asthma tachycardia), all invented cells, all on the clinician
+sheet.
+
+Checked and not written: PE raised WCC. CURES registry (7,312 PE; WBC > 10
+in 26.5%) caps > 11 at 0.265, while a Serbian cohort's subgroup quartiles
+(1,622 PE; survivors 10.0 [7.9-12.7], deaths 12.1 [9.3-17.6]) floor it at
+0.277. Two populations disagreeing around the invented 0.25; neither a
+value, and the pair cannot both be bounds, so neither row was added.

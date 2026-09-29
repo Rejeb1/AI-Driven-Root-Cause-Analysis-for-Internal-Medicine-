@@ -1655,6 +1655,29 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
              "flagged the same way as the MIMIC-III tachycardia cell "
              "above. Corrects the invented 0.25 upward by about half.",
     ),
+    # First measured cell for ACS in the D-dimer column. Found looking for
+    # D-dimer in ACS through the aortic-dissection literature, which
+    # measures it in ACS as the comparison arm.
+    ("acute_coronary_syndrome", "lab:raised_d_dimer"): measured(
+        0.397,
+        Citation(
+            "KIM-2023-DT-RATIO",
+            "Kim et al., J Clin Med 2023;12(9):3054, PMC10179683, Table 2",
+            "positive D-dimer (above the 0.55 ug/mL reference value, "
+            "turbidimetric) in 48 of 121 NSTEMI patients presenting to a "
+            "Korean emergency department with acute chest pain (39.7%)",
+        ),
+        low=0.31,
+        high=0.48,
+        note="corrects the invented 0.20 upward. Band is the binomial 95% "
+             "interval on 48/121. Three caveats stated, not absorbed: the "
+             "cutoff is 0.55 against this project's ~0.50 (in the "
+             "deviations; it can only undercount); the population is NSTEMI, "
+             "not ACS overall; and patients were included only if a D-dimer "
+             "was drawn, which in NSTEMI happens when a clinician suspects "
+             "something else -- a selection that may push the figure either "
+             "way and is the weakest part of the cell.",
+    ),
     ("asthma_exacerbation", "dyspnoea_at_rest"): measured(
         0.91,
         Citation(

@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 88 of its 177 likelihoods are invented, no
+an unfinished feature — because 87 of its 177 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -20,9 +20,9 @@ The rest of this document is largely history — what was measured, what was
 believed, and how each belief moved. This section is the current state, so a
 reader does not have to reconstruct it from the history.
 
-- **Knowledge base.** 177 finding-given-disease likelihoods: 78 counted in
-  published patient cohorts, 11 converted from textbook sentences, **88 still
-  invented (50% sourced)**. All 8 disease priors are sourced. The 51 other
+- **Knowledge base.** 177 finding-given-disease likelihoods: 79 counted in
+  published patient cohorts, 11 converted from textbook sentences, **87 still
+  invented (51% sourced)**. All 8 disease priors are sourced. The 51 other
   model settings (gate thresholds, test costs, correlation weights, budgets,
   selector constants) are all invented; `scripts/gate_sweep.py` shows what the
   gate thresholds trade without choosing them.
@@ -190,7 +190,7 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**88 of 177 likelihoods are invented.** That is the number, stated on its own
+**87 of 177 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project. It was 89 of
 153 until the pericardial columns were added (§5): two concepts the real cases
 showed were missing, two sourced cells for pericarditis, and 21 invented rival
@@ -450,7 +450,7 @@ celebrate.
 ### Nothing was checking the numbers themselves
 
 Every test in this project checks outputs. The knowledge base is inputs, and
-for most of its life nothing looked at it: 88 of 177 likelihoods are invented,
+for most of its life nothing looked at it: 87 of 177 likelihoods are invented,
 and the only scrutiny they got was whichever ones happened to change a case.
 
 Reading each column sorted, against what the diseases actually do, found five

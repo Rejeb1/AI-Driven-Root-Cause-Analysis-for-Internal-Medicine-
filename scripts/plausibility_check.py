@@ -260,6 +260,37 @@ QUARTILE_BOUNDS: tuple[tuple[str, str, float, float, str, str], ...] = (
      "PMC13109608 (Ceriani 2026) Table 1, 169 ED acute pericarditis",
      "heart rate median 88, IQR 76-100 bpm in 134 with a recorded rate; "
      "at most a quarter above 100"),
+    # A third kind of distribution-free bound, from a mean and SD alone.
+    # This file used to decline mean/SD tables as needing a normality
+    # assumption; Cantelli's one-sided Chebyshev inequality needs none:
+    # P(X >= mu + k) <= s^2 / (s^2 + k^2). Italian ED asthma cohort
+    # (PMC6580601, Table 2, 201 confirmed asthma attacks, ages 12-65):
+    # pulse 80.3 +/- 13 in 123 discharged, 85.4 +/- 15 in 78 admitted.
+    # Above 100 bpm: at most 169/(169 + 19.7^2) = 0.303 of the discharged
+    # and 225/(225 + 14.6^2) = 0.514 of the admitted, so at most
+    # (123 x 0.303 + 78 x 0.514) / 201 = 0.385 overall. The invented 0.45 is
+    # above it: a KNOWN FAILURE, flagged and not moved, as for pericarditis
+    # tachycardia above. Caveats: a sample SD stands in for the population
+    # one, and the cohort includes adolescents. The same table's SpO2 means
+    # give only a floor of 0.11 under hypoxia (invented 0.35), too loose to
+    # be worth a row.
+    ("asthma_exacerbation", "exam:tachycardia", 0.0, 0.385,
+     "PMC6580601 Table 2, 201 ED asthma attacks, Cantelli bound from mean/SD",
+     "pulse 80.3 +/- 13 (123 discharged) and 85.4 +/- 15 (78 admitted); "
+     "one-sided Chebyshev caps the share above 100 at 0.385"),
+    # The same inequality on a mean/SD fixtures.py declined for oedema
+    # fever: Ross 2024 (PMC11313032, 2,246 ED acute heart failure),
+    # temperature 36.2 +/- 0.7C, so at most 0.49/(0.49 + 1.8^2) = 0.131 at
+    # or above 38C. Invented 0.10 passes.
+    ("acute_pulmonary_oedema", "fever", 0.0, 0.131,
+     "PMC11313032 (Ross 2024), 2,246 ED acute heart failure, Cantelli bound",
+     "temperature 36.2 +/- 0.7C; one-sided Chebyshev caps >= 38C at 0.131"),
+    # A subset floor from the Schnyder audit already cited for asthma cough:
+    # SpO2 < 92% in 30 patients, of 157 with a saturation measured (98.1% of
+    # 160). Below 92% implies below this project's 95%.
+    ("asthma_exacerbation", "exam:hypoxia", 0.191, 1.0,
+     "PMC9843545 (Schnyder 2022), 160 adult asthma exacerbations",
+     "SpO2 < 92% in 30 of 157 measured (19.1%); SpO2 < 95% includes them"),
     ("community_acquired_pneumonia", "lab:raised_d_dimer", 0.25, 0.50,
      "PMC11809021 Table 1, 630 hospitalised CAP patients without VTE",
      "D-dimer median 468, IQR 286-978 ng/mL; the 500 cutoff sits between "
@@ -349,7 +380,7 @@ def report_bounds(kb) -> int:
     """Print the quartile-bound audit. Returns the number of failures."""
     failures = bound_failures(kb)
     print()
-    print(f"{len(QUARTILE_BOUNDS)} distribution-free bounds from cohort data (quartiles, subset ceilings)")
+    print(f"{len(QUARTILE_BOUNDS)} distribution-free bounds from cohort data (quartiles, subsets, Cantelli)")
     print("  a bound checks an invented value without replacing it -- see")
     print("  QUARTILE_BOUNDS for the sources and where each cutoff fell")
     for label, concept, low, high, _src, _why in QUARTILE_BOUNDS:

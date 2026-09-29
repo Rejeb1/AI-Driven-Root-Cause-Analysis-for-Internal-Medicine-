@@ -697,13 +697,18 @@ def test_flip_action_is_silent_once_nothing_can_change_the_answer(kb, cases):
     assert outcome.prediction == case.diagnosis
     assert len(outcome.steps) < LoopLimits().max_turns
 
-    # And once every question the rule could ask has been asked, it is
-    # silent: the floor on outcome probability is what keeps it from asking
-    # for results it believes will not happen.
+    # This used to go on to assert that no flip remained afterwards, and
+    # failed a second time for the reason the docstring gives: sourcing
+    # ACS's D-dimer (0.20 invented -> 0.397 measured) left fever able to move
+    # fx-002 to pneumonia at 9%. What holds whatever the numbers are is that
+    # the rule never proposes something already asked -- the half of
+    # "silent" that is a property of the code rather than of the day's
+    # knowledge base.
     state = CaseState(case_id=case.case_id, presenting_complaint=case.presenting_complaint)
     state.asked.update(s.action.target for s in outcome.steps)
     state.asked.update(case.initial_findings)
-    assert InformationGainSelector(kb).flip_action(state, outcome.differential) is None
+    flip = InformationGainSelector(kb).flip_action(state, outcome.differential)
+    assert flip is None or flip.target not in state.asked
 
 
 def test_flip_action_ignores_outcomes_it_believes_will_not_happen(kb, cases):
@@ -826,11 +831,15 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
     # 0.11, dyspnoea 0.70 -> 0.91, leg swelling 0.20 -> 0.37): it is a COPD
     # exacerbation with leg swelling absent, which now argues against COPD
     # harder than before, and asthma edges ahead on this arm (44%).
+    #
+    # And left again when ACS's D-dimer was measured (invented 0.20 ->
+    # 0.397): the redistribution of mass off ACS is enough to put COPD back
+    # on top for fx-005 on this arm. One more reversal on a saturated set.
     assert [
         case.case_id
         for case in cases
         if aware.run(case).differential.top.label != case.diagnosis
-    ] == ["fx-005", "fx-009", "fx-010"]
+    ] == ["fx-009", "fx-010"]
     # fx-009 is no longer recoverable on this arm by any mechanism. Its
     # troponin and its BNP are both normal, and both of those likelihoods for
     # pulmonary embolism have since been sourced upward -- 0.25 to 0.53 and
@@ -885,11 +894,16 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
     # column being worked. This is what "the count moves with every
     # sourcing pass" (docstring above) means in practice, traced rather
     # than just re-pinned.
+    #
+    # fx-004 joined when ACS's D-dimer was measured (invented 0.20 -> 0.397,
+    # Kim 2023) -- the same commit that took fx-005 off the correlation-only
+    # arm above. One cell, one fixture off one arm and another onto the
+    # next: the saturated-set point again, not a signal about either case.
     assert [
         case.case_id
         for case in cases
         if decisive.run(case).differential.top.label != case.diagnosis
-    ] == ["fx-009", "fx-010"]
+    ] == ["fx-004", "fx-009", "fx-010"]
 
 
 def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
@@ -1115,8 +1129,16 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     # as pneumonia, which no criterion covers). The cost is paid on the
     # fixtures: two correct pericarditis commits at 94% (fx-006, fx-h02,
     # troponin with ST changes -- myopericarditis) now escalate too.
+    #
+    # Sourcing ACS's D-dimer (invented 0.20 -> measured 0.397) gave the
+    # unweighted arm a second wrong commit again: pmc-6350673, an oedema
+    # read as panic attack at 65%. A raised D-dimer now argues less against
+    # ACS, the time-critical rival loses less, and without the weighting the
+    # panic column's overcounted facets carry it past the gate. The shipped
+    # (weighted) arm still commits it correctly. Not chosen with this case in
+    # mind -- the cell was the first countable D-dimer figure found in ACS.
     assert wrong_commits(True) == 0
-    assert wrong_commits(False) == 1
+    assert wrong_commits(False) == 2
 
     # Where the safety difference lives now: the fixtures. Without the
     # weighting, four facets of one picture counted as four findings sharpen
@@ -2625,7 +2647,7 @@ def test_the_threshold_dependent_concepts_say_what_they_mean():
     assert not missing, f"threshold-dependent concepts with no definition: {missing}"
 
     deviations = deviations_from_operational_definitions(kb)
-    assert len(deviations) == 7, (
+    assert len(deviations) == 8, (
         "a sourced cell now uses a different cutoff, or one was repaired: "
         f"{deviations}"
     )

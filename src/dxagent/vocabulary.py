@@ -591,6 +591,9 @@ def deviations_from_operational_definitions(kb) -> list[tuple[str, str, str]]:
         ("acute_coronary_syndrome", "lab:raised_wcc"):
             "leukocyte count at or above 12,000/uL rather than the "
             "~11,000 named above, in a STEMI-only population",
+        ("acute_coronary_syndrome", "lab:raised_d_dimer"):
+            "D-dimer above 0.55 ug/mL rather than ~0.50, in an NSTEMI-only "
+            "population tested for D-dimer at a clinician's discretion",
     }
     out = []
     for (label, concept), note in known.items():
