@@ -187,6 +187,40 @@ What wave 2 found (searched 2026-09-29): 7 more, pooled 28 -- still under
 - ACS, taken rank 9. Skipped: 1, 3, 5, 6, 7, 8 mimics; 2 three findings;
   4 carbon monoxide poisoning.
 
+Amendment 2 -- a third wave and a second frozen model, committed before
+its search and before the model it will test exists
+------------------------------------------------------------------------------
+The 28 cases above have now been run and looked at, and the model has
+changed since (two cells sourced after the internship report). Three design
+changes are about to be made: an escalation that states what would resolve
+it, ST elevation and ST depression as separate findings, and a language
+model reading the presenting complaint. None of them may be judged on cases
+already seen, so a third wave is fixed here first.
+
+Search: continue every walk above, in the same relevance order with the
+same filters, from rank 41 to rank 80 -- the eight wave-1 queries, plus the
+four wave-2 queries for pericarditis, pneumonia, panic and ACS. Inclusion
+rules 1-5 unchanged, plus: not already in either wave or walked past in
+one. Take the first **three** per diagnosis that qualify (wave-2 query
+first where a diagnosis has two lists, then the wave-1 list), at most 24 in
+all; a diagnosis that cannot fill three within ranks 41-80 is recorded
+short, not topped up.
+
+Extraction, the same discipline as before, with one addition: where the
+report says which way the ST segment moved, record ``ecg:st_elevation`` or
+``ecg:st_depression`` as well as ``exam:ecg_st_changes``. The 53 cases
+already extracted get the same addition, read from their reports for the
+ECG sentence only, with every change listed in DESIGN.md.
+
+Model v2 is the commit that adds the three design changes, made before this
+wave is searched. Wave 3 is run once on v2 and once on the current model
+(v1, commit 9c12b9f), and reported apart from waves 1-2 as well as pooled.
+Nothing is tuned after the wave-3 run; a change prompted by it is a v3
+and needs a fourth wave.
+
+If the pooled holdout reaches 30, Amendment 1's fitting plan runs on it,
+with v2, exactly as written there.
+
 Not fitted, on purpose: the red-flag tolerance (10%), which decides how much
 residual probability of a time-critical cause is acceptable. That is a
 clinical policy with a cost on both sides, not a parameter to optimise
