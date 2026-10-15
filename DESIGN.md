@@ -3337,7 +3337,7 @@ Med, PMC10179683: positive D-dimer, > 0.55 ug/mL, in 48 of 121 ED NSTEMI;
 band 0.31-0.48). Found through the aortic-dissection literature, which
 measures D-dimer in ACS as its comparison arm. Caveats in the cell: 0.55
 cutoff (deviation #8), NSTEMI only, D-dimer drawn at clinician discretion.
-Sourced cells 89 -> 90 (51%); invented 87 of 177, down from 88.
+Sourced cells 89 -> 90 (51%); invented 88 -> 87.
 
 Effects, all recorded in the tests that pinned them: real cases unchanged
 at 10/0/15 on the shipped arm; the unweighted arm gains a second wrong
@@ -3463,3 +3463,59 @@ on the set the project has lived with, overconfident on the fresh one; a
 temperature fitted on either alone would point the wrong way for the other,
 which is the argument for waiting for 30 independent cases rather than
 fitting on what is there.
+
+## After the report: two more cells sourced (pericarditis tachycardia, ACS ST change)
+
+Chosen as the two cells most worth a search, not by what they would do to
+any case: pericarditis tachycardia was one of the three invented values
+failing its own bound (0.40 against a 0.25 ceiling), and ACS ST change was
+an invented 0.75 on the finding the HEART workup and the MI veto both turn
+on. Neither value was looked at against a case before it was written.
+
+- pericarditis / exam:tachycardia 0.40 -> 0.134 (Martinez-Nadal 2020,
+  Emergencias, 132 of 983 consecutive ED pericarditis, HR >= 100; both
+  subgroup splits sum to 132). Inside the ceiling, so 2 bounds now fail,
+  not 3 (COPD hypoxia, asthma tachycardia).
+- acute_coronary_syndrome / exam:ecg_st_changes 0.75 -> 0.55 (FORCE-ACS,
+  van der Sangen 2022, Open Heart, PMC8969003: ST deviation in 2,756 of
+  5,015 ACS; band 0.53-0.68 spans GRACE derivation 53% and CCC-ACS 68%).
+
+Declined on the way and recorded in fixtures.py: a 60-chart pericarditis
+series (tamponade 23%, mostly secondary causes); asthma tachycardia (means
+only, or HR >= 120 in pooled severe-asthma trials); pneumonia D-dimer (the
+only proportions use 2-3 ug/mL cutoffs).
+
+Sourced 90 -> 92 (52%); invented 87 -> 85.
+
+Effects, measured after the values were fixed and not tuned against:
+
+                          before (report)    after
+  original 25, loop       10/0/15            9/0/16
+  original 25, top-1      15/25 (60%)        14/25 (56%)
+  holdout 28, loop        5/0/23             4/0/24
+  holdout 28, top-1       11/28 (39%)        12/28 (43%)
+  pooled 53, top-1        26/53              26/53
+  single pass, 25 / 28    14 / 12            15 / 12
+  retrieval, 25 / 28      14 / 13            14 / 13
+  confidence vs accuracy  0.55/0.60, 0.50/0.39   0.56/0.56, 0.49/0.43
+  fixtures: AURC          0.125              0.305
+  fixtures: ECE / Brier   0.192 / 0.132      0.115 / 0.189
+
+Zero wrong commits still, on both real sets. Coverage fell by one case on
+each, and both are explained by the corrected numbers rather than by noise.
+pmc-12708975 is pericarditis with "a racing heart": at a measured 13% the
+tachycardia now counts against pericarditis, pneumonia edges ahead 48% to
+45%, and the loop escalates. ho-8498672 is an ACS with ST changes and no
+troponin in the record: ST change is now less specific to ACS and the top-1
+lands at 64%, one point under the 65% gate. The gate is not moved for it;
+that would be choosing a threshold after seeing which case it rescues.
+
+On the fixtures the loop's top-1 is unchanged at 57.1%, but fx-010 (ACS)
+now ranks oedema first at 77% -- still escalated, never committed -- which
+is what drives AURC from 0.125 to 0.305 on seven invented cases. Calibration
+on the real patients moved the other way: stated confidence now equals
+accuracy on the original 25 and the holdout gap shrinks from 11 to 6
+points. More accurate inputs made the system slightly more cautious and
+slightly better calibrated, and did not make it more accurate. That is
+the expected outcome of correcting two invented numbers that happened to
+favour commits, and it is reported rather than repaired.

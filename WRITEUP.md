@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 87 of its 177 likelihoods are invented, no
+an unfinished feature — because 85 of its 177 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -20,14 +20,16 @@ The rest of this document is largely history — what was measured, what was
 believed, and how each belief moved. This section is the current state, so a
 reader does not have to reconstruct it from the history.
 
-- **Knowledge base.** 177 finding-given-disease likelihoods: 80 counted in
-  published patient cohorts, 10 converted from textbook sentences, **87 still
-  invented (51% sourced)**. All 8 disease priors are sourced. The 51 other
+- **Knowledge base.** 177 finding-given-disease likelihoods: 82 counted in
+  published patient cohorts, 10 converted from textbook sentences, **85 still
+  invented (52% sourced)**. All 8 disease priors are sourced. The 51 other
   model settings (gate thresholds, test costs, correlation weights, budgets,
   selector constants) are all invented; `scripts/gate_sweep.py` shows what the
   gate thresholds trade without choosing them.
 - **Real patients** (25 published case reports, extracted by a non-clinician):
-  **10 correct commits, 0 wrong, 15 escalations.** The last wrong commit (an
+  **9 correct commits, 0 wrong, 16 escalations** (10/0/15 before the two
+  cells sourced after the internship report; see DESIGN.md, last section).
+  The last wrong commit (an
   ACS read as pneumonia) now escalates because a guideline criterion — troponin
   rise with ST changes, the definition of myocardial infarction — vetoes
   committing to anything else. That veto costs two correct pericarditis
@@ -47,12 +49,14 @@ reader does not have to reconstruct it from the history.
   (SpO2 < 91% in 190 of 344), left flagged for a clinician rather than
   nudged to pass. A tenth, from an ED pericarditis cohort (heart rate
   median 88, upper quartile 100, n = 134), caps pericarditis tachycardia at
-  0.25 and fails the invented 0.40 by a wide margin; also flagged, not moved,
-  because a ceiling does not say where below it the value lies.
+  0.25 and failed the invented 0.40 by a wide margin; it was flagged, not
+  moved, because a ceiling does not say where below it the value lies. A
+  983-patient ED cohort later counted it directly (132 of 983, 0.134),
+  inside the ceiling, so two bounds now fail rather than three.
 - **A second, pre-registered real-case set.** 28 patients in two waves, each
   chosen by a rule committed before its search, run on a frozen model:
   5 correct, **0 wrong**, 23 escalated (coverage 18% against 40% on the
-  original 25). The no-wrong-commit property held on unseen patients; the
+  original 25); 4/0/24 after the two later cells. The no-wrong-commit property held on unseen patients; the
   coverage did not. Of 17 escalations for "ACS not excluded" across both
   sets, 12 are reports that record neither troponin nor ECG -- the records,
   not the gate, limit coverage. Under 30, so calibration is still unfitted.
@@ -198,14 +202,16 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**87 of 177 likelihoods are invented.** That is the number, stated on its own
+**85 of 177 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project. It was 89 of
 153 until the pericardial columns were added (§5): two concepts the real cases
 showed were missing, two sourced cells for pericarditis, and 21 invented rival
 cells without which the new concepts would discriminate nothing. Coverage went
 *down*, from 42% to 38%, and that is the honest direction — the count now
 includes claims the model needs to make. A pneumonia sourcing pass (§5) then
-took it to 39%, a pass on the tachycardia column (§5) to 41%, and one cell recovered from the same search (§5) to 42%.
+took it to 39%, a pass on the tachycardia column (§5) to 41%, and one cell recovered from the same search (§5) to 42%. It stood at 87
+invented (51%) when the internship report was written; two cells sourced
+afterwards (DESIGN.md, last section) bring it to 85 (52%).
 
 The remaining 73 carry a citation: 7 counted from the DDXPlus simulator, 55
 from published cohorts and StatPearls, and 11 converted from Merck Manual
@@ -458,7 +464,7 @@ celebrate.
 ### Nothing was checking the numbers themselves
 
 Every test in this project checks outputs. The knowledge base is inputs, and
-for most of its life nothing looked at it: 87 of 177 likelihoods are invented,
+for most of its life nothing looked at it: 85 of 177 likelihoods are invented,
 and the only scrutiny they got was whichever ones happened to change a case.
 
 Reading each column sorted, against what the diseases actually do, found five

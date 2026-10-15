@@ -1535,6 +1535,62 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
              "not the emergency presentation of any acute coronary syndrome. "
              "Cutoff >= 100 against this project's > 100; in the deviations",
     ),
+    # The tachycardia column again, after the report: pericarditis was the
+    # one cell whose invented value sat outside its own bound (0.40 against
+    # at most 0.25 from Ceriani's quartiles, plausibility_check.py). An
+    # emergency-department cohort counts it at the threshold directly.
+    ("pericarditis", "exam:tachycardia"): measured(
+        0.134,
+        Citation(
+            "MARTINEZ-NADAL-2020",
+            "Martinez-Nadal G et al., Emergencias 2020;32(2):97-104, "
+            "Tables 2 and 3",
+            "tachycardia (HR >= 100 bpm) on arrival in 132 of 983 consecutive "
+            "patients diagnosed with acute pericarditis in one emergency "
+            "department over 10 years (13 of 72 with myopericarditis, 119 of "
+            "911 without; 15 of 62 admitted, 117 of 921 discharged)",
+        ),
+        low=0.11,
+        high=0.16,
+        note="corrects the invented 0.40 threefold and lands inside the "
+             "[0, 0.25] quartile bound that had flagged it. The two "
+             "subgroup splits in the paper each sum to 132, the arithmetic "
+             "check that the count is read correctly; the table's mean heart "
+             "rate, 80 +/- 19, agrees. Band is the binomial 95% interval. "
+             "Cutoff >= 100 against this project's > 100; in the "
+             "deviations. Declined from a second cohort, PMC5587407 (60 "
+             "charts, tachycardia on examination 65%, sinus tachycardia on "
+             "ECG 41%): 23% of its patients had tamponade and only a third "
+             "were idiopathic, a far sicker and mostly secondary population "
+             "than the acute pericarditis this entry describes.",
+    ),
+    # A column the report left at an invented 0.75. GRACE scores ST-segment
+    # deviation (elevation or depression), the same parent concept this
+    # vocabulary maps to HP:0012249, and registries validating GRACE report
+    # it for all ACS -- the full-spectrum population Hess's 'acute ischemic
+    # ECG changes' row (declined above, it includes T-wave inversion) could
+    # not supply.
+    ("acute_coronary_syndrome", "exam:ecg_st_changes"): measured(
+        0.55,
+        Citation(
+            "VAN-DER-SANGEN-2022",
+            "van der Sangen NMR et al., Open Heart 2022;9:e001984, "
+            "PMC8969003, Table 1",
+            "ST-segment deviation in 2,756 of 5,015 patients with acute "
+            "coronary syndrome in the Dutch FORCE-ACS registry (55.0%: "
+            "ST-elevation 43.4%, ST-depression 41.2%, 40.9% STE-ACS); the "
+            "GRACE derivation cohort in the same table gives 53% of 32,037",
+        ),
+        low=0.53,
+        high=0.68,
+        note="corrects the invented 0.75 downward, inside the [0.25, 1.00] "
+             "bound. The band spans three registries rather than a binomial "
+             "interval, because they disagree by more than sampling: GRACE "
+             "derivation 53%, FORCE-ACS 55%, and the Chinese CCC-ACS project "
+             "(PMC7867931, Table 1) 68.4% of 62,546. Population caveat: "
+             "FORCE-ACS enrols admitted patients, so ACS seen and sent home "
+             "from the emergency department is missing.",
+    ),
     # The mechanistic trace of pmc-13070269 (ACS misread as pneumonia,
     # WRITEUP.md "Three open items") found that troponin was never the
     # decisive finding in this differential -- pleuritic_pain was, an
@@ -1832,6 +1888,15 @@ _FROM_LITERATURE: dict[tuple[str, str], tuple[float, LikelihoodSource]] = {
 # machine-learning papers rather than clinical tables. Same result as the
 # first pass: auscultation is reported in aggregate or not at all in what
 # turns up. Stays invented.
+
+# Two more searched after the report and declined, recorded so they are not
+# repeated. Asthma tachycardia: the Italian ED cohort (PMC6580601) gives only
+# pulse means (the Cantelli bound in plausibility_check.py), and the one
+# threshold count found, Rodrigo & Neffen 2015 (Am J Emerg Med, 1,192 severe
+# acute asthmatics pooled from trials), is heart rate >= 120 in 22% -- a
+# different cutoff in a population selected for FEV1 <= 50%. Pneumonia D-dimer:
+# the two cohorts that count it (PMC12393968, >= 2 ug/mL; PMC12901036,
+# > 3.0 ug/mL) use cutoffs four to six times this project's ~0.5.
 
 # lab:raised_wcc, continued: two cells found, one declined, two not reached
 # ---------------------------------------------------------------------------
