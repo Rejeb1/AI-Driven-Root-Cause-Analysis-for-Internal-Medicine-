@@ -221,6 +221,132 @@ and needs a fourth wave.
 If the pooled holdout reaches 30, Amendment 1's fitting plan runs on it,
 with v2, exactly as written there.
 
+What wave 3 found (searched 2026-10-16, ranks are PubMed relevance)
+-------------------------------------------------------------------
+PE (wave-1 list): taken r43 PMC11343825, r44 PMC10932506, r49 PMC6624151.
+  Skipped: r41 acute pancreatitis co-primary; r42 image report, no text; r45
+  presented with leg pain, breathlessness began as an inpatient; r46, r47
+  COVID-19; r48 tumour embolism.
+
+ACS (wave-2 list first): taken w2 r63 PMC12539291, w2 r68 PMC12097248, w1
+  r48 PMC12426847. Skipped, wave-2 list: r41, r42, r51, r59, r61, r62, r64,
+  r72-r74 mimics; r43, r79 drug-induced; r44 cocaine with COVID-19; r45
+  adolescent, no PMC; r46 RSV infection co-primary; r47 lung carcinoma; r48
+  on chemotherapy for malignancy; r49, r54, r77 embolic; r50 carbon
+  monoxide; r52 thyrotoxicosis co-primary; r53 non-atherosclerotic thrombus,
+  cause unresolved (as wave-1 r39); r55, r65 no case text; r56 vasospasm;
+  r57 presented as limb ischaemia; r58 four findings; r60 no PMC; r66
+  adrenal crisis co-primary; r67 non-obstructive ectasia, no thrombus; r69
+  hypertensive emergency with heart failure co-primary; r70 coronary-
+  subclavian steal; r71 cannabis; r75 amniotic fluid embolism; r76 final
+  diagnosis PE; r78 TTP co-primary; r80 attributed to hot-weather running
+  (exposure-attributed, as wave-2 pericarditis r29). Wave-1 list: r41 no
+  PMC; r42 drug-induced; r43 no case text; r44 myocarditis co-primary; r45
+  mimic; r46 embolic; r47 no PMC.
+
+Extraction note: "acute onset" read as sudden_onset, as real_cases already
+  reads "acute shortness of breath"; "vital signs unremarkable" read as no
+  tachycardia only.
+
+ACS correction during the walk: w1 r48 PMC12426847 withdrawn -- its sixth
+  finding relied on "otherwise unremarkable vital signs" as a negative,
+  which real_cases.py's recorded ruling forbids; five findings without it.
+  "acute onset" likewise NOT read as sudden_onset (close-but-not-quite); no
+  accepted case depends on it.
+
+ACS wave-1 list, continued: r48 five findings (above); r49 embolic
+  (duplicate of wave-2 r49); r50, r59, r72, r73 no case text; r51 post-
+  operative; r52, r56, r63, r74, r78 no PMC; r53 intracardiac mass; r54,
+  r61, r70, r71, r77 mimics; r55 endomyocardial fibrosis co-primary; r57
+  pseudoxanthoma elasticum vasculopathy; r58 gastric perforation co-primary;
+  r60 not an ACS; r62 walked in wave 1; r64 Kounis (allergic vasospasm); r65
+  oleander poisoning; r66 already in the holdout; r67 autopsy; r68 carbon
+  monoxide; r69 tumour embolism; r75 presented with headache; r76 aged 9;
+  r79 five findings; r80 simulated (telemetry artefact). ACS SHORT: 2 of 3
+  within ranks 41-80, recorded, not topped up.
+
+Pneumonia (wave-2 list first): taken r55 PMC11162253, r61 PMC9757645, r74
+  PMC7581029. Skipped: r41, r44 not a pneumonia presentation (pancreatitis,
+  rash); r42 myocarditis co-primary; r43, r48 children; r45, r50, r54, r58
+  no PMC; r46 pericardial abscess; r47, r49, r60, r62 immunocompromised or
+  cancer; r51 HUS and meningitis; r52 aortic aneurysm; r53 atrial flutter
+  with cardiomyopathy co-primary; r56 autopsy; r57 no breathlessness, cough
+  or chest pain; r59 rhabdomyolysis co-primary; r63 agranulocytosis co-
+  primary; r64 empyema named in the title (co-primary consequence, as wave-1
+  asthma r15); r65 five findings (its consolidation is on CT, which
+  real_cases.py rules is not the chest-film concept); r66 COVID-19; r67
+  child; r68 four findings; r69 no breathing symptoms; r70 no English text.
+
+Oedema: taken r44 PMC6009803 (first patient of two), r59 PMC9826619.
+  Skipped: r41, r47, r48, r50, r53, r56 drug-induced; r42, r51, r55, r61,
+  r62, r65, r69, r75, r78, r80 non-cardiogenic; r43 giant cell myocarditis;
+  r45 negative-pressure with Takotsubo; r46 serotonin syndrome; r49, r70 no
+  PMC; r52, r67 veterinary; r54 no case text; r57 post-operative; r58
+  subarachnoid haemorrhage; r60 after pacemaker insertion; r63 postpartum
+  hypertension-related, mechanism a judgement call; r64 severe anaemia and
+  pericardial effusion co-primary; r66 coronary spasm; r68 ex vivo lung; r71
+  adenocarcinoma; r72, r76 pre-eclampsia; r73 carbon monoxide; r74 atrial
+  myxoma; r77 SVT co-primary (as wave-2 pericarditis r34); r79
+  thyrotoxicosis. OEDEMA SHORT: 2 of 3.
+
+COPD (list has 66 results): none taken. Skipped: r41 presented with syncope;
+  r42, r66 mimics; r43 tracheal stenosis; r44 already in the holdout; r45
+  COVID-19; r46, r51, r54, r60, r65 not case reports of a presentation; r47
+  foreign-body aspiration; r48 two findings; r49 Aspergillus co-primary; r50
+  PRES; r52 hypercapnic cerebral oedema; r53 haematological malignancy; r55
+  lung malignancy; r56 Listeria meningitis; r57 stable COPD at a routine
+  visit; r58, r62, r63 no PMC; r59 methaemoglobinaemia; r61 myoclonus
+  presentation; r64 HSV oesophagitis. COPD SHORT: 0 of 3.
+
+Asthma: taken r59 PMC9949361, r68 PMC6010635. Skipped: r41, r57 already
+  recorded in real_cases; r42 EGPA question; r43, r47, r64, r71, r78, r79
+  under 18; r44, r55 mimics; r45 Pseudomonas infection co-primary; r46, r69,
+  r72, r80 pneumothorax or pneumomediastinum; r48, r54 COVID-19; r49, r51,
+  r66 chronic management; r50 HHT (as wave-1 r12); r52, r67, r77 fewer than
+  six findings; r53 drug reaction co-primary; r56 tracheal tumour; r58 final
+  diagnosis PE; r60, r63 Strongyloides hyperinfection; r61 influenza
+  pneumonia co-primary; r62 drug liver injury; r65 ICU-acquired weakness
+  named in the title; r70 foreign body; r73, r75 Takotsubo; r74 urinary
+  infection co-primary (as wave-1 r34); r76 attributed to weather change
+  (exposure-attributed, as ACS r80). ASTHMA SHORT: 2 of 3.
+
+Extraction notes: exam wheeze -> wheeze_subjective and a wholly normal chest
+  film -> both CXR concepts absent, as real_cases already does; "ECG
+  unremarkable" not read as a specific negative. r68's pharyngitis is the
+  named trigger ("an asthma attack due to acute pharyngitis"), not a co-
+  primary diagnosis.
+
+Pericarditis (wave-2 list first): taken w2 r65 PMC6439374, w2 r76
+  PMC11089582. Skipped, wave-2 list: r41, r43, r47, r54 (no PMC), r60, r74,
+  r75, r77, r78, r80 COVID-19; r42, r56 leukaemia; r44, r70 vaccine-related;
+  r45, r50, r53, r68 mimics; r46, r52, r67 drug-induced; r48, r73 SLE; r49
+  after stem-cell transplant; r51 neoplastic; r55 pre-eclampsia co-primary;
+  r57, r72 after ablation; r58 post-pericardiotomy; r59 concurrent PE; r61
+  bloodstream infection; r62, r71 presented as cholecystitis; r63 no PMC;
+  r64 anorexia with pneumomediastinum; r66 differentiation syndrome; r69
+  Salmonella aneurysm; r79 bronchogenic cyst. Wave-1 list: r41 rheumatoid;
+  r42-44, r47, r56, r57, r64, r75 walked in waves 1-2; r45, r54, r69, r76,
+  r78 purulent or bacterial; r46 Graves' co-primary; r48, r50, r53, r66,
+  r67, r72 constrictive; r49, r58, r60, r63 tuberculous or mycobacterial;
+  r51 peri-infarct; r52 familial Mediterranean fever (autoinflammatory, as
+  rheumatoid and vasculitic); r55 mesothelioma; r59 parasitic; r61 no case
+  text; r62 no PMC; r65 Guillain-Barre co-primary; r68, r74, r77 veterinary;
+  r70 lymphoma; r71 transplant recipient; r73 asymptomatic overdose; r79
+  drug-induced; r80 post-operative. PERICARDITIS SHORT: 2 of 3.
+
+Extraction note: 37.8C is below this project's 38C, recorded as fever
+  absent; "infiltrate" on a chest film read as cxr_consolidation, as in r55.
+
+Panic (wave-2 list has 10 results, none at 41-80; wave-1 list has 57): none
+  taken. Skipped: r41 walked (ventricular fibrillation); r42 autoimmune
+  encephalitis; r43 cohort study; r44, r45, r46, r51, r52 psychiatric or
+  outpatient course; r47 unrelated presentation; r48, r53, r54, r55, r57 no
+  PMC; r49 hypercapnic COPD failure co-primary; r50 VF with Takotsubo; r56
+  already in the holdout. PANIC SHORT: 0 of 3.
+
+WAVE 3: 14 cases (PE 3, ACS 2, pneumonia 3, oedema 2, COPD 0, asthma 2,
+  pericarditis 2, panic 0). Pooled holdout 42 >= 30.
+
 Not fitted, on purpose: the red-flag tolerance (10%), which decides how much
 residual probability of a time-critical cause is acceptable. That is a
 clinical policy with a cost on both sides, not a parameter to optimise
@@ -881,4 +1007,351 @@ HOLDOUT_CASES: tuple[Case, ...] = (
 )
 
 
-__all__ = ["HOLDOUT_CASES"]
+# ---- wave 3 (Amendment 2) ---------------------------------------------------
+# Searched 2026-10-16, after model v2 was frozen (commit b0af386) and before
+# either model was run on any of these. Ranks 41-80 of the same queries, three
+# per diagnosis at most. 14 found: PE 3, ACS 2, pneumonia 3, oedema 2, COPD 0,
+# asthma 2, pericarditis 2, panic 0. Every candidate walked past is listed in
+# WAVE3_WALK below with its reason.
+WAVE3_CASES: tuple[Case, ...] = (
+    # ---- pulmonary embolism (wave-1 list, ranks 43, 44, 49) ---------------
+    # PMC11343825 -- saddle PE with thrombus in transit across a PFO.
+    Case(
+        case_id="ho-11343825",
+        presenting_complaint=(
+            "51-year-old man with sleep apnoea, one day of progressive "
+            "breathlessness and palpitations"
+        ),
+        diagnosis="pulmonary_embolism",
+        features={
+            "dyspnoea_at_rest": True,  # "progressive dyspnea"
+            "palpitations": True,
+            "exam:hypoxia": False,  # "oxygen saturation 95% on room air"
+            "leg_swelling": True,  # "mild right lower extremity edema"
+            "exam:tachycardia": True,  # "EKG showed sinus tachycardia"
+            "exam:ecg_st_changes": False,  # "without signs of ischemia"
+            "lab:raised_troponin": True,  # 0.05, reference 0-0.01
+            "lab:raised_d_dimer": True,  # 10.13, reference < 0.50
+            "imaging:ctpa_filling_defect": True,  # "saddle pulmonary embolus"
+        },
+        vocabulary=frozenset(),
+    ),
+    # PMC10932506 -- PE in rheumatoid arthritis on etanercept; emphysema and
+    # bypass surgery six months earlier are background.
+    Case(
+        case_id="ho-10932506",
+        presenting_complaint=(
+            "67-year-old man with emphysema and coronary bypass six months "
+            "ago, sharp left-sided chest pain"
+        ),
+        diagnosis="pulmonary_embolism",
+        features={
+            # "acute in onset" is not read as sudden_onset (close, not quite)
+            "smoking_history": True,  # 12 pack-years, quit six months ago
+            # "no change in his ambulatory status ... No recent long-distance travel"
+            "recent_immobility": False,
+            "exam:tachycardia": True,  # 110 per minute
+            "exam:hypoxia": True,  # 86% on room air
+            "exam:crackles": False,  # "No lung crackles or wheezing"
+            "wheeze_subjective": False,
+            "leg_swelling": False,  # "No pedal edema"
+            "exam:raised_jvp": False,  # "or jugular venous distension"
+            "lab:raised_wcc": False,  # "no leukocytosis"
+            "lab:raised_bnp": False,  # "B-natriuretic peptide was not elevated"
+            "imaging:ctpa_filling_defect": True,  # segmental and subsegmental PE
+        },
+        vocabulary=frozenset(),
+    ),
+    # PMC6624151 -- submassive PE after a long car journey.
+    Case(
+        case_id="ho-6624151",
+        presenting_complaint=(
+            "55-year-old man, pleuritic chest pain and breathlessness with a "
+            "faint during a long car journey"
+        ),
+        diagnosis="pulmonary_embolism",
+        features={
+            "pleuritic_pain": True,
+            "dyspnoea_at_rest": True,  # "shortness of breath"
+            # "a car trip from Texas to Cleveland" -- as real_cases records a
+            # long flight
+            "recent_immobility": True,
+            "exam:tachycardia": True,  # pulse 119
+            "exam:hypoxia": True,  # 93% on room air
+            "fever": False,  # 36.6C
+            "exam:crackles": False,  # "clear lungs"
+            # "significant for ... ProBNP 3188pg/mL, and initial troponin 0.12"
+            "lab:raised_bnp": True,
+            "lab:raised_troponin": True,
+            "imaging:ctpa_filling_defect": True,  # "multiple bilateral filling defects"
+        },
+        vocabulary=frozenset(),
+    ),
+    # ---- acute coronary syndrome (wave-2 list ranks 63, 68) ----------------
+    # PMC12539291 -- STEMI from plaque erosion in a 23-year-old smoker.
+    Case(
+        case_id="ho-12539291",
+        presenting_complaint=(
+            "23-year-old man who smokes heavily, sudden chest tightness at "
+            "work that did not ease with rest"
+        ),
+        diagnosis="acute_coronary_syndrome",
+        features={
+            "smoking_history": True,  # > 30 cigarettes a day
+            "sudden_onset": True,  # "sudden-onset chest tightness"
+            "exam:tachycardia": False,  # 65 bpm
+            "exam:hypoxia": False,  # 100% on room air
+            # "ST-segment elevations in leads I, aVL, and V2-4"
+            "exam:ecg_st_changes": True,
+            "exam:ecg_st_elevation": True,
+            "lab:raised_wcc": True,  # "elevated white blood cell count of 13,600"
+            # "without valve disease or effusion"
+            "imaging:pericardial_effusion": False,
+            # hs-troponin T 0.095 ng/mL is given without a reference: left out
+        },
+        vocabulary=frozenset(),
+    ),
+    # PMC12097248 -- STEMI at 37 weeks' gestation; thrombotic, no dissection.
+    Case(
+        case_id="ho-12097248",
+        presenting_complaint=(
+            "26-year-old woman, 37 weeks pregnant, mid-chest pain that came "
+            "on while grocery shopping"
+        ),
+        diagnosis="acute_coronary_syndrome",
+        features={
+            "exam:tachycardia": False,  # 99 beats per minute
+            "exam:hypoxia": False,  # 99% on room air
+            # "ST elevation in leads II, III, V3, V6, and aVF with reciprocal
+            # depressions in V1, V2, I and aVL" -- both stated, as ho-5067724
+            "exam:ecg_st_changes": True,
+            "exam:ecg_st_elevation": True,
+            "exam:ecg_st_depression": True,
+            "lab:raised_troponin": True,  # 0.07 and 6.04, reference <= 0.03
+        },
+        vocabulary=frozenset(),
+    ),
+    # ---- community-acquired pneumonia (wave-2 list ranks 55, 61, 74) -------
+    # PMC11162253 -- Legionella pneumonia with ten days of fever.
+    Case(
+        case_id="ho-11162253",
+        presenting_complaint=(
+            "69-year-old man, ten days of progressive fever and breathlessness "
+            "with a dry cough"
+        ),
+        diagnosis="community_acquired_pneumonia",
+        features={
+            "fever": True,  # 101.8F
+            "dyspnoea_at_rest": True,  # "shortness of breath"
+            "sudden_onset": False,  # "10-day history of progressive"
+            "productive_cough": False,  # "a dry, nonproductive cough"
+            "exam:hypoxia": True,  # 91%
+            "exam:tachycardia": False,  # pulse 79
+            "exam:crackles": True,  # "diffuse, bilateral crackles"
+            # "alveolar infiltrates ... consistent with multifocal pneumonia"
+            "imaging:cxr_consolidation": True,
+        },
+        vocabulary=frozenset(),
+    ),
+    # PMC9757645 -- Mycoplasma pneumonia with cavitated lesions.
+    Case(
+        case_id="ho-9757645",
+        presenting_complaint=(
+            "55-year-old man who smokes, one week of daily fever, pleuritic "
+            "chest pain and a cough turning productive"
+        ),
+        diagnosis="community_acquired_pneumonia",
+        features={
+            "fever": True,  # daily fever, maximum 39C
+            "pleuritic_pain": True,
+            "productive_cough": True,  # "initially dry then productive"
+            # "dyspnea after medium exertion" -- exertional, not at rest: left out
+            "smoking_history": True,  # 40 pack-years
+            "exam:tachycardia": False,  # "normocardic"
+            "exam:hypoxia": False,  # 96% on room air
+            # "No other abnormalities were noted, including on pulmonary
+            # auscultation" -- names the lungs, so it is a negative
+            "exam:crackles": False,
+            "wheeze_subjective": False,
+            "lab:raised_wcc": True,  # 16 x10^3, reference 4.8-10.8
+            "exam:ecg_st_changes": False,  # "The electrocardiogram revealed no changes"
+            "lab:raised_troponin": False,  # "high-sensitivity troponin I was normal"
+            # the film shows a new hypertransparency; the cavitated densities
+            # are on CT, which is not the chest-film concept
+        },
+        vocabulary=frozenset(),
+    ),
+    # PMC7581029 -- fatal Legionella pneumonia, new sequence type.
+    Case(
+        case_id="ho-7581029",
+        presenting_complaint=(
+            "59-year-old man who smokes, six days of high fever with "
+            "progressive breathlessness and blood-streaked yellow sputum"
+        ),
+        diagnosis="community_acquired_pneumonia",
+        features={
+            "fever": True,  # maximum 39.6C (36.9C on admission after dexamethasone)
+            "productive_cough": True,  # "yellow sputum"
+            "dyspnoea_at_rest": True,  # "progressive dyspnea"
+            "sudden_onset": False,  # progressive over six days
+            "smoking_history": True,  # 30 pack-years
+            "exam:tachycardia": True,  # 140
+            "exam:hypoxia": True,  # SO2 78%
+            "exam:crackles": True,  # "extensive moist rales in both lungs"
+            "leg_swelling": True,  # "edema of both lower extremities"
+            "lab:raised_wcc": False,  # 3.1 x10^9/L
+            # consolidation is on CT only; proBNP 1271 and troponin 0.34 are
+            # given without a reference or a flag: all left out
+        },
+        vocabulary=frozenset(),
+    ),
+    # ---- acute pulmonary oedema (wave-1 list ranks 44, 59) -----------------
+    # PMC6009803, case 1 of 2 -- hypertensive cardiogenic pulmonary oedema.
+    Case(
+        case_id="ho-6009803",
+        presenting_complaint=(
+            "65-year-old woman with heart failure and hypertension, acute "
+            "breathlessness and chest tightness"
+        ),
+        diagnosis="acute_pulmonary_oedema",
+        features={
+            "dyspnoea_at_rest": True,  # "acute dyspnea"
+            "exam:tachycardia": True,  # 103 bpm
+            "exam:hypoxia": True,  # 92% on a high-flow mask
+            "fever": False,  # 36C
+            "orthopnoea": True,
+            "exam:crackles": True,  # "bilateral basal rales"
+            # "Chest X-ray ... diagnostic of acute pulmonary edema"
+            "imaging:cxr_pulmonary_oedema": True,
+            # "nonspecific ST-T changes" is not ST change: left out
+        },
+        vocabulary=frozenset(),
+    ),
+    # PMC9826619 -- upper-lobe cardiogenic oedema from mitral chordal rupture;
+    # serial COVID-19 PCR negative.
+    Case(
+        case_id="ho-9826619",
+        presenting_complaint=(
+            "77-year-old man, nine days of gradually worsening tiredness, "
+            "breathlessness, cough and breathlessness lying flat"
+        ),
+        diagnosis="acute_pulmonary_oedema",
+        features={
+            "sudden_onset": False,  # "gradual onset"
+            "dyspnoea_at_rest": True,
+            "orthopnoea": True,
+            # "He denied chest pain, palpitation, haemoptysis, cough with
+            # expectoration, and fever" -- both chest-pain concepts absent, as
+            # ho-8302121 reads "no significant chest pain"
+            "pleuritic_pain": False,
+            "exertional_chest_pain": False,
+            "palpitations": False,
+            "productive_cough": False,
+            "fever": False,  # denied; 36.4C
+            "smoking_history": False,  # "no history of smoking"
+            "exam:tachycardia": True,  # 112
+            "exam:hypoxia": True,  # "the patient was hypoxemic"
+            "exam:crackles": True,  # "bilateral lung crackles"
+            "exam:raised_jvp": False,  # "jugular venous pressure was 4 cm"
+            "leg_swelling": False,  # "no leg oedema"
+            "imaging:cxr_pulmonary_oedema": True,
+            "exam:ecg_st_changes": False,  # "without ST-segment or T-wave changes"
+            "imaging:ctpa_filling_defect": False,  # "no evidence of pulmonary embolism"
+            "lab:raised_wcc": False,  # "white cell count was normal"
+            "lab:raised_bnp": True,  # "his BNP was also high"
+        },
+        vocabulary=frozenset(),
+    ),
+    # ---- asthma exacerbation (wave-1 list ranks 59, 68) --------------------
+    # PMC9949361 -- severe acute asthma after cold exposure, readmitted.
+    Case(
+        case_id="ho-9949361",
+        presenting_complaint=(
+            "38-year-old man with asthma, two days of progressive "
+            "breathlessness after cold exposure, cough and audible wheeze"
+        ),
+        diagnosis="asthma_exacerbation",
+        features={
+            "dyspnoea_at_rest": True,  # unable to complete sentences
+            "sudden_onset": False,  # "2-day history of progressive"
+            "wheeze_subjective": True,  # "audible wheezes"
+            "fever": False,  # "no associated fever"; 37.3C
+            "exam:tachycardia": True,  # 145
+            # "unremarkable for any pulmonary infiltrates, pneumothorax,
+            # pleural effusion, or pathology" -- a wholly normal film
+            "imaging:cxr_consolidation": False,
+            "imaging:cxr_pulmonary_oedema": False,
+            # "mild cough" and "no ... cough" both stated: left out
+        },
+        vocabulary=frozenset(),
+    ),
+    # PMC6010635 -- exacerbation after three weeks on a dummy inhaler,
+    # triggered by acute pharyngitis.
+    Case(
+        case_id="ho-6010635",
+        presenting_complaint=(
+            "42-year-old woman with lifelong asthma, three weeks of dry cough "
+            "and increasing breathlessness, now febrile"
+        ),
+        diagnosis="asthma_exacerbation",
+        features={
+            "productive_cough": False,  # "dry cough"
+            "dyspnoea_at_rest": True,  # "increasing breathlessness"
+            "sudden_onset": False,  # three weeks
+            "exam:tachycardia": True,  # 140
+            "exam:hypoxia": False,  # 98% on room air at admission
+            "fever": True,  # 39C
+            "wheeze_subjective": True,  # "bilateral poly-phonic wheezes"
+            "lab:raised_wcc": True,  # 11.5, range 4.5-8
+        },
+        vocabulary=frozenset(),
+    ),
+    # ---- pericarditis (wave-2 list ranks 65, 76) ---------------------------
+    # PMC6439374 -- recurrent idiopathic pericarditis with haemorrhagic
+    # effusion; the readmission is the presentation extracted.
+    Case(
+        case_id="ho-6439374",
+        presenting_complaint=(
+            "22-year-old woman, pericarditis four months ago, three days of "
+            "chest pain worse on breathing in and lying down"
+        ),
+        diagnosis="pericarditis",
+        features={
+            "pleuritic_pain": True,  # "inspiratory and worse on lying down"
+            "exam:tachycardia": True,  # 115
+            "fever": False,  # 37.8C, under this project's 38C
+            "imaging:pericardial_effusion": True,  # 28 mm on echocardiography
+            "lab:raised_troponin": False,  # < 0.012, reference < 0.08
+            "lab:raised_wcc": False,  # 6810, reference 4000-11000
+        },
+        vocabulary=frozenset(),
+    ),
+    # PMC11089582 -- idiopathic acute (myo)pericarditis with tamponade after
+    # a flu-like illness; renal cancer resected three years earlier.
+    Case(
+        case_id="ho-11089582",
+        presenting_complaint=(
+            "60-year-old man, days of fever, chills and sore throat, now "
+            "chest pressure, breathlessness and lethargy"
+        ),
+        diagnosis="pericarditis",
+        features={
+            "fever": True,
+            "dyspnoea_at_rest": True,  # "shortness of breath"
+            "exam:tachycardia": True,  # heart rate in the 120s
+            "exam:ecg_st_changes": True,  # "diffuse ST-elevation in all leads"
+            "exam:ecg_st_elevation": True,
+            "imaging:pericardial_effusion": True,  # "large pericardial effusion"
+            # "bilateral lung infiltrate", read as consolidation as in ho-11162253
+            "imaging:cxr_consolidation": True,
+            "lab:raised_troponin": True,  # hs-troponin I 4,767 ng/L, reference 0-54
+        },
+        vocabulary=frozenset(),
+    ),
+)
+
+HOLDOUT_CASES = HOLDOUT_CASES + WAVE3_CASES
+WAVE3_IDS = frozenset(c.case_id for c in WAVE3_CASES)
+
+
+__all__ = ["HOLDOUT_CASES", "WAVE3_CASES", "WAVE3_IDS"]

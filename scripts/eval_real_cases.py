@@ -48,6 +48,11 @@ def main() -> int:
     # The holdout set (datasets/holdout_cases.py) was selected by a rule
     # committed before any search, and is never merged into REAL_CASES.
     cases = HOLDOUT_CASES if "--holdout" in sys.argv else REAL_CASES
+    # --wave3: only the third holdout wave (Amendment 2), reported apart.
+    if "--wave3" in sys.argv:
+        from dxagent.datasets.holdout_cases import WAVE3_CASES
+
+        cases = WAVE3_CASES
     kb = build_knowledge_base(correlated=True)
     agent = DiagnosticAgent(
         kb=kb,
