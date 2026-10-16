@@ -35,6 +35,7 @@ from fastapi.staticfiles import StaticFiles  # noqa: E402
 from pydantic import BaseModel  # noqa: E402
 
 from dxagent import AbstentionGate, DiagnosticAgent, LoopLimits, Verdict  # noqa: E402
+from dxagent.gate import real_case_scaler  # noqa: E402
 from dxagent.belief import BayesianProposer  # noqa: E402
 from dxagent.datasets import build_knowledge_base  # noqa: E402
 from dxagent.environment import Case  # noqa: E402
@@ -290,7 +291,7 @@ def create_session(req: StartRequest) -> dict:
     agent = DiagnosticAgent(
         kb=kb,
         proposer=proposer,
-        gate=AbstentionGate(kb=kb),
+        gate=AbstentionGate(kb=kb, scaler=real_case_scaler()),
         limits=limits,
     )
     session = Session(

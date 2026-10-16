@@ -40,6 +40,7 @@ from dxagent import AbstentionGate, DiagnosticAgent, LoopLimits  # noqa: E402
 from dxagent.belief import BayesianProposer  # noqa: E402
 from dxagent.datasets import REAL_CASES, build_knowledge_base  # noqa: E402
 from dxagent.datasets.holdout_cases import HOLDOUT_CASES  # noqa: E402
+from dxagent.gate import real_case_scaler  # noqa: E402
 from dxagent.resolution import _candidates, _commits  # noqa: E402
 from dxagent.schemas import Finding, Polarity  # noqa: E402
 
@@ -50,7 +51,7 @@ def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8")
     cases = HOLDOUT_CASES if "--holdout" in sys.argv else REAL_CASES
     kb = build_knowledge_base(correlated=True)
-    gate = AbstentionGate(kb=kb)
+    gate = AbstentionGate(kb=kb, scaler=real_case_scaler())
     agent = DiagnosticAgent(
         kb=kb,
         proposer=BayesianProposer(kb),

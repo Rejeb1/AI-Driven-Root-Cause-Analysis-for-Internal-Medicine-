@@ -63,6 +63,17 @@ reader does not have to reconstruct it from the history.
   sets, 12 are reports that record neither troponin nor ECG -- the records,
   not the gate, limit coverage. Under 30, so calibration is still unfitted.
   See `datasets/holdout_cases.py` and DESIGN.md.
+- **After the report: model v2 and a third holdout wave** (DESIGN.md, last
+  three sections). Escalations now name the test results that would resolve
+  them; ST elevation and depression are separate findings; a language model
+  may commit a confidence-only escalation if every safety condition still
+  holds. Wave 3 -- 14 more unseen patients, chosen by a rule committed before
+  the model existed -- gave v2 **7 correct, 1 wrong, 6 escalated**: the first
+  wrong commit on a real patient (an asthma attack with fever and a raised
+  white count read as pneumonia, by v1 too). The pooled holdout reached 42,
+  so the pre-registered fitting plan ran: temperature 1.25 adopted for real
+  patients (it lowers held-out NLL), confidence threshold kept at 0.65.
+  Shipped configuration: original 25 7/0/18, holdout 42 12/0/30.
 - **Open, and not resolvable from here.** Twenty-five real patients are too few to
   fit calibration or to settle design choices — several comparisons in the test
   suite have changed direction on almost every sourcing pass, which is itself

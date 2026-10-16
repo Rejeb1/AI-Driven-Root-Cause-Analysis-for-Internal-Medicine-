@@ -265,6 +265,27 @@ class ConformalPredictor:
         return hits / n, total_size / n
 
 
+# The one fitted number in the gate, fitted by holdout Amendment 1's plan, which
+# was committed before any holdout case existed: once the pooled holdout reached
+# 30 independent cases, fit T on it and adopt it for real patients only if it
+# lowers the negative log-likelihood of the true label on the original 25. The
+# holdout reached 42 with wave 3; T = 1.25 on the default grid; original-25 NLL
+# 36.24 -> 35.48, so it is adopted, as the plan says. The plan's measure and the
+# mean-confidence gap disagree: at T = 1.25 stated confidence sits below
+# accuracy on every real set, and coverage falls (original 10 -> 6 correct
+# commits). Reported in DESIGN.md rather than overruled after the fact.
+# Real-patient configurations use it; the invented fixtures keep T = 1.
+REAL_CASE_TEMPERATURE = 1.25
+REAL_CASE_FIT_N = 42
+
+
+def real_case_scaler() -> "TemperatureScaler":
+    """The temperature fitted on the 42-case holdout, for real-patient runs."""
+    return TemperatureScaler(
+        temperature=REAL_CASE_TEMPERATURE, fitted=True, fit_n=REAL_CASE_FIT_N
+    )
+
+
 @dataclass(frozen=True)
 class GateDecision:
     """Outcome of the gate, with the reason exposed."""

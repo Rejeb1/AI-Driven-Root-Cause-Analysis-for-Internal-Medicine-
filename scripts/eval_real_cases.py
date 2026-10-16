@@ -27,6 +27,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from dxagent import AbstentionGate, DiagnosticAgent, LoopLimits, Verdict  # noqa: E402
+from dxagent.gate import real_case_scaler  # noqa: E402
 from dxagent.belief import BayesianProposer  # noqa: E402
 from dxagent.datasets import REAL_CASES, build_knowledge_base  # noqa: E402
 from dxagent.datasets.holdout_cases import HOLDOUT_CASES  # noqa: E402
@@ -57,7 +58,7 @@ def main() -> int:
     agent = DiagnosticAgent(
         kb=kb,
         proposer=BayesianProposer(kb),
-        gate=AbstentionGate(kb=kb),
+        gate=AbstentionGate(kb=kb, scaler=real_case_scaler()),
         # Real case reports return UNKNOWN for anything the source text never
         # addressed -- the ten fixtures never do this, so it never mattered
         # there. Without this, a turn spent on an unanswerable question costs

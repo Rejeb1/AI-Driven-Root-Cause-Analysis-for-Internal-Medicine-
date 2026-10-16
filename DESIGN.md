@@ -3598,3 +3598,62 @@ pulmonary oedema is not, though the internship report's chapter 1 called
 "the three urgent causes" all specially guarded. Corrected there, not in
 the code: whether oedema should be a red flag is a clinical decision, and
 making it one now, after seeing these cases, would be a v3.
+
+## Wave 3: 14 unseen patients, the first wrong commit, and the fitting plan
+
+Searched 2026-10-16 under Amendment 2, after v2 was frozen (b0af386);
+extraction committed (5e8dc20) before either model ran. 14 cases: PE 3,
+ACS 2, pneumonia 3, oedema 2, asthma 2, pericarditis 2, COPD 0, panic 0
+(the walk record is in holdout_cases.py). One ACS candidate was withdrawn
+mid-walk: its sixth finding had read "otherwise unremarkable vital signs" as
+a negative, which real_cases.py's recorded ruling forbids.
+
+First and only runs, as the amendment fixed:
+
+                        correct / wrong / escalated   top-1    conf vs acc
+  v1 (9c12b9f)          6 / 1 / 7                     10/14    .63 / .71
+  v2 (b0af386)          7 / 1 / 6                     10/14    .66 / .71
+  v2 + second reading   7 / 1 / 6   (no eligible escalation)
+
+**The first wrong commit on a real patient.** ho-6010635, an asthma
+exacerbation triggered by pharyngitis -- fever 39C, white count 11.5, wheeze,
+three weeks of dry cough -- committed as pneumonia at 72% by both models.
+Fever and a raised white count are the pneumonia picture, and the wheeze
+does not outweigh them: COPD and asthma both carry wheeze, so it barely
+separates asthma from pneumonia once infection markers are present. Neither
+v2 change caused it (v1 makes the same commit). It is reported, not
+repaired: a fix chosen after seeing this case would be a v3 and need a
+fourth wave. The zero-wrong record held on 53 seen-before real patients and
+on 28 unseen ones; it did not hold on the next 14.
+
+v2 against v1: one more correct commit (ho-12097248, ACS at 37 weeks'
+pregnancy, where the reciprocal ST depression now counts: 98% against v1's
+63%), nothing lost. The second reading had nothing to act on: every wave-3
+escalation was a safety one.
+
+**Amendment 1's fitting plan, now that the pooled holdout is 42.**
+1. Temperature, fitted on the 42 holdout (loop's final differential, true
+   label): T = 1.25. Original-25 NLL 36.24 at T = 1, 35.48 at T = 1.25 --
+   lower, so adopted for real-patient runs as the plan says
+   (`gate.REAL_CASE_TEMPERATURE`; fixtures keep T = 1). Its cost, measured
+   after adoption and reported rather than overruled:
+
+                     T = 1       T = 1.25    conf vs acc at T = 1.25
+     original 25     10/0/15     6/0/19      .50 / .60
+     holdout 1-2     7/0/21      5/0/23      .45 / .50
+     wave 3          7/1/6       5/0/9       .58 / .71
+
+   It removes the wave-3 wrong commit (72% softens below 65%) and four
+   correct commits on the original 25. NLL and the mean-confidence gap
+   measure different things: T = 1.25 improves the first and leaves stated
+   confidence under accuracy on every set.
+2. Confidence threshold: the lowest in 0.50-0.80 with zero wrong holdout
+   commits, the shipped 0.65 if none is lower. At T = 1 the holdout has a
+   wrong commit at every threshold up to 0.70 (three at 0.50-0.55, one at
+   0.60-0.70); zero first at 0.75. None is lower than 0.65, so 0.65 stays.
+   0.75 would have cost four correct commits on each set; not adopted,
+   because the plan only ever allowed lowering it.
+
+With T = 1.25 and the second reading (Gemini, cached): original 25 7/0/18,
+holdout 42 12/0/30 (wave 3 6/0/8). These are not clean tests -- T was fitted
+on the holdout -- and are recorded as the configuration now shipped.

@@ -28,6 +28,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from dxagent import AbstentionGate, DiagnosticAgent, LoopLimits, Verdict  # noqa: E402
+from dxagent.gate import real_case_scaler  # noqa: E402
 from dxagent.belief import BayesianProposer  # noqa: E402
 from dxagent.datasets import build_knowledge_base  # noqa: E402
 from dxagent.environment import Case, Environment  # noqa: E402
@@ -132,7 +133,9 @@ def main() -> int:
     agent = DiagnosticAgent(
         kb=kb,
         proposer=BayesianProposer(kb),
-        gate=AbstentionGate(kb=kb, min_confidence=args.min_confidence),
+        gate=AbstentionGate(
+            kb=kb, min_confidence=args.min_confidence, scaler=real_case_scaler()
+        ),
         limits=LoopLimits(require_workup=not args.no_workup),
     )
 
