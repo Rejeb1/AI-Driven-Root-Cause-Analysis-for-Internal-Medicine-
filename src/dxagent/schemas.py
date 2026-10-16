@@ -407,6 +407,9 @@ class CaseOutcome:
     # Populated on a commit. Empty on an escalation, whose packet already
     # names what it sought and could not get.
     unexamined: tuple[UnexaminedRival, ...] = ()
+    # Who made the commit: the Bayesian gate, or ``dxagent.hybrid``'s second
+    # reading. Reported, so the two are never pooled without saying so.
+    committed_by: str = "bayesian gate"
 
     @property
     def prediction(self) -> str | None:

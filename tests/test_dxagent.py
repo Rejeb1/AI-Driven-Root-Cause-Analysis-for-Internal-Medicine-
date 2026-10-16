@@ -4510,3 +4510,64 @@ def test_a_commit_carries_no_resolutions():
         outcome = DiagnosticAgent(kb=kb).run(case)
         if not outcome.abstained:
             assert outcome.escalation is None
+
+
+# -- hybrid: a language model proposes, the gate's safety conditions decide --
+
+
+def _second_reading_setup():
+    from dxagent.datasets import REAL_CASES
+
+    kb = build_knowledge_base(correlated=True)
+    gate = AbstentionGate(kb=kb)
+    agent = DiagnosticAgent(
+        kb=kb, proposer=BayesianProposer(kb), gate=gate,
+        limits=LoopLimits(
+            uninformative_turns_still_count=False, unanswered_actions_still_cost=False
+        ),
+    )
+    return kb, gate, agent, {c.case_id: c for c in REAL_CASES}
+
+
+def _scripted(label: str, confidence: float):
+    from dxagent.llm import ScriptedLLM
+
+    return ScriptedLLM(
+        [json.dumps({"ranking": [{"label": label, "probability": 0.9}], "confidence": confidence})]
+    )
+
+
+def test_second_reading_never_touches_a_safety_escalation():
+    """A red flag, a veto or a missing workup is never handed to the model."""
+    from dxagent.hybrid import second_reading
+
+    kb, gate, agent, cases = _second_reading_setup()
+    case = cases["pmc-10993079"]  # PE exclusion could not be completed
+    outcome = agent.run(case)
+    llm = _scripted("copd_exacerbation", 0.99)
+    after, why = second_reading(outcome, case.presenting_complaint, kb, gate, LLMProposer(kb, llm))
+    assert after is outcome and why.startswith("not eligible")
+    assert llm.calls == [], "the model is not even consulted"
+
+
+def test_second_reading_commits_only_through_every_safety_condition():
+    from dxagent.hybrid import second_reading
+
+    kb, gate, agent, cases = _second_reading_setup()
+    case = cases["pmc-9335400"]  # escalated on confidence alone; ACS 26%
+    outcome = agent.run(case)
+    complaint = case.presenting_complaint
+
+    def read(label, confidence):
+        return second_reading(outcome, complaint, kb, gate, LLMProposer(kb, _scripted(label, confidence)))
+
+    # Benign proposal while ACS keeps 26%: the red-flag condition holds.
+    after, why = read("copd_exacerbation", 0.95)
+    assert after.abstained and "time-critical" in why
+    # The right label, stated below the gate's own threshold: declined.
+    after, why = read("acute_coronary_syndrome", 0.50)
+    assert after.abstained and why.startswith("declined")
+    # The right label, confident, every condition met: committed, and labelled.
+    after, why = read("acute_coronary_syndrome", 0.90)
+    assert not after.abstained and after.prediction == "acute_coronary_syndrome"
+    assert after.committed_by != "bayesian gate"

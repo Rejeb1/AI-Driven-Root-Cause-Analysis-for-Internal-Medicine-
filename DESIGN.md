@@ -3519,3 +3519,82 @@ points. More accurate inputs made the system slightly more cautious and
 slightly better calibrated, and did not make it more accurate. That is
 the expected outcome of correcting two invented numbers that happened to
 favour commits, and it is reported rather than repaired.
+
+## Model v2: three changes, fixed before wave 3 is searched
+
+Amendment 2 (commit 2533b61) named these three before any of them existed,
+and fixed a third holdout wave to test them. This entry is the freeze.
+
+**1. An escalation names what would resolve it** (`dxagent/resolution.py`).
+The same model and gate re-run on hypothetical results for up to three
+missing tests; per diagnosis, the likeliest minimal set under which the loop
+would commit is reported. Conditionals only -- never counted as commits.
+Candidates: missing workup items, then each live diagnosis's confirming
+finding (highest likelihood ratio against its rivals), then expected gain.
+The first version used workup items and gain only; measured, its fork held
+the true diagnosis in 3 of 16 and 7 of 24 escalations, and adding the
+confirming findings did not raise that (3, 7). The reason was traced: even
+with every unknown finding answered the way the true diagnosis predicts,
+the gate would not commit to it in about half of these cases (asthma and
+panic cannot push ACS under 10%; COPD and asthma stay contested). The fork
+is bounded by the model, not by the search.
+
+Weighted by the model's own posterior, 43 of 55 reported paths point away
+from the true diagnosis, which looked like a hazard. Weighted instead by
+how the tests would come back in the true disease
+(`scripts/counterfactual_workup.py`), it is not: had the three tests been
+done, the original 25 expect 0.8 more correct commits and 0.1 wrong, the
+holdout 28 expect 2.4 and 0.2. The zero-wrong record is not mainly an
+artefact of missing data; the low coverage is mainly the model's.
+
+**2. ST elevation and ST depression are findings of their own.** Reading
+the ECG sentence of every real case with an ST change: all four
+pericarditis had elevation; the four depressions were three ACS and one
+hypertensive oedema. Sixteen cells, three measured (FORCE-ACS elevation
+0.434 and depression 0.412; Martinez-Nadal pericarditis elevation 0.18,
+which disagrees with the parent's 0.50 and is left visibly disagreeing),
+thirteen invented. Two costs and two correlation pairs tie each child to
+its parent. A record saying "no ST change" answers both children absent.
+Named `exam:ecg_st_elevation` / `exam:ecg_st_depression`, not the
+amendment's `ecg:` spelling, so they classify and cost like their parent;
+same concepts. The 3 fixtures with an ST change carry no direction --
+it would have to be invented. Invented 85 -> 98 of 193 (49% sourced).
+
+Annotations from the reports, ECG sentence only: pmc-5841117 elevation
+(the aVR depression is reciprocal, left out); pmc-13070269 depression,
+elevation absent (NSTEMI); pmc-4672113 depression, elevation absent
+(NSTEMI); pmc-12708975 elevation; pmc-13222672 elevation; pmc-6350673
+depression; ho-5067724 both; ho-8498672, ho-7489791, ho-8788021 elevation.
+
+**3. A language model proposes; the gate's conditions still decide**
+(`dxagent/hybrid.py`). Only on an escalation whose sole objection was
+confidence or margin, Gemini reads the complaint and the gathered findings
+once; its proposal commits only if no workup is outstanding, no criterion
+vetoes it, no other time-critical diagnosis keeps over 10% in the Bayesian
+posterior, the Bayesian posterior keeps it at 10% or more, and the model
+states at least 65%. No new threshold. Answers cached on disk by prompt.
+
+Only 1 of 15 and 3 of 21 escalations are eligible: almost every escalation
+is a safety one. Of the four: pmc-9335400 (ACS) -- Gemini said PE at 10%,
+declined; ho-12702526 (PE) -- Gemini PE at 95%, committed, correct;
+ho-7279685 and ho-12240549 (pericarditis) -- Gemini right both times,
+declined because the Bayesian posterior holds pericarditis at 2%. The
+fourth condition cost two correct commits; it is kept, because loosening it
+after seeing which cases it blocks is the tuning this project refuses.
+
+Effects on the already-seen sets, not a clean test of change 2 (chosen
+after reading these ECGs) -- wave 3 is the test:
+
+                       report    after 2 cells   v2 Bayes   v2 hybrid
+  original 25          10/0/15   9/0/16          10/0/15    10/0/15
+  holdout 28           5/0/23    4/0/24          7/0/21     8/0/20
+  top-1 (25 / 28)      15 / 11   14 / 12         16 / 14
+  conf vs acc (25)     .55/.60   .56/.56         .57/.64
+  conf vs acc (28)     .50/.39   .49/.43         .52/.50
+
+Found on the way, a documentation error rather than a code one: only
+pulmonary embolism and ACS are red flags in the knowledge base. Acute
+pulmonary oedema is not, though the internship report's chapter 1 called
+"the three urgent causes" all specially guarded. Corrected there, not in
+the code: whether oedema should be a red flag is a clinical decision, and
+making it one now, after seeing these cases, would be a v3.

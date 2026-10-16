@@ -83,9 +83,27 @@ def main() -> int:
     ))
 
     correct = wrong = resolvable = 0
+    # --hybrid: dxagent.hybrid's second reading, a language model consulted
+    # once on each escalation the gate made for confidence alone. Answers are
+    # cached on disk by prompt, so a rerun spends no quota and repeats the
+    # same answers rather than drawing new ones.
+    reader = None
+    if "--hybrid" in sys.argv:
+        from dxagent.belief import LLMProposer
+        from dxagent.hybrid import second_reading
+        from dxagent.llm import CachedLLM, GeminiLLM
+
+        reader = LLMProposer(kb, CachedLLM(GeminiLLM()))
+        by_reader = 0
     escalation_reasons: list[tuple[str, str]] = []
     for case in cases:
         outcome = agent.run(case)
+        reading = None
+        if reader is not None:
+            outcome, reading = second_reading(
+                outcome, case.presenting_complaint, kb, agent.gate, reader
+            )
+            by_reader += outcome.committed_by != "bayesian gate"
         print(THIN)
         print(f"{case.case_id}")
         print(wrap(case.presenting_complaint))
@@ -95,6 +113,8 @@ def main() -> int:
             )
             print(f"    {step.index + 1}. {humanise(step.action.target)} -> {answers}")
         print(f"  true diagnosis: {case.diagnosis.replace('_', ' ')}")
+        if reading is not None and not reading.startswith("not eligible"):
+            print(f"  second reading: {reading}")
         if outcome.verdict is Verdict.COMMITTED:
             got_it = outcome.prediction == case.diagnosis
             correct += int(got_it)
@@ -103,6 +123,8 @@ def main() -> int:
                 f"  system said:    {outcome.prediction.replace('_', ' ')} "
                 f"({outcome.confidence:.0%})  "
                 f"[{'CORRECT' if got_it else 'WRONG'}]"
+                + ("" if outcome.committed_by == "bayesian gate"
+                   else f"  -- {outcome.committed_by}")
             )
             for rival in outcome.unexamined:
                 print(
@@ -141,6 +163,12 @@ def main() -> int:
         f"{len(cases) - correct - wrong} escalated, out of "
         f"{len(cases)} real cases."
     )
+    if reader is not None:
+        print(
+            f"  {by_reader} of those commits made by the second reading "
+            f"({reader.llm.inner.model}); {reader.llm.calls} model calls, "
+            f"{reader.llm.hits} answered from cache."
+        )
     print(
         f"  {resolvable} of {len(cases) - correct - wrong} escalations name "
         "test results under which the same gate would commit (conditionals, "

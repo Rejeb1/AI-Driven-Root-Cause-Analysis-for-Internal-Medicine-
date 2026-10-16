@@ -286,6 +286,43 @@ class OpenAICompatibleLLM:
             return False
 
 
+@dataclass
+class CachedLLM:
+    """Any client, with every answer stored on disk by prompt.
+
+    A free-tier model has a daily quota and gives a different answer on
+    some reruns. Caching both saves the quota and makes a reported run
+    repeatable: the second run reads the first run's answers instead of
+    drawing new ones. The key covers the model name, the system prompt and
+    the prompt, so a changed prompt is a new question, never a stale hit.
+    """
+
+    inner: object
+    directory: str = ".cache/llm"
+    calls: int = 0
+    hits: int = 0
+
+    def complete(self, prompt: str, system: str = "", max_tokens: int = 1024) -> str:
+        import hashlib
+        import json
+        from pathlib import Path
+
+        model = getattr(self.inner, "model", type(self.inner).__name__)
+        key = hashlib.sha256("\n".join((model, system, prompt)).encode("utf-8")).hexdigest()
+        path = Path(self.directory) / f"{key}.json"
+        if path.exists():
+            self.hits += 1
+            return json.loads(path.read_text(encoding="utf-8"))["answer"]
+        self.calls += 1
+        answer = self.inner.complete(prompt, system=system, max_tokens=max_tokens)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps({"model": model, "answer": answer}, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        return answer
+
+
 def ollama(model: str = "qwen2.5:7b") -> OpenAICompatibleLLM:
     """A local Ollama model: free, offline, no key."""
     return OpenAICompatibleLLM(model=model)

@@ -40,3 +40,6 @@ data/ddxplus/
 # regenerates its data from documented commands.
 cases.json
 *.cases.json
+
+# Cached language-model answers (dxagent.llm.CachedLLM): local, per machine.
+.cache/
