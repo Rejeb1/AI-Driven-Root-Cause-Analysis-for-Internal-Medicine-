@@ -368,6 +368,10 @@ class Escalation:
     unresolved_question: str | None
     findings: tuple[Finding, ...]
     turns_used: int
+    # Hypothetical results under which the same model and gate would commit,
+    # one per diagnosis (``dxagent.resolution``). Conditionals, never a
+    # commit: nothing that counts correct or wrong reads them.
+    resolutions: tuple = ()
 
 
 @dataclass(frozen=True)

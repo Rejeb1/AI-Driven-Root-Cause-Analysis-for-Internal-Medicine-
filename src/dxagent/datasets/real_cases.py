@@ -207,6 +207,10 @@ REAL_CASES: tuple[Case, ...] = (
             "exam:tachycardia": True,
             # "diffuse concave ST elevations with PR depressions"
             "exam:ecg_st_changes": True,
+            # "diffuse concave ST elevations with PR depressions in all leads,
+            # except in aVR which showed ST depression" -- the aVR depression is the
+            # reciprocal of diffuse elevation, not an ischaemic depression; left out
+            "exam:ecg_st_elevation": True,
             # WBC 12.2 K/mL (elevated)
             "lab:raised_wcc": True,
             # D-dimer 257 ng/mL = 0.257 mg/L, below the 0.5 mg/L cutoff used
@@ -250,6 +254,10 @@ REAL_CASES: tuple[Case, ...] = (
             "exam:crackles": False,
             # "ST segment depressions in inferior leads"
             "exam:ecg_st_changes": True,
+            # "ST segment depressions in the inferior leads"; the report names it
+            # a non-ST-elevation myocardial infarction
+            "exam:ecg_st_depression": True,
+            "exam:ecg_st_elevation": False,
             # hs-troponin T 2027 ng/L
             "lab:raised_troponin": True,
             # WBC 14.2 (elevated)
@@ -701,6 +709,9 @@ REAL_CASES: tuple[Case, ...] = (
             "wheeze_subjective": False,
             # "1-2 mm horizontal ST depressions in V3 to V5"
             "exam:ecg_st_changes": True,
+            # "1-2 mm horizontal ST depressions in V3 to V5"; NSTEMI by the report
+            "exam:ecg_st_depression": True,
+            "exam:ecg_st_elevation": False,
             "lab:raised_troponin": True,  # troponin I peaked at 2.6 ng/mL
         },
         vocabulary=frozenset(),
@@ -923,6 +934,8 @@ REAL_CASES: tuple[Case, ...] = (
             "exam:hypoxia": False,  # oxygen saturation 97% on room air
             # "concave ST-segment elevation in the precordial leads (V2-V5)"
             "exam:ecg_st_changes": True,
+            # "ST-segment elevation in leads V2-V5"
+            "exam:ecg_st_elevation": True,
             # "a characteristic pericardial friction rub was auscultated"
             "exam:friction_rub": True,
             # troponin I 14.96 pg/mL against <40.0
@@ -1055,6 +1068,8 @@ REAL_CASES: tuple[Case, ...] = (
             "leg_swelling": False,
             # "ST-segment elevation ... in the inferior leads (II, III, aVF)"
             "exam:ecg_st_changes": True,
+            # "ST-segment elevation in the inferior leads (II, III, and aVF)"
+            "exam:ecg_st_elevation": True,
             # "high-sensitivity troponin I (244 ng/L; reference 0-34.2)"
             "lab:raised_troponin": True,
         },
@@ -1088,6 +1103,8 @@ REAL_CASES: tuple[Case, ...] = (
             "leg_swelling": True,
             # "lateral lead ST depression"
             "exam:ecg_st_changes": True,
+            # "lateral lead ST depression"
+            "exam:ecg_st_depression": True,
             # "cephalization, and Kerley B-lines, indicating interstitial
             # edema"
             "imaging:cxr_pulmonary_oedema": True,

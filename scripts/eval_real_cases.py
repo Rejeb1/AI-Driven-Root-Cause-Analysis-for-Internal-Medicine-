@@ -82,7 +82,7 @@ def main() -> int:
         "Each is one real data point, not a benchmark.\n"
     ))
 
-    correct = wrong = 0
+    correct = wrong = resolvable = 0
     escalation_reasons: list[tuple[str, str]] = []
     for case in cases:
         outcome = agent.run(case)
@@ -117,6 +117,17 @@ def main() -> int:
                     "  unresolved:     "
                     + humanise(outcome.escalation.unresolved_question)
                 )
+            for r in outcome.escalation.resolutions:
+                results = ", ".join(
+                    f"{humanise(c)} {'present' if present else 'absent'}"
+                    for c, present in r.results
+                )
+                print(
+                    f"  would resolve:  if {results} -> "
+                    f"{r.diagnosis.replace('_', ' ')} at {r.confidence:.0%} "
+                    f"(these results {r.probability:.0%} likely)"
+                )
+            resolvable += bool(outcome.escalation.resolutions)
             escalation_reasons.append((case.case_id, outcome.escalation.reason))
         top3 = ", ".join(
             f"{h.label.replace('_', ' ')} {h.probability:.0%}"
@@ -129,6 +140,11 @@ def main() -> int:
         f"  {correct} committed and correct, {wrong} committed and WRONG, "
         f"{len(cases) - correct - wrong} escalated, out of "
         f"{len(cases)} real cases."
+    )
+    print(
+        f"  {resolvable} of {len(cases) - correct - wrong} escalations name "
+        "test results under which the same gate would commit (conditionals, "
+        "not commits; not counted above)."
     )
     if cases is HOLDOUT_CASES:
         print(wrap(

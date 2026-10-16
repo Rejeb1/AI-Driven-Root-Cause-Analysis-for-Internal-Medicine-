@@ -132,6 +132,13 @@ class Environment(Protocol):
     def respond(self, action: Action) -> list[Finding]: ...
 
 
+# Findings that refine a parent finding: absent parent means absent child.
+_REFINES: dict[str, str] = {
+    "exam:ecg_st_elevation": "exam:ecg_st_changes",
+    "exam:ecg_st_depression": "exam:ecg_st_changes",
+}
+
+
 @dataclass
 class CaseOracle:
     """Truthful responder. Unqueried features stay unobserved."""
@@ -142,6 +149,18 @@ class CaseOracle:
         if not action.target:
             return []
         if action.target not in self.case.features:
+            parent = _REFINES.get(action.target)
+            if parent is not None and self.case.features.get(parent) is False:
+                # No ST change recorded answers its direction too: a record
+                # that says there was none has said there was no elevation
+                # and no depression. Entailed, not a new observation.
+                return [
+                    Finding(
+                        concept=action.target,
+                        polarity=Polarity.ABSENT,
+                        provenance=f"{action.kind.value} (entailed by {parent} absent)",
+                    )
+                ]
             if self.case.known_absent(action.target):
                 # The record is complete over this vocabulary, so silence is a
                 # genuine negative rather than a gap.

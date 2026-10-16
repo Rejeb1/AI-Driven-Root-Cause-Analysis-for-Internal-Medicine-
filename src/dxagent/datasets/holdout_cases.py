@@ -386,6 +386,10 @@ HOLDOUT_CASES: tuple[Case, ...] = (
             "lab:raised_wcc": True,  # "neutrophilic leucocytosis"
             # "ST segment elevation in II, III and aVF"
             "exam:ecg_st_changes": True,
+            # "ST segment elevation in II, III and aVF and ST segment depression in
+            # V4, V5, and V6" -- both stated
+            "exam:ecg_st_elevation": True,
+            "exam:ecg_st_depression": True,
         },
         vocabulary=frozenset(),
     ),
@@ -403,6 +407,8 @@ HOLDOUT_CASES: tuple[Case, ...] = (
             "exam:crackles": False,  # "lung sounds were normal with no crackles"
             # "ST segment elevation with Q waves in the anterior leads"
             "exam:ecg_st_changes": True,
+            # "ST segment elevation with Q waves in the anterior leads"
+            "exam:ecg_st_elevation": True,
         },
         vocabulary=frozenset(),
     ),
@@ -752,6 +758,8 @@ HOLDOUT_CASES: tuple[Case, ...] = (
             "imaging:ctpa_filling_defect": False,
             "lab:raised_troponin": False,  # two negative assays
             "exam:ecg_st_changes": True,  # "diffuse ST-PR discordance"
+            # "at least 1-mm ST elevation" (V2), with diffuse ST-PR discordance
+            "exam:ecg_st_elevation": True,
             "imaging:pericardial_effusion": False,  # echo "without ... effusion"
         },
         vocabulary=frozenset(),
@@ -865,6 +873,8 @@ HOLDOUT_CASES: tuple[Case, ...] = (
             "lab:raised_bnp": True,  # 124.5, normal < 100
             # first ECG "showed an acute anterior ... myocardial infarction"
             "exam:ecg_st_changes": True,
+            # "ST-segment elevation was noted in the lead V2-V4"
+            "exam:ecg_st_elevation": True,
         },
         vocabulary=frozenset(),
     ),

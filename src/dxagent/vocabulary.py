@@ -189,8 +189,12 @@ CURATED: dict[str, tuple[str | None, str, str]] = {
         "HP:0012250 are distinct children and should be separated once the "
         "case representation supports it -- they carry different implications",
     ),
-    "ecg:st_elevation": ("HP:0012251", "ecg", ""),
-    "ecg:st_depression": ("HP:0012250", "ecg", ""),
+    # The two children, separated after the internship report. Named under
+    # exam: rather than ecg: so they classify and cost like their parent, the
+    # same reason exam:ecg_pr_depression is. A record that says there was no
+    # ST change answers both as absent (environment.CaseOracle).
+    "exam:ecg_st_elevation": ("HP:0012251", "ecg", "ST elevation"),
+    "exam:ecg_st_depression": ("HP:0012250", "ecg", "ST depression"),
     "exam:ecg_pr_depression": (
         None,
         "ecg",

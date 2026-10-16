@@ -56,6 +56,7 @@ from .guidelines import (
     unexamined_signatures,
 )
 from .knowledge import InMemoryKnowledgeBase
+from .resolution import resolutions
 from .schemas import (
     Action,
     CaseOutcome,
@@ -194,9 +195,8 @@ class GraphAgent:
 
     # -- helpers shared with DiagnosticAgent -------------------------------
 
-    @staticmethod
     def _escalate(
-        state: CaseState, differential, confidence: float, reason: str,
+        self, state: CaseState, differential, confidence: float, reason: str,
         unresolved: str | None,
     ) -> CaseOutcome:
         return CaseOutcome(
@@ -210,6 +210,10 @@ class GraphAgent:
                 unresolved_question=unresolved,
                 findings=tuple(state.findings),
                 turns_used=state.turn,
+                resolutions=resolutions(
+                    self.kb, self.gate, state.findings, differential,
+                    state.presenting_complaint,
+                ),
             ),
             steps=tuple(state.history),
             budget_spent=state.budget_spent,

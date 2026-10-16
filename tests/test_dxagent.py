@@ -899,11 +899,15 @@ def test_the_weakened_loop_still_has_exactly_one_masquerade_failure(kb, cases):
     # Lee 2023) -- the same commit that took fx-005 off the correlation-only
     # arm above. One cell, one fixture off one arm and another onto the
     # next: the saturated-set point again, not a signal about either case.
+    #
+    # fx-004 left again with the ST split: ACS's measured ST-direction cells
+    # (FORCE-ACS) give its ECG finding more to say on this arm. Fixtures
+    # carry no direction, so the change is through the KB, not the case.
     assert [
         case.case_id
         for case in cases
         if decisive.run(case).differential.top.label != case.diagnosis
-    ] == ["fx-004", "fx-009", "fx-010"]
+    ] == ["fx-009", "fx-010"]
 
 
 def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
@@ -1137,8 +1141,13 @@ def test_correlation_pays_and_decisive_tests_still_do_not(kb, cases):
     # panic column's overcounted facets carry it past the gate. The shipped
     # (weighted) arm still commits it correctly. Not chosen with this case in
     # mind -- the cell was the first countable D-dimer figure found in ACS.
+    #
+    # The ST split (after the internship report) took pmc-6350673 off the
+    # unweighted arm: its lateral ST depression is now a finding of its own,
+    # and it argues for oedema's ischaemic picture rather than for panic.
+    # pmc-10993079 (COPD as pneumonia) remains.
     assert wrong_commits(True) == 0
-    assert wrong_commits(False) == 2
+    assert wrong_commits(False) == 1
 
     # Where the safety difference lives now: the fixtures. Without the
     # weighting, four facets of one picture counted as four findings sharpen
@@ -2733,13 +2742,17 @@ def test_the_model_parameters_outside_the_likelihood_table_are_counted():
     # due-diligence rule that was measured, found to change no verdict, and
     # left off by default. Off is still a number somebody chose, so it stays
     # in the count.
+    #
+    # 55 after the ST split (after the internship report): two costs for
+    # ST elevation and ST depression, and two correlation pairings tying
+    # each to its parent finding. All four named in fixtures.py.
     report = parameter_report()
-    assert report.total == 51
-    assert report.invented == 51, "none of these has a source yet"
+    assert report.total == 55
+    assert report.invented == 55, "none of these has a source yet"
 
     by_name = {g.name: g for g in report.groups}
-    assert by_name["correlation weights"].count == 6
-    assert by_name["acquisition costs"].count == 29
+    assert by_name["correlation weights"].count == 8
+    assert by_name["acquisition costs"].count == 31
     assert by_name["gate thresholds"].count == 5
 
     # Every group says where it lives, so the count can be checked against
@@ -3718,9 +3731,14 @@ def test_completing_the_grid_buys_rank_and_costs_one_wrong_commit():
     # (pmc-13305284, pericarditis as pneumonia), complete grid still better
     # on rank (2.10 against 2.35). The title is true again -- fifth reading
     # in five passes, which is the finding.
+    #
+    # Sixth, after the ST split: the complete grid commits two wrong
+    # (pmc-5841117 pericarditis as ACS at 76%, pmc-13305284 pericarditis as
+    # pneumonia) and now also ranks worse (2.28 against 2.20). Both reasons
+    # to keep it off point the same way for the first time.
     assert off_wrong == 0, "the shipped grid commits nothing wrong"
-    assert on_wrong == off_wrong + 1, "completing the grid costs one wrong commit"
-    assert on_rank < off_rank, "the complete grid still ranks better"
+    assert on_wrong == off_wrong + 2, "completing the grid costs two wrong commits"
+    assert on_rank > off_rank, "and no longer buys rank"
 
     # No cell is left to fall back on once the grid is complete.
     kb = build(correlated=True, complete_grid=True)
@@ -4429,3 +4447,66 @@ def test_each_evidence_line_cites_its_own_likelihood(kb):
         citation = kb._evidence_citation(entry, Finding(concept, Polarity.PRESENT), 2.0)
         assert citation.source_id == expect_source
         assert expect_text in citation.snippet
+
+
+# -- resolution: what would let an escalation commit -------------------------
+
+
+def _real_escalation(case_id: str):
+    from dxagent.datasets import REAL_CASES
+
+    kb = build_knowledge_base(correlated=True)
+    gate = AbstentionGate(kb=kb)
+    limits = LoopLimits(
+        uninformative_turns_still_count=False, unanswered_actions_still_cost=False
+    )
+    case = next(c for c in REAL_CASES if c.case_id == case_id)
+    return kb, gate, limits, case
+
+
+def test_every_resolution_actually_commits_when_its_results_are_applied():
+    """A resolution may never say more than the loop itself would on those results."""
+    from dxagent.guidelines import diagnostic_criteria_met, outstanding_workup
+    from dxagent.schemas import Finding, Polarity
+
+    kb, gate, limits, case = _real_escalation("pmc-10993079")
+    outcome = DiagnosticAgent(
+        kb=kb, proposer=BayesianProposer(kb), gate=gate, limits=limits
+    ).run(case)
+    assert outcome.abstained
+    assert outcome.escalation.resolutions, "this COPD escalation names a resolution"
+    proposer = BayesianProposer(kb)
+    for r in outcome.escalation.resolutions:
+        tested = {c for c, _ in r.results}
+        findings = [f for f in outcome.escalation.findings if f.concept not in tested] + [
+            Finding(concept=c, polarity=Polarity.PRESENT if p else Polarity.ABSENT)
+            for c, p in r.results
+        ]
+        differential = gate.calibrate(proposer.propose(findings, case.presenting_complaint))
+        decision = gate.evaluate(
+            differential,
+            evidence_fit=proposer.last_evidence_fit,
+            criteria_met=diagnostic_criteria_met(findings),
+        )
+        assert decision.should_commit and not outstanding_workup(findings)
+        assert differential.top.label == r.diagnosis
+        assert 0.0 < r.probability <= 1.0
+
+
+def test_resolutions_are_one_per_diagnosis_and_identical_in_both_engines():
+    from dxagent.graph import GraphAgent
+
+    kb, gate, limits, case = _real_escalation("pmc-10993079")
+    loop = DiagnosticAgent(kb=kb, proposer=BayesianProposer(kb), gate=gate, limits=limits).run(case)
+    graph = GraphAgent(kb=kb, proposer=BayesianProposer(kb), gate=gate, limits=limits).run(case)
+    labels = [r.diagnosis for r in loop.escalation.resolutions]
+    assert len(labels) == len(set(labels))
+    assert loop.escalation.resolutions == graph.escalation.resolutions
+
+
+def test_a_commit_carries_no_resolutions():
+    kb = build_knowledge_base()
+    for case in build_cases():
+        outcome = DiagnosticAgent(kb=kb).run(case)
+        if not outcome.abstained:
+            assert outcome.escalation is None

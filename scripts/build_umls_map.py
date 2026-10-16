@@ -232,6 +232,8 @@ SEARCH_TERMS: dict[str, tuple[str, str]] = {
     "exam:reduced_breath_sounds": ("Decreased breath sounds", _FINDING_TYPES),
     "exam:friction_rub": ("Pericardial friction rub", _FINDING_TYPES),
     "exam:ecg_st_changes": ("ST segment changes", _RESULT_TYPES),
+    "exam:ecg_st_elevation": ("ST segment elevation", _RESULT_TYPES),
+    "exam:ecg_st_depression": ("ST segment depression", _RESULT_TYPES),
     # laboratory
     # "Leukocytosis" first ranked a CSF-specific (cerebrospinal fluid) subtype,
     # a different body fluid entirely. Rewriting the query as "White blood cell

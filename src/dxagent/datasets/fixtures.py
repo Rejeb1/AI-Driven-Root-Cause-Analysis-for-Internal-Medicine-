@@ -63,6 +63,8 @@ COSTS: dict[str, float] = {
     "exam:hypoxia": 0.5,
     "exam:ecg_st_changes": 2.0,
     "exam:ecg_pr_depression": 2.0,  # read from the same tracing
+    "exam:ecg_st_elevation": 2.0,  # read from the same tracing
+    "exam:ecg_st_depression": 2.0,  # read from the same tracing
     # bloods
     "lab:raised_wcc": 4.0,
     "lab:raised_d_dimer": 4.0,
@@ -145,6 +147,12 @@ _CORRELATION_GROUPS: tuple[tuple[float, tuple[str, ...]], ...] = (
     # in pericarditis are two parts of one stage-I picture, so they must not
     # count as two independent pieces of evidence. Invented, like the others.
     (0.80, ("exam:ecg_st_changes", "exam:ecg_pr_depression")),
+    # A direction is part of the ST change it qualifies: observed together
+    # they are one finding, not two. Two pairs rather than one group of
+    # three, because elevation and depression are not the same evidence as
+    # each other. Invented, like the others.
+    (0.80, ("exam:ecg_st_changes", "exam:ecg_st_elevation")),
+    (0.80, ("exam:ecg_st_changes", "exam:ecg_st_depression")),
 )
 
 
@@ -2105,6 +2113,90 @@ for _concept, (_value, _low, _high) in _PIOPED_NO_PE.items():
         )
 
 
+# ---------------------------------------------------------------------------
+# ST elevation and ST depression, separated after the internship report.
+#
+# exam:ecg_st_changes is the parent concept (HPO 'Abnormal ST segment') and
+# the vocabulary had noted since the start that its two children "carry
+# different implications". Reading the ECG sentence of every real case with
+# an ST change (DESIGN.md lists them) found the split matters in one
+# direction: every pericarditis had elevation, and the four depressions were
+# three ACS and one hypertensive oedema. Depression is the discriminating
+# child; elevation is shared.
+#
+# All eight diseases carry both cells -- a finding described by one disease
+# alone is the single-describer defect this file has already paid for once.
+# Three are measured; thirteen are invented, chosen against the parent
+# value where the entry has one, and counted as invented by the provenance
+# report. The sourced share falls, which is the honest direction: these are
+# claims the model now needs to make.
+_ST_DIRECTION: dict[str, tuple[float, float]] = {
+    # (P(elevation | d), P(depression | d))
+    "acute_coronary_syndrome": (0.434, 0.412),  # both measured, below
+    "pericarditis": (0.18, 0.03),  # elevation measured below; depression invented
+    "pulmonary_embolism": (0.05, 0.15),  # right-heart strain pattern; invented
+    "acute_pulmonary_oedema": (0.05, 0.25),  # ischaemia and strain; invented
+    "copd_exacerbation": (0.02, 0.06),  # inside the invented parent 0.08
+    "asthma_exacerbation": (0.02, 0.03),  # inside the invented parent 0.05
+    "community_acquired_pneumonia": (0.03, 0.03),  # invented
+    "panic_attack": (0.01, 0.03),  # invented
+}
+
+_FROM_LITERATURE[("acute_coronary_syndrome", "exam:ecg_st_elevation")] = measured(
+    0.434,
+    Citation(
+        "VAN-DER-SANGEN-2022",
+        "van der Sangen NMR et al., Open Heart 2022;9:e001984, PMC8969003, Table 1",
+        "ST-elevation in 2,176 of 5,015 patients with acute coronary syndrome "
+        "in FORCE-ACS (43.4%); GRACE derivation cohort 36%",
+    ),
+    low=0.36,
+    high=0.45,
+    note="the same table already sources the parent at 0.55; band spans "
+         "the GRACE derivation figure. Elevation and depression overlap "
+         "(reciprocal change), so the two children sum past the parent.",
+)
+_FROM_LITERATURE[("acute_coronary_syndrome", "exam:ecg_st_depression")] = measured(
+    0.412,
+    Citation(
+        "VAN-DER-SANGEN-2022",
+        "van der Sangen NMR et al., Open Heart 2022;9:e001984, PMC8969003, Table 1",
+        "ST-depression in 2,068 of 5,015 patients with acute coronary "
+        "syndrome in FORCE-ACS (41.2%); GRACE derivation cohort 32%",
+    ),
+    low=0.32,
+    high=0.43,
+)
+_FROM_LITERATURE[("pericarditis", "exam:ecg_st_elevation")] = measured(
+    0.18,
+    Citation(
+        "MARTINEZ-NADAL-2020",
+        "Martinez-Nadal G et al., Emergencias 2020;32(2):97-104, Table 1",
+        "ST segment elevation in 177 of 983 consecutive emergency-department "
+        "pericarditis diagnoses (18%)",
+    ),
+    low=0.16,
+    high=0.21,
+    note="disagrees with the parent cell (0.50, StatPearls) and with a "
+         "referral cohort (CERIANI-2026, ST elevation in 121 of 351, 34%); "
+         "taken from the consecutive ED series because that is the "
+         "presentation this entry describes, and the disagreement is left "
+         "visible rather than reconciled. Depression stays invented: the "
+         "same paper pools it with T-wave change.",
+)
+
+
+def _seed_st_direction(kb: InMemoryKnowledgeBase) -> None:
+    """Add the two ST-direction cells to every entry; sources then overwrite three."""
+    for label, (elevation, depression) in _ST_DIRECTION.items():
+        entry = kb.entries[label]
+        features = dict(entry.features)
+        features.setdefault("exam:ecg_st_elevation", elevation)
+        features.setdefault("exam:ecg_st_depression", depression)
+        kb.entries[label] = dataclasses.replace(entry, features=features)
+    kb._marginals.clear()
+
+
 def _seed_pioped_cells(kb: InMemoryKnowledgeBase) -> None:
     """Put the cells in place so ``_apply_sources`` can source them.
 
@@ -2758,6 +2850,7 @@ def build_knowledge_base(
         )
     )
     _seed_pioped_cells(kb)
+    _seed_st_direction(kb)
     if complete_grid:
         _complete_uncharacterised(kb)
     _apply_sources(kb)
