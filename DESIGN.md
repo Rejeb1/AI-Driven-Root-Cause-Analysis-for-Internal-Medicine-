@@ -3618,10 +3618,14 @@ First and only runs, as the amendment fixed:
 **The first wrong commit on a real patient.** ho-6010635, an asthma
 exacerbation triggered by pharyngitis -- fever 39C, white count 11.5, wheeze,
 three weeks of dry cough -- committed as pneumonia at 72% by both models.
-Fever and a raised white count are the pneumonia picture, and the wheeze
-does not outweigh them: COPD and asthma both carry wheeze, so it barely
-separates asthma from pneumonia once infection markers are present. Neither
-v2 change caused it (v1 makes the same commit). It is reported, not
+Traced per finding (log LR, asthma against pneumonia): fever -1.51 and
+raised white count -1.31 decide it, and both asthma cells are invented
+(0.15 and 0.20). The wheeze does not rescue it, and argues slightly the
+wrong way (-0.14): pneumonia lists no wheeze cell, so it backs off to the
+KB-wide marginal, 0.81, dragged up by COPD and asthma -- the marginal-backoff
+defect `InMemoryKnowledgeBase.backoff` already documents for troponin under
+asthma. Two invented numbers and one known structural weakness, not a new
+mechanism. Neither v2 change caused it (v1 makes the same commit). It is reported, not
 repaired: a fix chosen after seeing this case would be a v3 and need a
 fourth wave. The zero-wrong record held on 53 seen-before real patients and
 on 28 unseen ones; it did not hold on the next 14.
