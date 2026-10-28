@@ -379,6 +379,136 @@ second, v3 against v2, on wave 4 alone, then pooled. Nothing is tuned
 after the run; a change it prompts is a v4 and needs a fifth wave. No
 refitting: the temperature stays 1.25 whatever wave 4 shows.
 
+What wave 4 found (searched 2026-10-28, ranks are PubMed relevance)
+-------------------------------------------------------------------
+Full text read through NCBI E-utilities, as in wave 3; "no case text" means
+efetch returned no body. Multi-patient reports are judged on their first
+patient, as wave 3 took PMC6009803. An ST statement that fills a parent and a
+child cell counts once toward rule 4's six. Rank drift since wave 3: items
+already in a set reappeared at oedema r84, r95, asthma r100, r105, r107,
+pericarditis r81, r94, r102, r103 and ACS w2 r88, and were skipped as handled.
+
+PE (wave-1 list): taken r90 PMC11047289, r103 PMC6392898, r107 PMC7008764.
+  Skipped: r81 sarcoidosis co-primary; r82 vaccine-attributed; r83
+  supplement-attributed (exposure-attributed, as ACS r80 in wave 3); r84 RV
+  noncompaction with VT co-primary; r85, r86, r96, r100 no case text; r87
+  severe asthma co-primary; r88 clozapine-attributed; r89, r95 COVID-19; r91
+  emphysematous pancreatitis co-primary; r92 four findings (the seizure-like
+  episode not read as syncope); r93 myxoma; r94 stroke co-primary; r97
+  tumour embolism (choriocarcinoma); r98 pneumonia treated alongside for a
+  week, co-primary; r99 leiomyomatosis (tumour embolism); r101 five findings;
+  r102 amyloidosis; r104 CMV pericarditis co-primary; r105 mimic; r106 no PMC.
+
+ACS (wave-2 list first): none taken. Skipped, wave-2 list: r81 thyrotoxicosis
+  with normal coronaries; r82 Takayasu, teenager; r83, r89, r92, r96, r101,
+  r107 no PMC; r84 sumitriptan; r85 seizure-associated, no plaque rupture; r86
+  Cogan vasculitis; r87 subclavian steal (as wave-3 r70); r88 handled; r90 no
+  presenting symptom stated; r91 stroke thrombolysis co-primary; r93 pacing
+  complication; r94 trauma; r95 four findings; r97, r112 external compression;
+  r98, r113 vasospasm; r99 endocarditis; r100 foreign body; r102, r105, r118,
+  r119 no case text; r103 post-stroke thrombolysis; r104 Brugada mimic; r106
+  five findings (ST elevation counted once); r108 final diagnosis PE; r109
+  Kounis; r110 moyamoya; r111 three findings; r114 dobutamine with
+  hyperthyroidism; r115, r116 COVID-19; r117 SCAD; r120 hypertensive
+  emergency co-primary (as wave-3 r69). Wave-1 list: r81 antiphospholipid
+  thrombosis; r82 marijuana (as wave-3 r71); r83, r87 vasculitic; r84, r118
+  later mechanical complication, not the presentation; r85, r88, r100, r106,
+  r113 mimics; r86 myocardial bridging; r89, r95, r98, r101, r103, r111,
+  r114, r116, r119 no PMC; r90 embolic; r91 coronary aneurysm, first patient
+  three findings; r92 concurrent PE; r93 adolescent; r94 histopathology
+  teaching case; r96 four findings; r97, r109, r112 no case text; r99 first
+  patient in diabetic ketoacidosis; r102 trauma; r104 fistula steal, troponin
+  normal; r105 Takotsubo question; r107 mucormycosis after transplant; r108,
+  r110 phaeochromocytoma/paraganglioma; r115 tacrolimus; r117 tracheal
+  injury; r120 ketoacidosis co-primary. ACS SHORT: 0 of 3.
+
+Pneumonia (wave-2 list first): none taken. Skipped, wave-2 list: r81, r91,
+  r94, r107 mucocutaneous or haematological Mycoplasma syndromes; r82
+  endometritis and sepsis co-primary; r83, r85, r92, r95, r118 children; r84
+  surveillance report; r86, r102 after stem-cell transplant; r87 hernia mimic;
+  r88 tachypnoea and hypoxia but no breathlessness reported (as wave-2 r33);
+  r89, r98, r112 no case text; r90, r99, r113 co-primary complication
+  (haemolysis, splenial lesion, heart failure); r93 case series of a region;
+  r96, r97, r110, r116 COVID-19; r100 catatonia series; r101 pneumothorax
+  co-primary; r103 vaccine eosinophilic pneumonia; r104 endocarditis with HIV;
+  r105 dual bacteraemia; r106 long-term corticosteroids (immunosuppressed);
+  r108, r114 nosocomial; r109 hairy-cell leukaemia; r111 no PMC; r115
+  arthritis; r117 exposure study; r119, r120 mimic or later complication.
+  Wave-1 list: r81, r83, r104, r112 eosinophilic pneumonia; r82 no
+  breathlessness or chest pain, new diabetes; r84, r87, r90, r108 COVID-19;
+  r85 outpatient course, later COVID-19; r86, r99, r107, r113, r115 organising
+  or interstitial; r88, r95, r100, r106, r109, r116, r117 immunocompromised;
+  r89 emphysema diagnosed at the same presentation (co-primary); r91
+  varicella; r92 no case text; r93, r119 no PMC; r94 endobronchial lipoma;
+  r96, r110 mimic; r97 ultrasound method report; r98 handled; r101 hiccups and
+  syncope, no breathlessness or chest pain; r102 ventilator-associated; r103,
+  r120 hydropneumothorax named in the title; r105 splenic rupture; r111
+  veterinary; r114 parasitic; r118 mycobacterial. PNEUMONIA SHORT: 0 of 3.
+
+Oedema: none taken. Skipped: r81, r96, r105, r107 re-expansion; r82, r88,
+  r89, r90, r98, r99, r100, r103, r106, r108, r113, r116, r119 non-cardiogenic;
+  r83, r94 phaeochromocytoma; r84, r95 handled; r85 veterinary; r86, r104
+  post-operative; r87 after pacemaker insertion (as wave-3 r60); r91 LVAD;
+  r92 paediatric; r93 final diagnosis PE, lymphoma on chemotherapy; r97
+  antiphospholipid syndrome with lupus myocarditis; r101, r110, r112, r115,
+  r120 no PMC; r102 child, high altitude; r109, r114 Takayasu; r111 after
+  hyperbaric oxygen; r117 chronic pacing management; r118 immunotherapy for
+  lung cancer. OEDEMA SHORT: 0 of 3.
+
+Asthma: none taken. Skipped: r81, r85 EGPA; r82 poisoning co-primary; r83,
+  r84, r91, r95, r99, r103, r108-r110, r116 chronic management; r86, r102
+  COVID-19; r87 ketoacidosis co-primary; r88, r89, r90, r94, r111, r114, r117,
+  r118 under 18; r92 alveolar haemorrhage; r93 nocardiosis; r96
+  Strongyloides hyperinfection (as wave-3 r60); r97 infective focus
+  co-primary, temperatures contradictory; r98 ABPA; r100, r105, r107 handled;
+  r101 no case text; r104 eosinophilic pneumonia; r106 cohort study; r112,
+  r113 mimics; r115 myasthenic crisis co-primary; r119 vaccine-attributed;
+  r120 pneumorrhachis (as pneumomediastinum). ASTHMA SHORT: 0 of 3.
+
+Pericarditis (wave-2 list, 103 results, then wave-1): none taken. Skipped,
+  wave-2 list: r81, r94, r102, r103 handled; r82 presented as cholecystitis;
+  r83 teenager after COVID-19; r84 Salmonella aneurysm; r85 after primary PCI;
+  r86 anorexia with pneumomediastinum; r87 COVID-19; r88 leukaemia; r89 mimic;
+  r90 bronchogenic cyst; r91 post-pericardiotomy; r92 SLE; r93 bloodstream
+  infection; r95 concurrent active infections; r96 recurrent, chronic
+  management; r97 children, no PMC; r98 mimic; r99 filter strut; r100 Graves'
+  co-primary; r101 drug-induced. Wave-1 list: r81, r84, r88, r97, r100, r102,
+  r104, r105, r110-r112, r115, r117, r118 constrictive; r82 gunshot; r83, r95,
+  r99 COVID-19 or vaccine; r85 on ocrelizumab (immunosuppressed); r86, r90,
+  r91, r98, r103, r107, r109 purulent or bacterial; r87, r120 veterinary;
+  r89, r101, r114, r116 tuberculous; r92 bronchogenic cyst; r93 SLE; r94
+  procedural; r96 monkeypox; r106 aortic dissection; r108 absent pericardium;
+  r113 adolescent; r119 IgG4. PERICARDITIS SHORT: 0 of 3.
+
+COPD (new query, 82 results, ranks 1-40): none taken. Skipped: r1, r11, r13,
+  r23, r31 no PMC; r2, r8, r10, r30 combined fibrosis and emphysema; r3, r4,
+  r6, r7, r12, r17, r21, r22 surgical or subcutaneous emphysema; r5, r27, r35
+  fungal, nocardial or mycobacterial co-primary; r9, r16 chronic home
+  ventilation; r14 first patient obtunded, no breathlessness reported; r15
+  lung cancer; r18 veterinary; r19 PRES; r20 asthma with pneumothorax; r24
+  final diagnosis "AECOPD by community-acquired pneumonia", two of the eight
+  (as PE r98 above); r25 cohort study; r26 chronic PE; r28 pneumothorax; r29
+  congenital lobar emphysema; r32 panic attacks triggering hypercapnia, two of
+  the eight; r33 handled; r34 bullous emphysema; r36 mimic; r37, r38, r40
+  COVID-19; r39 intraoperative. COPD SHORT: 0 of 3.
+
+Panic (new query, 2 results): none taken. r1 final diagnosis borderline
+  personality disorder, which the report distinguishes from panic disorder;
+  r2 serotonergic mimic. PANIC SHORT: 0 of 3.
+
+Extraction notes: "pinkish sputum" (r90) is not read as haemoptysis, and
+  "worsened suddenly" after three weeks of exertional breathlessness is not
+  read as sudden_onset (close-but-not-quite); r107's saturation was 98% and
+  then 60% after a second syncope in the same visit, conflicting, so left out;
+  r107's "physical exam including heart and lungs ... normal" read as lungs
+  clear; laboratory values without a reference range left out, as before.
+
+WAVE 4: 3 cases, all pulmonary embolism. 21 of the 24 places went unfilled,
+  and the rule says record the shortfall rather than top it up. Three cases
+  cannot say whether v3 is better than v2; they are a first look, not a
+  verdict. Two of the three present with syncope, one of the two signs v3
+  added -- the PE list's rank order, not a choice.
+
 Not fitted, on purpose: the red-flag tolerance (10%), which decides how much
 residual probability of a time-critical cause is acceptable. That is a
 clinical policy with a cost on both sides, not a parameter to optimise
@@ -1395,9 +1525,93 @@ WAVE3_IDS = frozenset(c.case_id for c in WAVE3_CASES)
 
 
 # ---- wave 4 (Amendment 3) ---------------------------------------------------
-# Empty in the commit that fixes the rule, as wave 1 was: the cases arrive in
-# a later commit, before any model is run on them.
-WAVE4_CASES: tuple[Case, ...] = ()
+# Empty in the commit that fixed the rule (c6e2363), as wave 1 was; filled in
+# the next commit, before any model was run on these cases. PE 3, every other
+# diagnosis 0 -- the walk and its reasons are in the module docstring.
+WAVE4_CASES: tuple[Case, ...] = (
+    # PMC11047289 -- massive PE with localised pulmonary oedema, a month after
+    # rib fractures.
+    Case(
+        case_id="ho-11047289",
+        presenting_complaint=(
+            "47-year-old man, three weeks of worsening exertional "
+            "breathlessness, chest pain and pinkish sputum, now breathless "
+            "at rest"
+        ),
+        diagnosis="pulmonary_embolism",
+        features={
+            "dyspnoea_at_rest": True,  # "it became noticeable at rest"
+            "exam:tachycardia": True,  # pulse 126
+            "exam:hypoxia": True,  # SpO2 81% on a reservoir mask at 15 L/min
+            "fever": False,  # 37.7C, under 38C, as wave 3 recorded 37.8C
+            "exam:crackles": True,  # "Crackles were auscultated in the left upper lung field"
+            # "seated indoors for the whole day" for a month after rib
+            # fractures; the report's own differential says "prolonged inactivity"
+            "recent_immobility": True,
+            "lab:raised_troponin": True,  # "elevated levels of troponin I"
+            "lab:raised_bnp": True,  # NT-proBNP 5,200 pg/mL, "elevated"
+            # chest radiograph: "consolidation in the left upper lung field"
+            "imaging:cxr_consolidation": True,
+            # contrast CT: "thrombotic occlusions were noted in the other
+            # pulmonary artery branches"
+            "imaging:ctpa_filling_defect": True,
+        },
+        vocabulary=frozenset(),
+    ),
+    # PMC6392898 -- high-risk PE in a previously healthy woman.
+    Case(
+        case_id="ho-6392898",
+        presenting_complaint=(
+            "55-year-old woman, 40 days of breathlessness and pleuritic chest "
+            "pain, with brief syncope two days before admission"
+        ),
+        diagnosis="pulmonary_embolism",
+        features={
+            "pleuritic_pain": True,
+            "dyspnoea_at_rest": True,  # "complained of dyspnea"
+            "syncope": True,  # "transitory (10 minutes) episodes of syncope"
+            "fever": False,  # 36.0C
+            "exam:tachycardia": False,  # pulse 98
+            "exam:hypoxia": True,  # PaO2 52 mmHg on 5 L/min oxygen, cyanosed lips
+            "exam:crackles": False,  # "no moist rales were heard"
+            "exam:reduced_breath_sounds": True,  # "Breath sounds were diminished"
+            "leg_swelling": False,  # "No edema was found in the lower extremities"
+            "lab:raised_wcc": False,  # 6.82 x10^9/L
+            # enhanced chest CT: "filling defects in the right and left main
+            # pulmonary arteries"
+            "imaging:ctpa_filling_defect": True,
+            # troponin I 0.011, pro-BNP 3425 and D-dimer 2.47 are given
+            # without a reference range: left out
+        },
+        vocabulary=frozenset(),
+    ),
+    # PMC7008764 -- PE presenting as recurrent syncope.
+    Case(
+        case_id="ho-7008764",
+        presenting_complaint=(
+            "60-year-old woman, syncope while walking after palpitations, mild "
+            "chest discomfort and breathlessness; more than ten similar "
+            "episodes over a year"
+        ),
+        diagnosis="pulmonary_embolism",
+        features={
+            "syncope": True,  # "lost consciousness for a minute"
+            "palpitations": True,
+            "dyspnoea_at_rest": True,  # "shortness of breath"
+            "exam:tachycardia": False,  # heart rate 93 on initial evaluation
+            # "physical exam including heart and lungs ... normal", read as
+            # lungs clear
+            "exam:crackles": False,
+            "lab:raised_troponin": True,  # troponin T 0.015 ng/mL, normal < 0.010
+            # CT angiography: "prominent bilateral pulmonary emboli"
+            "imaging:ctpa_filling_defect": True,
+            # SpO2 98% at first, 60% after a second syncope in the same
+            # visit: conflicting, left out. "Non-specific ST and T wave
+            # changes", later re-read as S1Q3T3: left out.
+        },
+        vocabulary=frozenset(),
+    ),
+)
 
 HOLDOUT_CASES = HOLDOUT_CASES + WAVE4_CASES
 WAVE4_IDS = frozenset(c.case_id for c in WAVE4_CASES)
