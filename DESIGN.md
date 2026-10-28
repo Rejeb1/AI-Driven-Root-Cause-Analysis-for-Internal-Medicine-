@@ -3558,7 +3558,7 @@ its parent. A record saying "no ST change" answers both children absent.
 Named `exam:ecg_st_elevation` / `exam:ecg_st_depression`, not the
 amendment's `ecg:` spelling, so they classify and cost like their parent;
 same concepts. The 3 fixtures with an ST change carry no direction --
-it would have to be invented. Invented 85 -> 98 of 193 (49% sourced).
+it would have to be invented. Invented 85 -> 98, total 193, sourced share 49% at that point.
 
 Annotations from the reports, ECG sentence only: pmc-5841117 elevation
 (the aVR depression is reciprocal, left out); pmc-13070269 depression,
@@ -3661,3 +3661,34 @@ escalation was a safety one.
 With T = 1.25 and the second reading (Gemini, cached): original 25 7/0/18,
 holdout 42 12/0/30 (wave 3 6/0/8). These are not clean tests -- T was fitted
 on the holdout -- and are recorded as the configuration now shipped.
+
+## Model v3 (frozen for wave 4)
+
+Two of the four post-report suggestions, done together because each changes
+the model and so both need the same fourth wave. Cells to search were picked
+because of ho-6010635's wrong commit; their values are whatever the
+literature said, written in whichever direction.
+
+- Asthma fever: invented 0.15 -> measured 0.217 (Long 2014, PMC4180966: 39
+  of 180 adults hospitalised with severe asthma, radiographic pneumonia
+  excluded). Fever now argues less against asthma.
+- Asthma raised WCC: declined as a value again (Long 2014 and Tang 2013 give
+  means). An ICU cohort's median (PMC11417819, 13.6, IQR 10.4-18.6) floors
+  that population at 0.50; the invented 0.20 fails the new bound and stays,
+  flagged, as asthma tachycardia did.
+- Pneumonia wheeze: no count in GRACE (PMC3639712), 3C (PMC5724402, OR 1.02,
+  no pneumonia count) or the cited Danish cohort. Stays on the marginal.
+- Haemoptysis and syncope, in the vocabulary since the start and in no entry,
+  added to all eight. Embolism from Miniati's Firenze sample (5.0%, 21.7%);
+  every rival from patients investigated for embolism without one --
+  haemoptysis 2.8% (Courtney 2010, 7,372 ED), syncope 5.7% (9 of 158 older
+  inpatients, PMC10862503, the only split found). The proxy is weakest where
+  the rival causes the sign (pneumonia, oedema haemoptysis).
+- Old cases: haemoptysis/syncope recorded only where the existing file
+  already quoted the sentence (4 in real_cases, 7 in the holdout), not from a
+  re-read.
+
+209 likelihoods, 97 invented, 54% sourced. 57 other parameters (two costs).
+On the 67 seen cases at T = 1.25, v3 changes no verdict: original 25 6/0/19,
+holdout 42 10/0/32, both as v2. ho-6010635 still escalates; asthma 14% ->
+16%. Seen cases cannot show whether v3 is better; wave 4 is for that.

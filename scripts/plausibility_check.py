@@ -291,6 +291,15 @@ QUARTILE_BOUNDS: tuple[tuple[str, str, float, float, str, str], ...] = (
     ("asthma_exacerbation", "exam:hypoxia", 0.191, 1.0,
      "PMC9843545 (Schnyder 2022), 160 adult asthma exacerbations",
      "SpO2 < 92% in 30 of 157 measured (19.1%); SpO2 < 95% includes them"),
+    # A KNOWN FAILURE, added for model v3 while re-searching the cells behind
+    # wave 3's wrong commit (fixtures.py, "Model v3"). ICU-admitted asthma is
+    # sicker than the emergency presentation the entry describes, so this
+    # floor may not hold there -- which is why the invented 0.20 is flagged
+    # and not moved to a point chosen inside [0.50, 0.75].
+    ("asthma_exacerbation", "lab:raised_wcc", 0.50, 0.75,
+     "PMC11417819 (2024), 100 adults with life-threatening asthma in ICU",
+     "white cell count median 13.6, IQR 10.4-18.6 x10^9/L on ICU admission; "
+     "the 11 cutoff sits between Q1 and the median"),
     ("community_acquired_pneumonia", "lab:raised_d_dimer", 0.25, 0.50,
      "PMC11809021 Table 1, 630 hospitalised CAP patients without VTE",
      "D-dimer median 468, IQR 286-978 ng/mL; the 500 cutoff sits between "

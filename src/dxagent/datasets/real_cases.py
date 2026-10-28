@@ -145,6 +145,7 @@ REAL_CASES: tuple[Case, ...] = (
         features={
             # "denied chest pain, palpitation, cough and hemoptysis"
             "productive_cough": False,
+            "haemoptysis": False,
             "pleuritic_pain": False,
             "exertional_chest_pain": False,
             "palpitations": False,
@@ -310,6 +311,7 @@ REAL_CASES: tuple[Case, ...] = (
         features={
             "fever": True,  # temperature 40C
             "pleuritic_pain": True,
+            "haemoptysis": True,  # in the presenting complaint
             # HR 89/min -- not tachycardic
             "exam:tachycardia": False,
             # SpO2 98% on room air
@@ -498,6 +500,7 @@ REAL_CASES: tuple[Case, ...] = (
         diagnosis="community_acquired_pneumonia",
         features={
             "productive_cough": True,  # "cough, hemoptoic sputum"
+            "haemoptysis": True,  # the same "hemoptoic sputum"
             "dyspnoea_at_rest": True,
             "smoking_history": False,  # "no known toxic habits"
             "exam:tachycardia": True,  # heart rate 160 beats/min
@@ -667,6 +670,7 @@ REAL_CASES: tuple[Case, ...] = (
         features={
             "dyspnoea_at_rest": True,  # "dyspnea ... acute respiratory failure"
             "fever": True,  # reported; measured 36C on arrival
+            "haemoptysis": True,  # "dyspnea, fever, cough and hemoptysis"
             "exam:tachycardia": True,  # heart rate 120 bpm
             "exam:hypoxia": True,  # SpO2 90% on room air, pO2 52 mmHg
             "lab:raised_d_dimer": True,  # 3608 ng/mL against 0-500

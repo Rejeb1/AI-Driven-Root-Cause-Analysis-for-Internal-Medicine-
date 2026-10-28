@@ -378,8 +378,10 @@ HOLDOUT_CASES: tuple[Case, ...] = (
         diagnosis="pulmonary_embolism",
         features={
             "smoking_history": True,  # "tobacco use for approximately 10 years"
-            # "did not report any overt syncope or palpitations"
+            # "did not report any overt syncope or palpitations" -- presyncope
+            # is not syncope, so the syncope cell is absent
             "palpitations": False,
+            "syncope": False,
             "exam:tachycardia": False,  # heart rate 28 (complete heart block)
             "exam:hypoxia": False,  # "oximetry of 98% on room air"
             "lab:raised_d_dimer": True,  # 0.643 mg/L, reference < 0.5
@@ -402,6 +404,7 @@ HOLDOUT_CASES: tuple[Case, ...] = (
         ),
         diagnosis="pulmonary_embolism",
         features={
+            "haemoptysis": True,  # "one episode of haemoptysis"
             "pleuritic_pain": True,
             "sudden_onset": False,  # "three weeks of worsening"
             "smoking_history": True,  # "daily tobacco ... use"
@@ -453,6 +456,7 @@ HOLDOUT_CASES: tuple[Case, ...] = (
         ),
         diagnosis="pulmonary_embolism",
         features={
+            "haemoptysis": True,  # "one episode of haemoptysis"
             "pleuritic_pain": True,
             "dyspnoea_at_rest": True,  # "breathlessness ... since 12 h"
             # "He denies the history of fever, ... calf pain, swelling"
@@ -548,6 +552,7 @@ HOLDOUT_CASES: tuple[Case, ...] = (
         ),
         diagnosis="community_acquired_pneumonia",
         features={
+            "haemoptysis": True,  # in the presenting complaint
             "dyspnoea_at_rest": True,
             "fever": True,  # "subjective fever" -- reported counts, per the definition
             "exam:hypoxia": True,  # 93% on room air
@@ -733,6 +738,7 @@ HOLDOUT_CASES: tuple[Case, ...] = (
             "productive_cough": True,  # "cough with expectoration"
             # "no history of fever, chest pain, hemoptysis, orthopnea, pedal edema"
             "fever": False,
+            "haemoptysis": False,
             "pleuritic_pain": False,
             "exertional_chest_pain": False,
             "orthopnoea": False,
@@ -1071,6 +1077,7 @@ WAVE3_CASES: tuple[Case, ...] = (
         ),
         diagnosis="pulmonary_embolism",
         features={
+            "syncope": True,  # "a faint" on the journey
             "pleuritic_pain": True,
             "dyspnoea_at_rest": True,  # "shortness of breath"
             # "a car trip from Texas to Cleveland" -- as real_cases records a
@@ -1244,6 +1251,7 @@ WAVE3_CASES: tuple[Case, ...] = (
             # expectoration, and fever" -- both chest-pain concepts absent, as
             # ho-8302121 reads "no significant chest pain"
             "pleuritic_pain": False,
+            "haemoptysis": False,
             "exertional_chest_pain": False,
             "palpitations": False,
             "productive_cough": False,

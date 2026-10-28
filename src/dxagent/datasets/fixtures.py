@@ -54,6 +54,8 @@ COSTS: dict[str, float] = {
     "recent_immobility": 0.2,
     "palpitations": 0.2,
     "wheeze_subjective": 0.2,
+    "haemoptysis": 0.2,
+    "syncope": 0.2,
     # bedside
     "exam:crackles": 1.0,
     "exam:reduced_breath_sounds": 1.0,
@@ -2197,6 +2199,157 @@ def _seed_st_direction(kb: InMemoryKnowledgeBase) -> None:
     kb._marginals.clear()
 
 
+# ---------------------------------------------------------------------------
+# Model v3: one cell behind the first real wrong commit, and two embolism signs.
+#
+# Wave 3's wrong commit (ho-6010635, asthma read as pneumonia) was traced to
+# three cells: asthma fever and asthma raised WCC, both invented, and
+# pneumonia wheeze, uncharacterised and backing off to the marginal. Each was
+# searched again. Choosing *which* cells to search because a case went wrong
+# is allowed here; choosing their *values* is not -- whatever the literature
+# said was written, in whichever direction, and v3 is judged on a fourth
+# wave it has never seen (Amendment 3 in holdout_cases.py), not on that case.
+#
+# Asthma fever: sourced, below. Long 2014 is an RCT of hospitalised severe
+# asthma exacerbations that excluded radiographic pneumonia -- the boundary
+# this entry needs. 0.217 against the invented 0.15: the measurement makes
+# fever argue *less* against asthma, so the correction moves toward the case
+# that went wrong, which is luck, not design.
+#
+# Asthma raised WCC: declined again as a point value. Long 2014 (11.8 +/- 4.1
+# and 11.4 +/- 3.7 x10^9/L) and Tang 2013 (PMC3867421, 12.1 +/- 4.6 and
+# 11.9 +/- 5.2) give means only, and a mean below-or-near the threshold bounds
+# nothing useful. An ICU cohort's median does (PMC11417819, 100 adults with
+# life-threatening asthma, WCC median 13.6, IQR 10.4-18.6): the 11 cutoff sits
+# between Q1 and the median, so 0.50-0.75 of that population is above it. The
+# invented 0.20 is under that floor. It is a bound on a sicker population, so
+# it is written as a KNOWN FAILURE in plausibility_check.py and the cell is not
+# moved, the same treatment asthma tachycardia got.
+#
+# Pneumonia wheeze: still uncharacterised. GRACE (van Vugt 2013, PMC3639712,
+# 2,820 primary-care acute cough, 140 radiographic pneumonia) tabulates 20
+# signs by pneumonia status and wheeze is not one; the 3C cohort (PMC5724402,
+# 28,883 LRTI) reports wheeze only for the whole cohort and the radiographed
+# subset (218 of 720, 30.3%), with an odds ratio of 1.02 for pneumonia and no
+# count among the pneumonias; the Danish diagnostic-model cohort already
+# cited (PMC11141191) has no wheeze row. No count, no cell. A cell chosen by
+# judgement to fix one case is what this file refuses, so it stays on the
+# marginal and on the clinician sheet.
+_FROM_LITERATURE[("asthma_exacerbation", "fever")] = measured(
+    0.217,
+    Citation(
+        "LONG-2014",
+        "Long W et al., Crit Care 2014;18(5):471, PMC4180966, Table 1",
+        "fever in 22 of 90 (PCT-guided) and 17 of 90 (standard care) adults "
+        "hospitalised with a severe acute exacerbation of asthma, 39 of 180",
+    ),
+    low=0.16,
+    high=0.28,
+    note="Wilson 95% interval on 39/180. Radiographic pneumonia, antibiotics "
+         "in the previous 14 days and age over 65 were exclusions, and the "
+         "paper does not state its fever threshold -- this project's is 38C. "
+         "Replaces an invented 0.15.",
+)
+
+# Haemoptysis and syncope were in the vocabulary from the start and in no
+# entry, so the model could not ask about either -- yet both are items of the
+# Wells and Geneva rules, and the guide's own list of what embolism looks like
+# names them. All eight diseases get both cells (the single-describer rule).
+#
+# Embolism's cells come from the Firenze sample already cited for its fever,
+# leg swelling and orthopnoea. Every other disease gets the rate measured in
+# patients investigated for embolism who turned out not to have it -- the
+# construction _PIOPED_NO_PE uses -- because no source was found per disease.
+# That proxy is weakest where a rival causes the sign itself: pneumonia and
+# oedema surely cough blood more than 2.8% of the time, and a panic attack
+# surely faints less than 5.7%. Recorded, and on the clinician sheet, rather
+# than adjusted by judgement.
+_NO_PE_HAEMOPTYSIS = Citation(
+    "COURTNEY-2010",
+    "Courtney DM et al., Ann Emerg Med 2010;55(4):307-15, PMC2847003, Table 3",
+    "hemoptysis in 207 of 7,372 emergency-department patients tested for "
+    "pulmonary embolism in whom venous thromboembolism was excluded (2.8%); "
+    "20 of 568 with it (3.5%)",
+)
+_NO_PE_SYNCOPE = Citation(
+    "PE-NOMOGRAM-2024",
+    "Older hospitalised patients with suspected PE, Heliyon 2024, PMC10862503, "
+    "Table 3",
+    "syncope in 9 of 158 patients investigated for pulmonary embolism in whom "
+    "it was excluded (5.7%); 35 (12.1%) of those with it",
+)
+_V3_SIGNS: dict[str, tuple[tuple[float, LikelihoodSource], tuple[float, LikelihoodSource]]] = {
+    "haemoptysis": (
+        measured(
+            0.05,
+            Citation(
+                "MINIATI-2012",
+                "PLoS ONE 7(2):e30891, Firenze sample, Table 3",
+                "hemoptysis in 18 of 360 confirmed acute PE patients (6% "
+                "across both samples, n=800)",
+            ),
+            low=0.035,
+            high=0.08,
+            note="band from Courtney 2010's 3.5% in confirmed VTE to the "
+                 "Firenze upper limit; much rarer than its place in the "
+                 "Wells rule suggests, which is why it moves the posterior "
+                 "only modestly when present.",
+        ),
+        measured(
+            0.028,
+            _NO_PE_HAEMOPTYSIS,
+            low=0.025,
+            high=0.032,
+            note="suspected-PE population with PE excluded, applied to every "
+                 "rival as a proxy; likely an underestimate for pneumonia and "
+                 "oedema.",
+        ),
+    ),
+    "syncope": (
+        measured(
+            0.217,
+            Citation(
+                "MINIATI-2012",
+                "PLoS ONE 7(2):e30891, Firenze sample, Table 3",
+                "fainting or syncope in 78 of 360 confirmed acute PE patients "
+                "(24% across both samples, n=800)",
+            ),
+            low=0.12,
+            high=0.26,
+            note="the lower edge is the older inpatient cohort below (12.1%).",
+        ),
+        measured(
+            0.057,
+            _NO_PE_SYNCOPE,
+            low=0.03,
+            high=0.12,
+            note="the only suspected-PE comparison found with syncope split by "
+                 "PE status, and it is older inpatients, not the emergency "
+                 "presentation this KB describes; the band's top is the "
+                 "syncope-or-presyncope rate in 6,526 Canadian ED patients "
+                 "tested for PE (PMC9838465), almost all without one.",
+        ),
+    ),
+}
+
+for _concept, (_pe, _no_pe) in _V3_SIGNS.items():
+    _FROM_LITERATURE[("pulmonary_embolism", _concept)] = _pe
+    for _label in _NON_PE_DISEASES:
+        _FROM_LITERATURE[(_label, _concept)] = _no_pe
+
+
+def _seed_v3_signs(kb: InMemoryKnowledgeBase) -> None:
+    """Seed the haemoptysis and syncope cells so ``_apply_sources`` can source them."""
+    for label, entry in list(kb.entries.items()):
+        features = dict(entry.features)
+        for concept, (pe, no_pe) in _V3_SIGNS.items():
+            features.setdefault(
+                concept, pe[0] if label == "pulmonary_embolism" else no_pe[0]
+            )
+        kb.entries[label] = dataclasses.replace(entry, features=features)
+    kb._marginals.clear()
+
+
 def _seed_pioped_cells(kb: InMemoryKnowledgeBase) -> None:
     """Put the cells in place so ``_apply_sources`` can source them.
 
@@ -2851,6 +3004,7 @@ def build_knowledge_base(
     )
     _seed_pioped_cells(kb)
     _seed_st_direction(kb)
+    _seed_v3_signs(kb)
     if complete_grid:
         _complete_uncharacterised(kb)
     _apply_sources(kb)

@@ -10,7 +10,7 @@ in an earlier document, this one is current.
 The single most important sentence comes first, because burying it would be the
 error this whole project is organised against: **this system must not be used to
 make or influence a clinical decision about any real patient.** Not because of
-an unfinished feature — because 98 of its 193 likelihoods are invented, no
+an unfinished feature — because 97 of its 209 likelihoods are invented, no
 clinician has reviewed any part of it, and its accuracy has never been measured
 on a real patient in a way that would support a claim.
 
@@ -20,11 +20,13 @@ The rest of this document is largely history — what was measured, what was
 believed, and how each belief moved. This section is the current state, so a
 reader does not have to reconstruct it from the history.
 
-- **Knowledge base.** 193 finding-given-disease likelihoods: 85 counted in
-  published patient cohorts, 10 converted from textbook sentences, **98 still
-  invented (49% sourced)** -- down from 52% because ST elevation and ST
-  depression became findings of their own, 13 of their 16 cells invented.
-  All 8 disease priors are sourced. The 55 other
+- **Knowledge base.** 209 finding-given-disease likelihoods: 102 counted in
+  published patient cohorts, 10 converted from textbook sentences, **97 still
+  invented (54% sourced)**. It fell to 49% when ST elevation and ST
+  depression became findings of their own (13 of their 16 cells invented),
+  and rose again in model v3: asthma fever sourced, and haemoptysis and
+  syncope added with all 16 cells measured (§5, "Model v3").
+  All 8 disease priors are sourced. The 57 other
   model settings (gate thresholds, test costs, correlation weights, budgets,
   selector constants) are all invented; `scripts/gate_sweep.py` shows what the
   gate thresholds trade without choosing them.
@@ -215,7 +217,7 @@ named unresolved question, not a silent low-confidence answer.
 
 ## 3. The knowledge base and its provenance
 
-**98 of 193 likelihoods are invented.** That is the number, stated on its own
+**97 of 209 likelihoods are invented.** That is the number, stated on its own
 line, because it is the most important fact about this project. It was 89 of
 153 until the pericardial columns were added (§5): two concepts the real cases
 showed were missing, two sourced cells for pericarditis, and 21 invented rival
@@ -225,7 +227,9 @@ includes claims the model needs to make. A pneumonia sourcing pass (§5) then
 took it to 39%, a pass on the tachycardia column (§5) to 41%, and one cell recovered from the same search (§5) to 42%. It stood at 87
 invented (51%) when the internship report was written; two cells sourced
 afterwards bring it to 85 (52%); splitting ST change into
-elevation and depression then adds 16 cells, 13 invented: 98 of 193 (49%).
+elevation and depression then adds 16 cells, 13 invented: invented 98, total 193 (49%) at that point.
+Model v3 sources asthma fever and adds haemoptysis and syncope, 16 cells
+all measured: 97 of 209 (54%).
 
 The remaining 73 carry a citation: 7 counted from the DDXPlus simulator, 55
 from published cohorts and StatPearls, and 11 converted from Merck Manual
@@ -478,7 +482,7 @@ celebrate.
 ### Nothing was checking the numbers themselves
 
 Every test in this project checks outputs. The knowledge base is inputs, and
-for most of its life nothing looked at it: 98 of 193 likelihoods are invented,
+for most of its life nothing looked at it: 97 of 209 likelihoods are invented,
 and the only scrutiny they got was whichever ones happened to change a case.
 
 Reading each column sorted, against what the diseases actually do, found five

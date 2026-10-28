@@ -222,6 +222,8 @@ SEARCH_TERMS: dict[str, tuple[str, str]] = {
     "palpitations": ("Palpitations", _FINDING_TYPES),
     "wheeze_subjective": ("Wheezing", _FINDING_TYPES),
     "recent_immobility": ("Immobile", _EXPOSURE_TYPES),
+    "haemoptysis": ("Hemoptysis", _FINDING_TYPES),
+    "syncope": ("Syncope", _FINDING_TYPES),
     # examination
     "exam:crackles": ("Crackles", _FINDING_TYPES),
     "exam:tachycardia": ("Tachycardia", _FINDING_TYPES),

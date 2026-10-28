@@ -2746,13 +2746,16 @@ def test_the_model_parameters_outside_the_likelihood_table_are_counted():
     # 55 after the ST split (after the internship report): two costs for
     # ST elevation and ST depression, and two correlation pairings tying
     # each to its parent finding. All four named in fixtures.py.
+    #
+    # 57 in model v3 (28/10/2026): two question costs, for haemoptysis and
+    # syncope, at the history tier like every other question.
     report = parameter_report()
-    assert report.total == 55
-    assert report.invented == 55, "none of these has a source yet"
+    assert report.total == 57
+    assert report.invented == 57, "none of these has a source yet"
 
     by_name = {g.name: g for g in report.groups}
     assert by_name["correlation weights"].count == 8
-    assert by_name["acquisition costs"].count == 31
+    assert by_name["acquisition costs"].count == 33
     assert by_name["gate thresholds"].count == 5
 
     # Every group says where it lives, so the count can be checked against
