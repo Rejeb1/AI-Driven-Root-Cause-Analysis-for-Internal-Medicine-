@@ -3692,3 +3692,31 @@ literature said, written in whichever direction.
 On the 67 seen cases at T = 1.25, v3 changes no verdict: original 25 6/0/19,
 holdout 42 10/0/32, both as v2. ho-6010635 still escalates; asthma 14% ->
 16%. Seen cases cannot show whether v3 is better; wave 4 is for that.
+
+## Wave 4 (Amendment 3): 3 cases, v3 1/0/2 against v2 0/0/3
+
+Rule committed with v3 frozen and no case searched (c6e2363); cases
+committed before any run (3c615d9). Ranks 81-120 of the twelve lists and
+1-40 of two new COPD and panic queries filled 3 of 24 places, all PE. Every
+other diagnosis came up empty; the walk and every reason are in the
+holdout_cases docstring. Short, not topped up.
+
+At T = 1.25, Bayesian gate:
+
+                     v2          v3
+    wave 4 (3)       0/0/3       1/0/2
+    holdout 45       10/0/35     11/0/34
+    original 25      6/0/19      6/0/19
+
+- ho-6392898 (syncope, pleuritic pain, CT clot): PE 44% -> 68%, committed
+  correctly. The syncope cell carries it (LR 0.217/0.057).
+- ho-7008764 (recurrent syncope): PE 43% -> 68%, still escalated -- ACS
+  13% is above the 10% red-flag tolerance (v2: 23%).
+- ho-11047289 (no syncope or haemoptysis recorded): identical, 62%,
+  escalated; it names a raised D-dimer as what would resolve it.
+
+No wrong commit in either model. The second reading had nothing to act on:
+all three escalations name an unavailable exclusion test or a red flag.
+Three PE cases, two of them presenting with the sign v3 added, are a first
+look at the change and not evidence that v3 is better in general. Nothing
+tuned after the run.
