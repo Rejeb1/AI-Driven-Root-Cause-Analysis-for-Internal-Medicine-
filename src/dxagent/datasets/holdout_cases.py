@@ -347,6 +347,38 @@ Panic (wave-2 list has 10 results, none at 41-80; wave-1 list has 57): none
 WAVE 3: 14 cases (PE 3, ACS 2, pneumonia 3, oedema 2, COPD 0, asthma 2,
   pericarditis 2, panic 0). Pooled holdout 42 >= 30.
 
+Amendment 3 -- a fourth wave for model v3, committed after v3 is frozen and
+before its search
+------------------------------------------------------------------------------
+Wave 3 has been run and looked at, and its wrong commit (ho-6010635) chose
+which cells model v3 re-searched. v3 also adds two findings, haemoptysis and
+syncope. None of that may be judged on waves 1-3, so a fourth wave is fixed
+here, with model v3 already committed (49ac91e) and no wave-4 case searched.
+
+Search: continue every walk above, same relevance order and filters, from
+rank 81 to rank 120 -- the eight wave-1 queries and the four wave-2 queries.
+Inclusion rules 1-5 unchanged, plus: not already in any wave or walked past
+in one. Take the first **three** per diagnosis that qualify (wave-2 query
+first where a diagnosis has two lists, then the wave-1 list), at most 24; a
+diagnosis that cannot fill three is recorded short, not topped up. COPD's
+list (66 results) and panic's (57 and 10) end before rank 81, so each gets one
+new title query, walked from rank 1 to 40 under the same rules, skipping
+anything handled in waves 1-3:
+
+- copd_exacerbation: ``("COPD"[ti] OR "chronic obstructive"[ti] OR emphysema[ti]) AND ("respiratory failure"[tiab] OR hypercapnic[tiab] OR "acute exacerbation"[tiab])``
+- panic_attack: ``("panic"[tiab] OR "anxiety attack"[tiab]) AND ("chest pain"[ti] OR palpitations[ti] OR dyspnea[ti] OR "shortness of breath"[ti] OR mimic*[ti])``
+
+Extraction, the same discipline, with one addition: record ``haemoptysis``
+and ``syncope`` where the report states them (presyncope is not syncope).
+
+Run: wave 4 once on v3 and once on v2 (the model at 6fd37af), both at the
+shipped real-case temperature T = 1.25 with the Bayesian gate alone; the
+second reading (Gemini) is run as well where the API answers, and reported
+apart. The comparison fixed now: wrong commits first, correct commits
+second, v3 against v2, on wave 4 alone, then pooled. Nothing is tuned
+after the run; a change it prompts is a v4 and needs a fifth wave. No
+refitting: the temperature stays 1.25 whatever wave 4 shows.
+
 Not fitted, on purpose: the red-flag tolerance (10%), which decides how much
 residual probability of a time-critical cause is acceptable. That is a
 clinical policy with a cost on both sides, not a parameter to optimise
@@ -1362,4 +1394,13 @@ HOLDOUT_CASES = HOLDOUT_CASES + WAVE3_CASES
 WAVE3_IDS = frozenset(c.case_id for c in WAVE3_CASES)
 
 
-__all__ = ["HOLDOUT_CASES", "WAVE3_CASES", "WAVE3_IDS"]
+# ---- wave 4 (Amendment 3) ---------------------------------------------------
+# Empty in the commit that fixes the rule, as wave 1 was: the cases arrive in
+# a later commit, before any model is run on them.
+WAVE4_CASES: tuple[Case, ...] = ()
+
+HOLDOUT_CASES = HOLDOUT_CASES + WAVE4_CASES
+WAVE4_IDS = frozenset(c.case_id for c in WAVE4_CASES)
+
+
+__all__ = ["HOLDOUT_CASES", "WAVE3_CASES", "WAVE3_IDS", "WAVE4_CASES", "WAVE4_IDS"]

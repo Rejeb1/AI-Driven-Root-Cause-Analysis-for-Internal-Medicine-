@@ -54,6 +54,11 @@ def main() -> int:
         from dxagent.datasets.holdout_cases import WAVE3_CASES
 
         cases = WAVE3_CASES
+    # --wave4: only the fourth holdout wave (Amendment 3), reported apart.
+    if "--wave4" in sys.argv:
+        from dxagent.datasets.holdout_cases import WAVE4_CASES
+
+        cases = WAVE4_CASES
     kb = build_knowledge_base(correlated=True)
     agent = DiagnosticAgent(
         kb=kb,
