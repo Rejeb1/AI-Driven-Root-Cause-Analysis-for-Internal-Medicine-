@@ -33,6 +33,10 @@ pip install -e ".[webui]"
 python3 scripts/webui/server.py      # http://127.0.0.1:8420
 ```
 
+On Windows, double-clicking `open_demo.bat` does the same: it installs the web
+dependencies the first time, starts the server and opens the page. Closing its
+window stops the server.
+
 Everything above is offline and deterministic. Tests that need the optional
 stack skip themselves when it is absent, so a clean checkout is always green --
 that is deliberate, because it keeps the dependency-free loop usable as the

@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "dxagent-webui",
-      "runtimeExecutable": "python3",
+      "runtimeExecutable": "py",
       "runtimeArgs": ["scripts/webui/server.py"],
       "port": 8420
     }
